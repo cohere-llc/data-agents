@@ -1,0 +1,14 @@
+{
+  "agent_settings": {
+    "verbose": true,
+    "timeout": 30
+  },
+  "data_processing": {
+    "batch_size": 100,
+    "parallel": true
+  },
+  "output": {
+    "format": "json",
+    "pretty_print": true
+  }
+}
