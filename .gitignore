@@ -12,3 +12,7 @@ wheels/
 # Cache files
 .pytest_cache/
 .ruff_cache/
+
+# Code coverage reports
+.coverage
+coverage.xml

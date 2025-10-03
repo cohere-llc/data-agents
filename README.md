@@ -114,24 +114,3 @@ ruff check .
 # Type checking with mypy
 mypy src/
 ```
-
-### Project structure
-
-```
-data-agents/
-├── src/
-│   └── data_agents/
-│       ├── __init__.py
-│       ├── core.py          # Core DataAgent functionality
-│       └── cli.py           # Command-line interface
-├── tests/
-│   ├── __init__.py
-│   └── test_data_agents.py  # Test suite
-├── pyproject.toml           # Project configuration
-├── README.md                # This file
-└── uv.lock                  # Dependency lock file
-```
-
-## License
-
-Apache 2.0
