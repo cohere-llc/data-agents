@@ -16,3 +16,6 @@ wheels/
 # Code coverage reports
 .coverage
 coverage.xml
+
+# IDE files
+.vscode/

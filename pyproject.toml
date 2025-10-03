@@ -22,7 +22,9 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
-dependencies = []
+dependencies = [
+    "pandas>=2.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/cohere-llc/data-agents"

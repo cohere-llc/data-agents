@@ -43,14 +43,20 @@ pip install -e ".[dev]"
 The package provides a `data-agents` command-line tool:
 
 ```bash
+# Run a demonstration of the Router/Adapter functionality
+data-agents demo
+
 # Create a new agent
 data-agents create my-agent
 
-# Process data with an agent
-data-agents process my-agent "some data to process"
-
-# Get agent information
+# Get agent information (including router and adapters)
 data-agents info my-agent
+
+# List all adapters in an agent
+data-agents list-adapters my-agent
+
+# Query data through an adapter
+data-agents query my-agent adapter-name "query-string"
 
 # Use with configuration file
 data-agents create my-agent --config config.json
@@ -58,19 +64,96 @@ data-agents create my-agent --config config.json
 
 ### Python API
 
+#### Basic Usage
+
 ```python
-from data_agents import DataAgent
+from data_agents import DataAgent, TabularAdapter
+import pandas as pd
 
 # Create an agent
 agent = DataAgent("my-agent")
 
-# Process some data
-result = agent.process("input data")
-print(result)
+# Create sample data
+customers_data = pd.DataFrame({
+    'id': [1, 2, 3],
+    'name': ['Alice', 'Bob', 'Charlie'],
+    'age': [25, 30, 35]
+})
 
-# Get agent information
+# Create an adapter for the data
+customers_adapter = TabularAdapter("customers", customers_data)
+
+# Add adapter to the agent
+agent.add_adapter(customers_adapter)
+
+# Query the data
+all_customers = agent.query("customers", "*")
+older_customers = agent.query("customers", "age > 30")
+
+# Get information about available adapters
 info = agent.get_info()
 print(info)
+```
+
+#### Router/Adapter Architecture
+
+The system uses a **Router/Adapter** pattern:
+
+- **`Router`**: Manages a collection of adapters and routes queries to them
+- **`Adapter`**: Base class for accessing different types of data sources
+- **`TabularAdapter`**: Default implementation for pandas DataFrame data
+
+#### Creating Custom Adapters
+
+```python
+from data_agents import Adapter
+import pandas as pd
+
+class CustomAPIAdapter(Adapter):
+    """Custom adapter for REST API data."""
+    
+    def __init__(self, name: str, api_url: str, config=None):
+        super().__init__(name, config)
+        self.api_url = api_url
+    
+    def query(self, query: str, **kwargs) -> pd.DataFrame:
+        # Implement your custom query logic here
+        # This could make HTTP requests, parse responses, etc.
+        pass
+    
+    def get_schema(self) -> dict:
+        # Return schema information for your data source
+        return {"type": "api", "url": self.api_url}
+
+# Use your custom adapter
+api_adapter = CustomAPIAdapter("my-api", "https://api.example.com")
+agent.add_adapter(api_adapter)
+```
+
+#### Working with Multiple Data Sources
+
+```python
+# Create multiple adapters for different data sources
+customers_adapter = TabularAdapter("customers", customers_df)
+orders_adapter = TabularAdapter("orders", orders_df)
+products_adapter = TabularAdapter("products", products_df)
+
+# Add all adapters to the agent
+agent.add_adapter(customers_adapter)
+agent.add_adapter(orders_adapter)
+agent.add_adapter(products_adapter)
+
+# Query specific adapters
+customer_data = agent.query("customers", "*")
+recent_orders = agent.query("orders", "date > '2023-01-01'")
+
+# Query all adapters with the same query
+all_results = agent.query_all("*")
+for adapter_name, data in all_results.items():
+    print(f"{adapter_name}: {len(data)} records")
+
+# Get schema information for all adapters
+schemas = agent.router.get_all_schemas()
 ```
 
 ### Configuration
