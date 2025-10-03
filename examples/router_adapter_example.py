@@ -9,6 +9,8 @@ This script shows how to:
 4. Extend the base Adapter class for custom data sources
 """
 
+from typing import Any, Optional
+
 import pandas as pd
 
 from data_agents import Router
@@ -19,7 +21,9 @@ from data_agents.core import Adapter
 class MockAPIAdapter(Adapter):
     """Example custom adapter that simulates an API data source."""
 
-    def __init__(self, name: str, api_endpoint: str, config=None):
+    def __init__(
+        self, name: str, api_endpoint: str, config: Optional[dict[str, Any]] = None
+    ):
         super().__init__(name, config)
         self.api_endpoint = api_endpoint
         # Simulate API data
@@ -32,7 +36,7 @@ class MockAPIAdapter(Adapter):
             }
         )
 
-    def query(self, query: str, **kwargs) -> pd.DataFrame:
+    def query(self, query: str, **kwargs: Any) -> pd.DataFrame:
         """Simulate API queries."""
         if query == "*" or query == "all":
             return self._mock_data.copy()
@@ -47,7 +51,7 @@ class MockAPIAdapter(Adapter):
             except Exception:
                 return pd.DataFrame()
 
-    def discover(self) -> dict:
+    def discover(self) -> dict[str, Any]:
         """Return API discovery information."""
         return {
             "adapter_type": "mock_api",
@@ -65,7 +69,7 @@ class MockAPIAdapter(Adapter):
         }
 
 
-def main():
+def main() -> None:
     """Run the example demonstration."""
     print("=== Data Agents Router/Adapter Example ===\n")
 

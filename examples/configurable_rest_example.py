@@ -11,7 +11,7 @@ from data_agents.adapters import RESTAdapter
 from data_agents.core import Router
 
 
-def create_jsonplaceholder_adapter():
+def create_jsonplaceholder_adapter() -> RESTAdapter:
     """Create a RESTAdapter configured for JSONPlaceholder API."""
     config = {
         "headers": {"User-Agent": "DataAgents-ConfigExample/1.0"},
@@ -29,7 +29,7 @@ def create_jsonplaceholder_adapter():
     )
 
 
-def create_httpbin_adapter():
+def create_httpbin_adapter() -> RESTAdapter:
     """Create a RESTAdapter configured for httpbin.org API."""
     config = {
         "headers": {"User-Agent": "DataAgents-ConfigExample/1.0"},
@@ -48,7 +48,7 @@ def create_httpbin_adapter():
     )
 
 
-def create_rest_countries_adapter():
+def create_rest_countries_adapter() -> RESTAdapter:
     """Create a RESTAdapter configured for REST Countries API."""
     config = {
         "headers": {"User-Agent": "DataAgents-ConfigExample/1.0"},
@@ -67,7 +67,7 @@ def create_rest_countries_adapter():
     )
 
 
-def demonstrate_api_adapter(adapter_name: str, adapter: RESTAdapter):
+def demonstrate_api_adapter(adapter_name: str, adapter: RESTAdapter) -> None:
     """Demonstrate functionality of a specific API adapter."""
     print(f"\n🔍 Testing {adapter_name} API")
     print("-" * 40)
@@ -79,7 +79,7 @@ def demonstrate_api_adapter(adapter_name: str, adapter: RESTAdapter):
 
     if available_endpoints:
         print(f"✅ Available endpoints: {available_endpoints}")
-    
+
     if schema_endpoints:
         print(f"✅ Schema endpoints: {schema_endpoints}")
 
@@ -93,16 +93,19 @@ def demonstrate_api_adapter(adapter_name: str, adapter: RESTAdapter):
                 print(f"   Sample data shape: {result.shape}")
         except Exception as e:
             print(f"❌ Query '{first_endpoint}' failed: {e}")
-    
+
     if not available_endpoints and not schema_endpoints:
         print("❌ No endpoints found in discovery")
 
     print(f"🔍 Discovery info: base_url={discovery.get('base_url', 'N/A')}")
-    print(f"   Available: {len(available_endpoints)} endpoints, Schema: {len(schema_endpoints)} endpoints")
+    print(
+        f"   Available: {len(available_endpoints)} endpoints, "
+        f"Schema: {len(schema_endpoints)} endpoints"
+    )
 
 
-def main():
-    """Demonstrate configurable RESTAdapter with multiple APIs."""
+def main() -> None:
+    """Main function demonstrating RESTAdapter configuration and discovery."""
     print("🔧 Configurable REST Adapter Examples")
     print("=" * 50)
 

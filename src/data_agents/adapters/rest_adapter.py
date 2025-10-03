@@ -35,7 +35,7 @@ class RESTAdapter(Adapter):
                 - auth: Authentication tuple (username, password) for basic auth
                 - timeout: Request timeout in seconds (default: 30)
                 - verify: Whether to verify SSL certificates (default: True)
-                - endpoints: List of endpoints to discover (used for both availability 
+                - endpoints: List of endpoints to discover (used for both availability
                   checking and schema discovery)
                 - pagination_param: Parameter name for pagination
                   (e.g., '_limit', 'limit')
@@ -129,7 +129,7 @@ class RESTAdapter(Adapter):
         """Discover API capabilities including available endpoints and schema.
 
         This method performs comprehensive API discovery by:
-        1. Testing endpoint availability 
+        1. Testing endpoint availability
         2. Gathering schema information from the same endpoints
         3. Combining both into a unified discovery result
 
@@ -137,7 +137,8 @@ class RESTAdapter(Adapter):
             Dictionary containing:
             - base_url: The API base URL
             - available_endpoints: List of endpoints that respond successfully
-            - endpoints: Schema information for each endpoint including columns, dtypes, and samples
+            - endpoints: Schema information for each endpoint including columns,
+              dtypes, and samples
             - sample_data: Sample records from each endpoint
         """
         discovery_info: dict[str, Any] = {
@@ -163,7 +164,7 @@ class RESTAdapter(Adapter):
                 )
                 if response.status_code == 200:
                     discovery_info["available_endpoints"].append(endpoint)
-                    
+
                     # 2. Gather schema information for available endpoints
                     try:
                         # Try to get first few records with pagination if configured
@@ -178,8 +179,8 @@ class RESTAdapter(Adapter):
                                 "dtypes": sample_df.dtypes.to_dict(),
                                 "sample_count": len(sample_df),
                             }
-                            discovery_info["sample_data"][endpoint] = sample_df.head(1).to_dict(
-                                "records"
+                            discovery_info["sample_data"][endpoint] = (
+                                sample_df.head(1).to_dict("records")
                             )
                     except Exception:
                         # Endpoint is available but schema discovery failed

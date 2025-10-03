@@ -15,7 +15,7 @@ from data_agents.adapters import RESTAdapter, TabularAdapter
 from data_agents.core import Router
 
 
-def main():
+def main() -> None:
     """Demonstrate RESTAdapter functionality with JSONPlaceholder."""
     print("🌐 REST Adapter Example with JSONPlaceholder API")
     print("=" * 50)
