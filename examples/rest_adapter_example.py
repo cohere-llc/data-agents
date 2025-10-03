@@ -33,7 +33,7 @@ def main() -> None:
     api_adapter = RESTAdapter(
         name="jsonplaceholder",
         base_url="https://jsonplaceholder.typicode.com",
-        config=jsonplaceholder_config
+        config=jsonplaceholder_config,
     )
 
     print("\n1. 📋 Getting API Discovery Information")
@@ -49,27 +49,27 @@ def main() -> None:
     users_df = api_adapter.query("users")
     print(f"Found {len(users_df)} users")
     print("Sample user data:")
-    print(users_df[['id', 'name', 'email', 'website']].head(3))
+    print(users_df[["id", "name", "email", "website"]].head(3))
 
     print("\n3. 📝 Querying Posts")
     print("-" * 20)
     posts_df = api_adapter.query("posts", params={"_limit": 5})
     print(f"Found {len(posts_df)} posts (limited to 5)")
     print("Sample post data:")
-    print(posts_df[['id', 'userId', 'title']].head())
+    print(posts_df[["id", "userId", "title"]].head())
 
     print("\n4. 💬 Querying Comments for a Specific Post")
     print("-" * 40)
     comments_df = api_adapter.query("posts/1/comments")
     print(f"Found {len(comments_df)} comments for post 1")
     print("Sample comment data:")
-    print(comments_df[['id', 'name', 'email']].head(3))
+    print(comments_df[["id", "name", "email"]].head(3))
 
     print("\n5. 🔍 Single User Query")
     print("-" * 25)
     user_df = api_adapter.query("users/1")
     print("User 1 details:")
-    print(user_df[['name', 'email', 'phone', 'website']])
+    print(user_df[["name", "email", "phone", "website"]])
 
     print("\n6. 🏢 Creating a Router with Multiple Adapters")
     print("-" * 45)
@@ -79,15 +79,16 @@ def main() -> None:
     router.register_adapter(api_adapter)
 
     # Create some sample local data
-    local_data = pd.DataFrame({
-        'user_id': [1, 2, 3, 4, 5],
-        'local_score': [85, 92, 78, 96, 88],
-        'category': ['A', 'B', 'A', 'A', 'B'],
-        'last_updated': pd.to_datetime([
-            '2024-01-15', '2024-01-16', '2024-01-17',
-            '2024-01-18', '2024-01-19'
-        ])
-    })
+    local_data = pd.DataFrame(
+        {
+            "user_id": [1, 2, 3, 4, 5],
+            "local_score": [85, 92, 78, 96, 88],
+            "category": ["A", "B", "A", "A", "B"],
+            "last_updated": pd.to_datetime(
+                ["2024-01-15", "2024-01-16", "2024-01-17", "2024-01-18", "2024-01-19"]
+            ),
+        }
+    )
 
     local_adapter = TabularAdapter("local_scores", local_data)
     router.register_adapter(local_adapter)
@@ -111,16 +112,16 @@ def main() -> None:
     if not api_users.empty and not local_scores.empty:
         # Merge on user_id (assuming API id matches local user_id)
         merged_df = pd.merge(
-            api_users[['id', 'name', 'email']],
+            api_users[["id", "name", "email"]],
             local_scores,
-            left_on='id',
-            right_on='user_id',
-            how='inner'
+            left_on="id",
+            right_on="user_id",
+            how="inner",
         )
 
         if not merged_df.empty:
             print("\n🔗 Merged data (API users + local scores):")
-            print(merged_df[['name', 'email', 'local_score', 'category']])
+            print(merged_df[["name", "email", "local_score", "category"]])
         else:
             print("No matching user IDs found for merge")
 
@@ -132,7 +133,7 @@ def main() -> None:
         new_post_data = {
             "title": "Test Post from DataAgents",
             "body": "This is a test post created using the RESTAdapter",
-            "userId": 1
+            "userId": 1,
         }
 
         post_response = api_adapter.post_data("posts", new_post_data)
@@ -149,7 +150,7 @@ def main() -> None:
     print(f"Router: {router_info['name']}")
     print(f"Adapter count: {router_info['adapter_count']}")
     print("Adapter details:")
-    for name, info in router_info['adapters'].items():
+    for name, info in router_info["adapters"].items():
         print(f"  - {name}: {info['type']}")
 
     print("\n✨ Example completed successfully!")

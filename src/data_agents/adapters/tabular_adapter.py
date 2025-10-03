@@ -73,7 +73,7 @@ class TabularAdapter(Adapter):
                 "supports_query": True,
                 "supports_filtering": True,
                 "supports_column_selection": True,
-            }
+            },
         }
 
     def add_data(self, data: pd.DataFrame) -> None:

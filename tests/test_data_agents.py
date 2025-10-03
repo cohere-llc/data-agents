@@ -112,7 +112,7 @@ class TestRESTAdapter:
         assert adapter.pagination_param == "limit"
         assert adapter.pagination_limit == 20
 
-    @patch('requests.request')
+    @patch("requests.request")
     def test_query_list_response(self, mock_request):
         """Test query with list response."""
         # Mock response
@@ -120,7 +120,7 @@ class TestRESTAdapter:
         mock_response.status_code = 200
         mock_response.json.return_value = [
             {"id": 1, "name": "John"},
-            {"id": 2, "name": "Jane"}
+            {"id": 2, "name": "Jane"},
         ]
         mock_request.return_value = mock_response
 
@@ -138,14 +138,16 @@ class TestRESTAdapter:
         assert kwargs["method"] == "GET"
         assert kwargs["url"] == "https://api.example.com/users"
 
-    @patch('requests.request')
+    @patch("requests.request")
     def test_query_dict_response(self, mock_request):
         """Test query with dict response."""
         # Mock response
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "id": 1, "name": "John", "email": "john@example.com"
+            "id": 1,
+            "name": "John",
+            "email": "john@example.com",
         }
         mock_request.return_value = mock_response
 
@@ -156,7 +158,7 @@ class TestRESTAdapter:
         assert list(result.columns) == ["id", "name", "email"]
         assert result.iloc[0]["name"] == "John"
 
-    @patch('requests.request')
+    @patch("requests.request")
     def test_query_with_params(self, mock_request):
         """Test query with URL parameters."""
         mock_response = MagicMock()
@@ -171,13 +173,15 @@ class TestRESTAdapter:
         args, kwargs = mock_request.call_args
         assert kwargs["params"] == {"limit": 10, "offset": 0}
 
-    @patch('requests.request')
+    @patch("requests.request")
     def test_post_data(self, mock_request):
         """Test POST request."""
         mock_response = MagicMock()
         mock_response.status_code = 201
         mock_response.json.return_value = {
-            "id": 123, "name": "New User", "status": "created"
+            "id": 123,
+            "name": "New User",
+            "status": "created",
         }
         mock_request.return_value = mock_response
 
@@ -194,7 +198,7 @@ class TestRESTAdapter:
         assert kwargs["method"] == "POST"
         assert kwargs["json"] == data
 
-    @patch('requests.request')
+    @patch("requests.request")
     def test_query_http_error(self, mock_request):
         """Test query with HTTP error."""
         mock_response = MagicMock()
@@ -207,7 +211,7 @@ class TestRESTAdapter:
         with pytest.raises(requests.RequestException, match="HTTP request failed"):
             adapter.query("nonexistent")
 
-    @patch('requests.request')
+    @patch("requests.request")
     def test_query_json_error(self, mock_request):
         """Test query with invalid JSON response."""
         mock_response = MagicMock()
@@ -220,9 +224,10 @@ class TestRESTAdapter:
         with pytest.raises(ValueError, match="Failed to parse response as JSON"):
             adapter.query("users")
 
-    @patch('requests.get')
+    @patch("requests.get")
     def test_discover_endpoint_availability(self, mock_get):
         """Test endpoint availability discovery."""
+
         # Mock responses for different endpoints
         def mock_response(url, **kwargs):
             response = MagicMock()
@@ -235,9 +240,7 @@ class TestRESTAdapter:
         mock_get.side_effect = mock_response
 
         # Configure adapter with endpoints
-        config = {
-            "endpoints": ["users", "posts", "comments", "nonexistent"]
-        }
+        config = {"endpoints": ["users", "posts", "comments", "nonexistent"]}
         adapter = RESTAdapter("test-api", "https://api.example.com", config)
         discovery = adapter.discover()
 
@@ -247,10 +250,11 @@ class TestRESTAdapter:
         assert "comments" not in discovery["available_endpoints"]
         assert "nonexistent" not in discovery["available_endpoints"]
 
-    @patch('requests.get')
-    @patch('data_agents.adapters.rest_adapter.RESTAdapter.query')
+    @patch("requests.get")
+    @patch("data_agents.adapters.rest_adapter.RESTAdapter.query")
     def test_discover_comprehensive(self, mock_query, mock_get):
         """Test comprehensive API discovery using discover() method."""
+
         # Mock responses for endpoint availability testing
         def mock_response(url, **kwargs):
             response = MagicMock()
@@ -318,10 +322,11 @@ class TestRESTAdapter:
         assert discovery["endpoints"] == {}
         assert discovery["sample_data"] == {}
 
-    @patch('requests.get')
-    @patch('data_agents.adapters.rest_adapter.RESTAdapter.query')
+    @patch("requests.get")
+    @patch("data_agents.adapters.rest_adapter.RESTAdapter.query")
     def test_discover_schema_with_config(self, mock_query, mock_get):
         """Test schema discovery with configured endpoints."""
+
         # Mock HTTP GET responses for availability testing
         def mock_get_response(url, **kwargs):
             response = MagicMock()
@@ -512,7 +517,7 @@ class TestRESTAdapterIntegration:
             post_data = {
                 "title": "Test Post",
                 "body": "This is a test post",
-                "userId": 1
+                "userId": 1,
             }
             post_result = adapter.post_data("posts", post_data)
             assert not post_result.empty
@@ -578,7 +583,7 @@ class TestRESTAdapterIntegration:
             config = {
                 "headers": {
                     "User-Agent": "DataAgents-Custom-Test/2.0",
-                    "X-Custom-Header": "test-value-123"
+                    "X-Custom-Header": "test-value-123",
                 },
                 "timeout": 10,
             }

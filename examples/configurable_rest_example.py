@@ -6,7 +6,6 @@ This example shows how to configure the RESTAdapter for different
 REST APIs by providing API-specific configuration.
 """
 
-
 from data_agents.adapters import RESTAdapter
 from data_agents.core import Router
 
@@ -25,7 +24,7 @@ def create_jsonplaceholder_adapter() -> RESTAdapter:
     return RESTAdapter(
         name="jsonplaceholder",
         base_url="https://jsonplaceholder.typicode.com",
-        config=config
+        config=config,
     )
 
 
@@ -41,11 +40,7 @@ def create_httpbin_adapter() -> RESTAdapter:
         "pagination_limit": None,
     }
 
-    return RESTAdapter(
-        name="httpbin",
-        base_url="https://httpbin.org",
-        config=config
-    )
+    return RESTAdapter(name="httpbin", base_url="https://httpbin.org", config=config)
 
 
 def create_rest_countries_adapter() -> RESTAdapter:
@@ -61,9 +56,7 @@ def create_rest_countries_adapter() -> RESTAdapter:
     }
 
     return RESTAdapter(
-        name="rest_countries",
-        base_url="https://restcountries.com",
-        config=config
+        name="rest_countries", base_url="https://restcountries.com", config=config
     )
 
 

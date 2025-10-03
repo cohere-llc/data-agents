@@ -179,9 +179,9 @@ class RESTAdapter(Adapter):
                                 "dtypes": sample_df.dtypes.to_dict(),
                                 "sample_count": len(sample_df),
                             }
-                            discovery_info["sample_data"][endpoint] = (
-                                sample_df.head(1).to_dict("records")
-                            )
+                            discovery_info["sample_data"][endpoint] = sample_df.head(
+                                1
+                            ).to_dict("records")
                     except Exception:
                         # Endpoint is available but schema discovery failed
                         # Still keep it in available_endpoints
