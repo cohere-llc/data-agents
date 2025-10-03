@@ -1,62 +1,59 @@
-name: MacOS
+name: Release
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
+    tags:
+      - 'v*'
 
 jobs:
+  # Run all platform tests to ensure compatibility
   test:
-    runs-on: macos-latest
-    continue-on-error: true
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.9", "3.10", "3.11", "3.12"]
-
+    runs-on: ${{ matrix.os }}
+    
     steps:
     - uses: actions/checkout@v4
-
+    
     - name: Install uv
       uses: astral-sh/setup-uv@v2
-
+      
     - name: Set up Python ${{ matrix.python-version }}
       run: uv python install ${{ matrix.python-version }}
-
+      
     - name: Install dependencies
-      run: |
-        uv sync --dev
-
+      run: uv sync --dev
+        
     - name: Lint with ruff
       run: |
         uv run ruff check .
         uv run ruff format --check .
-
+        
     - name: Type check with mypy
-      run: |
-        uv run mypy src/
-
+      run: uv run mypy src/
+        
     - name: Test with pytest
-      run: |
-        uv run pytest -v
+      run: uv run pytest -v
 
-  build:
+  # Build and release (pure Python, so only need one build)
+  release:
     needs: test
-    runs-on: macos-latest
-
+    runs-on: ubuntu-latest
+    
     steps:
     - uses: actions/checkout@v4
-
+    
     - name: Install uv
       uses: astral-sh/setup-uv@v2
-
+      
     - name: Build package
-      run: |
-        uv build
-
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      run: uv build
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
       with:
-        name: dist-macos-latest
-        path: dist/
+        files: dist/*
+        generate_release_notes: true
+        
