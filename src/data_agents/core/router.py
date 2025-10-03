@@ -1,6 +1,8 @@
 """Router implementation for managing data adapters."""
 
-from typing import Any, Optional
+from __future__ import annotations
+
+from typing import Any
 
 import pandas as pd
 
@@ -15,7 +17,7 @@ class Router:
     execute queries across adapters, and retrieve metadata.
     """
 
-    def __init__(self, name: str = "default", config: Optional[dict[str, Any]] = None):
+    def __init__(self, name: str = "default", config: dict[str, Any] | None = None):
         """Initialize the router.
 
         Args:
@@ -48,7 +50,7 @@ class Router:
             return True
         return False
 
-    def get_adapter(self, name: str) -> Optional[Adapter]:
+    def get_adapter(self, name: str) -> Adapter | None:
         """Get a specific adapter by name.
 
         Args:
@@ -67,7 +69,7 @@ class Router:
         """
         return list(self.adapters.keys())
 
-    def query(self, adapter_name: str, query: str, **kwargs) -> pd.DataFrame:
+    def query(self, adapter_name: str, query: str, **kwargs: Any) -> pd.DataFrame:
         """Execute a query on a specific adapter.
 
         Args:
@@ -87,7 +89,7 @@ class Router:
 
         return adapter.query(query, **kwargs)
 
-    def query_all(self, query: str, **kwargs) -> dict[str, pd.DataFrame]:
+    def query_all(self, query: str, **kwargs: Any) -> dict[str, pd.DataFrame]:
         """Execute a query on all registered adapters.
 
         Args:
@@ -150,7 +152,7 @@ class Router:
         """
         self.register_adapter(adapter)
 
-    def process(self, data: Any) -> Any:
+    def process(self: Router, data: Any) -> Any:
         """Process input data and return results.
 
         Args:
@@ -163,7 +165,7 @@ class Router:
         print(f"Router {self.name} processing data: {data}")
         return f"Processed: {data}"
 
-    def get_info(self) -> dict[str, Any]:
+    def get_info(self: Router) -> dict[str, Any]:
         """Get information about the router and its adapters.
 
         Returns:

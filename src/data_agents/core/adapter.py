@@ -1,7 +1,9 @@
 """Base adapter class for data agents."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 import pandas as pd
 
@@ -14,7 +16,7 @@ class Adapter(ABC):
     this class to create custom adapters for their specific data sources.
     """
 
-    def __init__(self, name: str, config: Optional[dict[str, Any]] = None):
+    def __init__(self, name: str, config: dict[str, Any] | None = None):
         """Initialize the adapter.
 
         Args:
@@ -25,7 +27,7 @@ class Adapter(ABC):
         self.config = config or {}
 
     @abstractmethod
-    def query(self, query: str, **kwargs) -> pd.DataFrame:
+    def query(self, query: str, **kwargs: Any) -> pd.DataFrame:
         """Execute a query against the data source.
 
         Args:
@@ -46,7 +48,7 @@ class Adapter(ABC):
         """
         pass
 
-    def get_info(self) -> dict[str, Any]:
+    def get_info(self: Adapter) -> dict[str, Any]:
         """Get information about this adapter.
 
         Returns:

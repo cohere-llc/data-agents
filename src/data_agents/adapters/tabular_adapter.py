@@ -1,6 +1,8 @@
 """Tabular adapter implementation for data agents."""
 
-from typing import Any, Optional
+from __future__ import annotations
+
+from typing import Any
 
 import pandas as pd
 
@@ -17,8 +19,8 @@ class TabularAdapter(Adapter):
     def __init__(
         self,
         name: str,
-        data: Optional[pd.DataFrame] = None,
-        config: Optional[dict[str, Any]] = None,
+        data: pd.DataFrame | None = None,
+        config: dict[str, Any] | None = None,
     ):
         """Initialize the tabular adapter.
 
@@ -30,7 +32,7 @@ class TabularAdapter(Adapter):
         super().__init__(name, config)
         self.data = data if data is not None else pd.DataFrame()
 
-    def query(self, query: str, **kwargs) -> pd.DataFrame:
+    def query(self: TabularAdapter, query: str, **kwargs: Any) -> pd.DataFrame:
         """Execute a query against the tabular data.
 
         Args:
