@@ -40,11 +40,11 @@ class Adapter(ABC):
         pass
 
     @abstractmethod
-    def get_schema(self) -> dict[str, Any]:
-        """Get schema information for the data source.
+    def discover(self) -> dict[str, Any]:
+        """Discover capabilities and schema information for the data source.
 
         Returns:
-            Dictionary containing schema/metadata information
+            Dictionary containing discovery information about the data source
         """
         pass
 

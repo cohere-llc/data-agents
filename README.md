@@ -121,9 +121,13 @@ class CustomAPIAdapter(Adapter):
         # This could make HTTP requests, parse responses, etc.
         pass
     
-    def get_schema(self) -> dict:
-        # Return schema information for your data source
-        return {"type": "api", "url": self.api_url}
+    def discover(self) -> dict:
+        # Return discovery information for your data source
+        return {
+            "adapter_type": "api", 
+            "base_url": self.api_url,
+            "capabilities": {"supports_query": True}
+        }
 
 # Use your custom adapter
 api_adapter = CustomAPIAdapter("my-api", "https://api.example.com")
@@ -152,8 +156,8 @@ all_results = agent.query_all("*")
 for adapter_name, data in all_results.items():
     print(f"{adapter_name}: {len(data)} records")
 
-# Get schema information for all adapters
-schemas = agent.router.get_all_schemas()
+# Get discovery information for all adapters
+discoveries = agent.router.discover_all()
 ```
 
 ### Configuration

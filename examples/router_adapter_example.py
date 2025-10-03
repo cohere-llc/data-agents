@@ -47,13 +47,20 @@ class MockAPIAdapter(Adapter):
             except Exception:
                 return pd.DataFrame()
 
-    def get_schema(self) -> dict:
-        """Return API schema information."""
+    def discover(self) -> dict:
+        """Return API discovery information."""
         return {
-            "type": "mock_api",
-            "endpoint": self.api_endpoint,
+            "adapter_type": "mock_api",
+            "base_url": self.api_endpoint,
             "columns": list(self._mock_data.columns),
-            "record_count": len(self._mock_data),
+            "dtypes": self._mock_data.dtypes.to_dict(),
+            "shape": self._mock_data.shape,
+            "sample": self._mock_data.head(1).to_dict("records"),
+            "capabilities": {
+                "supports_query": True,
+                "supports_filtering": True,
+                "real_time": False,
+            },
             "last_updated": "2025-10-03T10:00:00Z",
         }
 
@@ -168,18 +175,20 @@ def main():
         print(f"\n{adapter_name.upper()}: {len(data)} records")
         print(data.head(2).to_string(index=False))
 
-    # 6. Get schema information
-    print("\n6. Schema information...")
+    # 6. Get discovery information
+    print("\n6. Discovery information...")
 
-    schemas = router.get_all_schemas()
-    for adapter_name, schema in schemas.items():
-        print(f"\n{adapter_name.upper()} Schema:")
-        if "columns" in schema:
-            print(f"  Columns: {', '.join(schema['columns'])}")
-        if "shape" in schema:
-            print(f"  Shape: {schema['shape']}")
-        if "type" in schema:
-            print(f"  Type: {schema['type']}")
+    discoveries = router.discover_all()
+    for adapter_name, discovery in discoveries.items():
+        print(f"\n{adapter_name.upper()} Discovery:")
+        if "columns" in discovery:
+            print(f"  Columns: {', '.join(discovery['columns'])}")
+        if "shape" in discovery:
+            print(f"  Shape: {discovery['shape']}")
+        if "adapter_type" in discovery:
+            print(f"  Type: {discovery['adapter_type']}")
+        if "capabilities" in discovery:
+            print(f"  Capabilities: {discovery['capabilities']}")
 
     # 7. Router information
     print("\n7. Router information...")

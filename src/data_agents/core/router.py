@@ -110,14 +110,14 @@ class Router:
 
         return results
 
-    def get_schema(self, adapter_name: str) -> dict[str, Any]:
-        """Get schema information for a specific adapter.
+    def discover(self, adapter_name: str) -> dict[str, Any]:
+        """Get discovery information for a specific adapter.
 
         Args:
             adapter_name: Name of the adapter
 
         Returns:
-            Schema information dictionary
+            Discovery information dictionary
 
         Raises:
             ValueError: If adapter is not found
@@ -126,23 +126,23 @@ class Router:
         if adapter is None:
             raise ValueError(f"Adapter '{adapter_name}' not found")
 
-        return adapter.get_schema()
+        return adapter.discover()
 
-    def get_all_schemas(self) -> dict[str, dict[str, Any]]:
-        """Get schema information for all registered adapters.
+    def discover_all(self) -> dict[str, dict[str, Any]]:
+        """Get discovery information for all registered adapters.
 
         Returns:
-            Dictionary mapping adapter names to their schema information
+            Dictionary mapping adapter names to their discovery information
         """
-        schemas = {}
+        discoveries = {}
         for name, adapter in self.adapters.items():
             try:
-                schemas[name] = adapter.get_schema()
+                discoveries[name] = adapter.discover()
             except Exception as e:
-                print(f"Error getting schema for adapter '{name}': {e}")
-                schemas[name] = {}
+                print(f"Error discovering adapter '{name}': {e}")
+                discoveries[name] = {}
 
-        return schemas
+        return discoveries
 
     def add_adapter(self, adapter: Adapter) -> None:
         """Add an adapter to the router (alias for register_adapter).

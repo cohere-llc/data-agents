@@ -142,12 +142,13 @@ def main() -> None:
         result = router.query("customers", "age > 30")
         print(result.to_string(index=False))
 
-        print("\n4. Get schema information:")
-        schemas = router.get_all_schemas()
-        for adapter_name, schema in schemas.items():
-            print(f"\n{adapter_name} schema:")
-            print(f"  Columns: {schema['columns']}")
-            print(f"  Shape: {schema['shape']}")
+        print("\n4. Get discovery information:")
+        discoveries = router.discover_all()
+        for adapter_name, discovery in discoveries.items():
+            print(f"\n{adapter_name} discovery:")
+            print(f"  Columns: {discovery.get('columns', [])}")
+            print(f"  Shape: {discovery.get('shape', (0, 0))}")
+            print(f"  Adapter Type: {discovery.get('adapter_type', 'unknown')}")
 
     elif args.command == "query":
         router = create_router(args.router_name, args.config)

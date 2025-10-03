@@ -57,17 +57,23 @@ class TabularAdapter(Adapter):
             # If query fails, return empty DataFrame
             return pd.DataFrame()
 
-    def get_schema(self) -> dict[str, Any]:
-        """Get schema information for the tabular data.
+    def discover(self) -> dict[str, Any]:
+        """Discover capabilities and schema information for the tabular data.
 
         Returns:
-            Dictionary containing column names, types, and basic stats
+            Dictionary containing column names, types, basic stats, and capabilities
         """
         return {
+            "adapter_type": "tabular",
             "columns": list(self.data.columns),
             "dtypes": self.data.dtypes.to_dict(),
             "shape": self.data.shape,
             "sample": self.data.head().to_dict() if not self.data.empty else {},
+            "capabilities": {
+                "supports_query": True,
+                "supports_filtering": True,
+                "supports_column_selection": True,
+            }
         }
 
     def add_data(self, data: pd.DataFrame) -> None:
