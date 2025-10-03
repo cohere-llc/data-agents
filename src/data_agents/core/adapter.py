@@ -1,13 +1,14 @@
 """Base adapter class for data agents."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Optional
+
 import pandas as pd
 
 
 class Adapter(ABC):
     """Base adapter class for accessing different types of data sources.
-    
+
     The Adapter class provides a standardized interface for accessing data
     from various sources like databases, APIs, files, etc. Users can extend
     this class to create custom adapters for their specific data sources.
@@ -37,7 +38,7 @@ class Adapter(ABC):
         pass
 
     @abstractmethod
-    def get_schema(self) -> Dict[str, Any]:
+    def get_schema(self) -> dict[str, Any]:
         """Get schema information for the data source.
 
         Returns:
@@ -45,7 +46,7 @@ class Adapter(ABC):
         """
         pass
 
-    def get_info(self) -> Dict[str, Any]:
+    def get_info(self) -> dict[str, Any]:
         """Get information about this adapter.
 
         Returns:

@@ -2,8 +2,8 @@
 
 __version__ = "0.1.0"
 
-from .core import Adapter, Router
-from .adapters import TabularAdapter
 from . import adapters
+from .adapters import TabularAdapter
+from .core import Adapter, Router
 
 __all__ = ["Adapter", "Router", "TabularAdapter", "adapters"]

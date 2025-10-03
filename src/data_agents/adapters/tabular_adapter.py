@@ -1,6 +1,7 @@
 """Tabular adapter implementation for data agents."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
+
 import pandas as pd
 
 from ..core.adapter import Adapter
@@ -8,12 +9,17 @@ from ..core.adapter import Adapter
 
 class TabularAdapter(Adapter):
     """Default adapter for tabular data sources.
-    
+
     This adapter provides basic functionality for working with tabular data
     and serves as a reference implementation for custom adapters.
     """
 
-    def __init__(self, name: str, data: Optional[pd.DataFrame] = None, config: Optional[dict[str, Any]] = None):
+    def __init__(
+        self,
+        name: str,
+        data: Optional[pd.DataFrame] = None,
+        config: Optional[dict[str, Any]] = None,
+    ):
         """Initialize the tabular adapter.
 
         Args:
@@ -36,11 +42,11 @@ class TabularAdapter(Adapter):
         """
         if query == "*" or query == "all":
             return self.data.copy()
-        
+
         # Simple column selection
         if query in self.data.columns:
             return self.data[[query]].copy()
-        
+
         # For more complex queries, users can extend this method
         try:
             # Try to use query as a pandas query string
@@ -49,7 +55,7 @@ class TabularAdapter(Adapter):
             # If query fails, return empty DataFrame
             return pd.DataFrame()
 
-    def get_schema(self) -> Dict[str, Any]:
+    def get_schema(self) -> dict[str, Any]:
         """Get schema information for the tabular data.
 
         Returns:
@@ -59,7 +65,7 @@ class TabularAdapter(Adapter):
             "columns": list(self.data.columns),
             "dtypes": self.data.dtypes.to_dict(),
             "shape": self.data.shape,
-            "sample": self.data.head().to_dict() if not self.data.empty else {}
+            "sample": self.data.head().to_dict() if not self.data.empty else {},
         }
 
     def add_data(self, data: pd.DataFrame) -> None:

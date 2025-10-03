@@ -1,6 +1,7 @@
 """Router implementation for managing data adapters."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
+
 import pandas as pd
 
 from .adapter import Adapter
@@ -8,7 +9,7 @@ from .adapter import Adapter
 
 class Router:
     """Router for managing and querying a collection of Adapter instances.
-    
+
     The Router acts as the primary interface for accessing data from multiple sources
     through registered Adapters. It provides methods to register adapters,
     execute queries across adapters, and retrieve metadata.
@@ -23,7 +24,7 @@ class Router:
         """
         self.name = name
         self.config = config or {}
-        self.adapters: Dict[str, Adapter] = {}
+        self.adapters: dict[str, Adapter] = {}
 
     def register_adapter(self, adapter: Adapter) -> None:
         """Register an adapter with the router.
@@ -58,7 +59,7 @@ class Router:
         """
         return self.adapters.get(name)
 
-    def list_adapters(self) -> List[str]:
+    def list_adapters(self) -> list[str]:
         """Get a list of all registered adapter names.
 
         Returns:
@@ -83,10 +84,10 @@ class Router:
         adapter = self.get_adapter(adapter_name)
         if adapter is None:
             raise ValueError(f"Adapter '{adapter_name}' not found")
-        
+
         return adapter.query(query, **kwargs)
 
-    def query_all(self, query: str, **kwargs) -> Dict[str, pd.DataFrame]:
+    def query_all(self, query: str, **kwargs) -> dict[str, pd.DataFrame]:
         """Execute a query on all registered adapters.
 
         Args:
@@ -104,10 +105,10 @@ class Router:
                 # Log error and continue with other adapters
                 print(f"Error querying adapter '{name}': {e}")
                 results[name] = pd.DataFrame()
-        
+
         return results
 
-    def get_schema(self, adapter_name: str) -> Dict[str, Any]:
+    def get_schema(self, adapter_name: str) -> dict[str, Any]:
         """Get schema information for a specific adapter.
 
         Args:
@@ -122,10 +123,10 @@ class Router:
         adapter = self.get_adapter(adapter_name)
         if adapter is None:
             raise ValueError(f"Adapter '{adapter_name}' not found")
-        
+
         return adapter.get_schema()
 
-    def get_all_schemas(self) -> Dict[str, Dict[str, Any]]:
+    def get_all_schemas(self) -> dict[str, dict[str, Any]]:
         """Get schema information for all registered adapters.
 
         Returns:
@@ -138,7 +139,7 @@ class Router:
             except Exception as e:
                 print(f"Error getting schema for adapter '{name}': {e}")
                 schemas[name] = {}
-        
+
         return schemas
 
     def add_adapter(self, adapter: Adapter) -> None:
@@ -162,16 +163,19 @@ class Router:
         print(f"Router {self.name} processing data: {data}")
         return f"Processed: {data}"
 
-    def get_info(self) -> Dict[str, Any]:
+    def get_info(self) -> dict[str, Any]:
         """Get information about the router and its adapters.
 
         Returns:
             Dictionary containing router information
         """
+        adapters_info = {
+            name: adapter.get_info() for name, adapter in self.adapters.items()
+        }
         return {
             "name": self.name,
             "type": "Router",
             "config": self.config,
             "adapter_count": len(self.adapters),
-            "adapters": {name: adapter.get_info() for name, adapter in self.adapters.items()}
+            "adapters": adapters_info,
         }

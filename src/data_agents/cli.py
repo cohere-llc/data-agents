@@ -4,10 +4,11 @@ import argparse
 import json
 import sys
 from typing import Optional
+
 import pandas as pd
 
-from .core import Router
 from .adapters import TabularAdapter
+from .core import Router
 
 
 def create_router(name: str, config_file: Optional[str] = None) -> Router:
@@ -48,8 +49,12 @@ def main() -> None:
     create_parser.add_argument("--config", help="Path to JSON configuration file")
 
     # Demo command - demonstrates the Router/Adapter functionality
-    demo_parser = subparsers.add_parser("demo", help="Run a demonstration of Router/Adapter functionality")
-    demo_parser.add_argument("--router-name", default="demo-router", help="Name for the demo router")
+    demo_parser = subparsers.add_parser(
+        "demo", help="Run a demonstration of Router/Adapter functionality"
+    )
+    demo_parser.add_argument(
+        "--router-name", default="demo-router", help="Name for the demo router"
+    )
 
     # Query command
     query_parser = subparsers.add_parser("query", help="Query data through a router")
@@ -59,7 +64,9 @@ def main() -> None:
     query_parser.add_argument("--config", help="Path to JSON configuration file")
 
     # List adapters command
-    list_parser = subparsers.add_parser("list-adapters", help="List all adapters in a router")
+    list_parser = subparsers.add_parser(
+        "list-adapters", help="List all adapters in a router"
+    )
     list_parser.add_argument("router_name", help="Name for the router")
     list_parser.add_argument("--config", help="Path to JSON configuration file")
 
@@ -89,48 +96,52 @@ def main() -> None:
     elif args.command == "demo":
         # Create a demo router with sample data
         router = Router(args.router_name)
-        
+
         # Create sample datasets
-        customers_data = pd.DataFrame({
-            'id': [1, 2, 3, 4, 5],
-            'name': ['Alice', 'Bob', 'Charlie', 'Diana', 'Eve'],
-            'age': [25, 30, 35, 28, 42],
-            'city': ['New York', 'London', 'Tokyo', 'Paris', 'Sydney']
-        })
-        
-        orders_data = pd.DataFrame({
-            'order_id': [101, 102, 103, 104, 105],
-            'customer_id': [1, 2, 1, 3, 2],
-            'product': ['Laptop', 'Phone', 'Tablet', 'Monitor', 'Keyboard'],
-            'amount': [1200, 800, 400, 300, 100]
-        })
-        
+        customers_data = pd.DataFrame(
+            {
+                "id": [1, 2, 3, 4, 5],
+                "name": ["Alice", "Bob", "Charlie", "Diana", "Eve"],
+                "age": [25, 30, 35, 28, 42],
+                "city": ["New York", "London", "Tokyo", "Paris", "Sydney"],
+            }
+        )
+
+        orders_data = pd.DataFrame(
+            {
+                "order_id": [101, 102, 103, 104, 105],
+                "customer_id": [1, 2, 1, 3, 2],
+                "product": ["Laptop", "Phone", "Tablet", "Monitor", "Keyboard"],
+                "amount": [1200, 800, 400, 300, 100],
+            }
+        )
+
         # Create adapters
         customers_adapter = TabularAdapter("customers", customers_data)
         orders_adapter = TabularAdapter("orders", orders_data)
-        
+
         # Add adapters to router
         router.add_adapter(customers_adapter)
         router.add_adapter(orders_adapter)
-        
+
         print(f"Demo router '{router.name}' created with sample data")
         print(f"Available adapters: {router.list_adapters()}")
-        
+
         # Show sample queries
         print("\n--- Sample Queries ---")
-        
+
         print("\n1. Get all customers:")
         result = router.query("customers", "*")
         print(result.to_string(index=False))
-        
+
         print("\n2. Get all orders:")
         result = router.query("orders", "*")
         print(result.to_string(index=False))
-        
+
         print("\n3. Query customers over 30:")
         result = router.query("customers", "age > 30")
         print(result.to_string(index=False))
-        
+
         print("\n4. Get schema information:")
         schemas = router.get_all_schemas()
         for adapter_name, schema in schemas.items():
