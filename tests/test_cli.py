@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
+import pytest
 
 from data_agents.cli import create_router, main
 
@@ -194,7 +195,9 @@ class TestCLICommands:
             "sys.argv", ["data_agents", "query", "test-router", "nonexistent", "*"]
         ):
             with patch("sys.stdout", new=io.StringIO()) as fake_out:
-                main()
+                with pytest.raises(SystemExit) as exc_info:
+                    main()
+                assert exc_info.value.code == 1
         output = fake_out.getvalue()
         assert "Error:" in output
         assert "not found" in output
@@ -251,7 +254,9 @@ class TestCLICommands:
             "sys.argv", ["data_agents", "query", "test-router", "test-adapter", "*"]
         ):
             with patch("sys.stdout", new=io.StringIO()) as fake_out:
-                main()
+                with pytest.raises(SystemExit) as exc_info:
+                    main()
+                assert exc_info.value.code == 1
 
         output = fake_out.getvalue()
         assert "Error:" in output
