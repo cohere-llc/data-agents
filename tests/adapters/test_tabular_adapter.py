@@ -48,11 +48,9 @@ class TestTabularAdapter:
 
     def test_query_multiple_columns(self):
         """Test querying multiple columns."""
-        data = pd.DataFrame({
-            "col1": [1, 2, 3],
-            "col2": ["a", "b", "c"],
-            "col3": [10, 20, 30]
-        })
+        data = pd.DataFrame(
+            {"col1": [1, 2, 3], "col2": ["a", "b", "c"], "col3": [10, 20, 30]}
+        )
         adapter = TabularAdapter("test-adapter", data)
         # Note: TabularAdapter doesn't support comma-separated columns
         # in current implementation

@@ -169,9 +169,7 @@ class TestRouter:
         assert router_copy.name == router.name
         assert len(router_copy.adapters) == len(router.adapters)
         # Shallow copy
-        assert (
-            router_copy.adapters["test-adapter"] is router.adapters["test-adapter"]
-        )
+        assert router_copy.adapters["test-adapter"] is router.adapters["test-adapter"]
         assert router_copy is not router
 
     def test_deepcopy(self):

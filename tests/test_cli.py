@@ -101,8 +101,7 @@ class TestCLICommands:
         assert "Created router: test-router" in output
 
     @patch(
-        "sys.argv",
-        ["data_agents", "create", "test-router", "--config", "test.json"]
+        "sys.argv", ["data_agents", "create", "test-router", "--config", "test.json"]
     )
     def test_create_command_with_config(self):
         """Test create command with configuration file."""
