@@ -230,46 +230,44 @@ class RESTAdapter(Adapter):
         }
 
         # Use configured endpoints for both availability and schema discovery
-        if not self.endpoints:
-            return discovery_info
+        if self.endpoints:
+            for endpoint in self.endpoints:
+                # 1. Test endpoint availability
+                try:
+                    response = requests.get(
+                        urljoin(self.base_url + "/", endpoint),
+                        headers=self.headers,
+                        auth=self.auth,
+                        timeout=self.timeout,
+                        verify=self.verify,
+                    )
+                    if response.status_code == 200:
+                        discovery_info["available_endpoints"].append(endpoint)
 
-        for endpoint in self.endpoints:
-            # 1. Test endpoint availability
-            try:
-                response = requests.get(
-                    urljoin(self.base_url + "/", endpoint),
-                    headers=self.headers,
-                    auth=self.auth,
-                    timeout=self.timeout,
-                    verify=self.verify,
-                )
-                if response.status_code == 200:
-                    discovery_info["available_endpoints"].append(endpoint)
+                        # 2. Gather schema information for available endpoints
+                        try:
+                            # Try to get first few records with pagination if configured
+                            params = {}
+                            if self.pagination_param and self.pagination_limit:
+                                params[self.pagination_param] = self.pagination_limit
 
-                    # 2. Gather schema information for available endpoints
-                    try:
-                        # Try to get first few records with pagination if configured
-                        params = {}
-                        if self.pagination_param and self.pagination_limit:
-                            params[self.pagination_param] = self.pagination_limit
-
-                        sample_df = self.query(endpoint, params=params)
-                        if not sample_df.empty:
-                            discovery_info["endpoints"][endpoint] = {
-                                "columns": list(sample_df.columns),
-                                "dtypes": sample_df.dtypes.to_dict(),
-                                "sample_count": len(sample_df),
-                            }
-                            discovery_info["sample_data"][endpoint] = sample_df.head(
-                                1
-                            ).to_dict("records")
-                    except Exception:
-                        # Endpoint is available but schema discovery failed
-                        # Still keep it in available_endpoints
-                        continue
-            except Exception:
-                # Endpoint not available, skip
-                continue
+                            sample_df = self.query(endpoint, params=params)
+                            if not sample_df.empty:
+                                discovery_info["endpoints"][endpoint] = {
+                                    "columns": list(sample_df.columns),
+                                    "dtypes": sample_df.dtypes.to_dict(),
+                                    "sample_count": len(sample_df),
+                                }
+                                discovery_info["sample_data"][endpoint] = (
+                                    sample_df.head(1).to_dict("records")
+                                )
+                        except Exception:
+                            # Endpoint is available but schema discovery failed
+                            # Still keep it in available_endpoints
+                            continue
+                except Exception:
+                    # Endpoint not available, skip
+                    continue
 
         # Add OpenAPI information if available
         if self.openapi_specs:

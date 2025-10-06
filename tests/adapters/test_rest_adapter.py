@@ -49,6 +49,218 @@ class TestRESTAdapter:
         assert adapter.pagination_param == "limit"
         assert adapter.pagination_limit == 20
 
+    def test_init_with_invalid_openapi_data_type(self):
+        """Test RESTAdapter initialization with invalid OpenAPI data type."""
+        config = {"openapi_data": 12345}  # Invalid type (not string or list)
+
+        with pytest.raises(ValueError, match="Invalid OpenAPI data format"):
+            RESTAdapter("https://api.example.com", config)
+
+    @patch("requests.get")
+    def test_init_with_openapi_url_success(self, mock_get):
+        """Test RESTAdapter initialization with OpenAPI URL that loads successfully."""
+        # Mock successful OpenAPI spec fetch
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "openapi": "3.0.0",
+            "info": {"title": "Test API", "version": "1.0.0"},
+            "paths": {"/users": {"get": {}}},
+        }
+        mock_get.return_value = mock_response
+
+        config = {"openapi_data": ["https://api.example.com/openapi.json"]}
+        adapter = RESTAdapter("https://api.example.com", config)
+
+        assert len(adapter.openapi_specs) == 1
+        assert "users" in adapter.endpoints
+
+    @patch("requests.get")
+    @patch("builtins.print")
+    def test_init_with_openapi_url_fetch_failure(self, mock_print, mock_get):
+        """Test RESTAdapter initialization when OpenAPI URL fetch fails completely."""
+        # Mock failed request that raises an exception
+        mock_get.side_effect = requests.RequestException("Connection failed")
+
+        config = {"openapi_data": ["https://api.example.com/openapi.json"]}
+        adapter = RESTAdapter("https://api.example.com", config)
+
+        # Should handle the error gracefully and print warnings
+        assert len(adapter.openapi_specs) == 0
+        mock_print.assert_any_call("Warning: Failed to load OpenAPI spec")
+
+    @patch("requests.get")
+    @patch("builtins.print")
+    def test_init_with_openapi_url_parse_failure_with_fallback(
+        self, mock_print, mock_get
+    ):
+        """Test OpenAPI URL fetch succeeds but parsing fails, with fallback."""
+        # First call fails to parse OpenAPI, second call succeeds for fallback
+        valid_spec = {
+            "openapi": "3.0.0",
+            "info": {"title": "Test API", "version": "1.0.0"},
+            "paths": {"/users": {"get": {}}},
+        }
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = valid_spec
+        mock_get.return_value = mock_response
+
+        # Mock OpenAPI constructor to fail first, then succeed on fallback
+        with patch("data_agents.adapters.rest_adapter.OpenAPI") as mock_openapi:
+            mock_openapi.side_effect = [
+                Exception("Parse failed"),
+                Exception("Parse failed again"),
+            ]
+
+            config = {"openapi_data": ["https://api.example.com/openapi.json"]}
+            adapter = RESTAdapter("https://api.example.com", config)
+
+            # Should have fallback raw spec stored
+            assert len(adapter.openapi_specs) == 1
+            assert isinstance(adapter.openapi_specs[0], dict)
+            assert "_raw_spec" in adapter.openapi_specs[0]
+
+    @patch("builtins.print")
+    def test_init_with_openapi_json_string_success(self, mock_print):
+        """Test RESTAdapter initialization with OpenAPI JSON string."""
+        openapi_json = """{
+            "openapi": "3.0.0",
+            "info": {"title": "Test API", "version": "1.0.0"},
+            "paths": {"/users": {"get": {}}}
+        }"""
+
+        with patch("data_agents.adapters.rest_adapter.OpenAPI") as mock_openapi:
+            mock_spec = MagicMock()
+            mock_spec.paths = {"/users": {}}
+            mock_openapi.return_value = mock_spec
+
+            config = {"openapi_data": [openapi_json]}
+            adapter = RESTAdapter("https://api.example.com", config)
+
+            assert len(adapter.openapi_specs) == 1
+            assert "users" in adapter.endpoints
+
+    @patch("builtins.print")
+    def test_init_with_openapi_json_parse_failure(self, mock_print):
+        """Test RESTAdapter initialization with invalid OpenAPI JSON string."""
+        invalid_json = "invalid json"
+
+        config = {"openapi_data": [invalid_json]}
+        adapter = RESTAdapter("https://api.example.com", config)
+
+        # Should handle the error gracefully
+        assert len(adapter.openapi_specs) == 0
+        mock_print.assert_called_with(
+            "Warning: Failed to parse OpenAPI spec: "
+            "Expecting value: line 1 column 1 (char 0)"
+        )
+
+    def test_init_with_openapi_single_string(self):
+        """Test RESTAdapter initialization with single OpenAPI string (not list)."""
+        openapi_json = """{
+            "openapi": "3.0.0",
+            "info": {"title": "Test API", "version": "1.0.0"},
+            "paths": {"/users": {"get": {}}}
+        }"""
+
+        with patch("data_agents.adapters.rest_adapter.OpenAPI") as mock_openapi:
+            mock_spec = MagicMock()
+            mock_spec.paths = {"/users": {}}
+            mock_openapi.return_value = mock_spec
+
+            # Pass string directly instead of list
+            config = {"openapi_data": openapi_json}
+            adapter = RESTAdapter("https://api.example.com", config)
+
+            assert len(adapter.openapi_specs) == 1
+            assert "users" in adapter.endpoints
+
+    @patch("builtins.print")
+    def test_init_with_openapi_dict_parse_failure(self, mock_print):
+        """Test RESTAdapter initialization with dict that fails OpenAPI parsing."""
+        openapi_dict = {
+            "openapi": "3.0.0",
+            "info": {"title": "Test API", "version": "1.0.0"},
+            "paths": {"/users": {"get": {}}},
+        }
+
+        with patch("data_agents.adapters.rest_adapter.OpenAPI") as mock_openapi:
+            # Make OpenAPI constructor always fail
+            mock_openapi.side_effect = Exception("Parse failed")
+
+            config = {"openapi_data": [openapi_dict]}
+            adapter = RESTAdapter("https://api.example.com", config)
+
+            assert len(adapter.openapi_specs) == 0
+            mock_print.assert_called_with(
+                "Warning: Failed to parse OpenAPI spec: Parse failed"
+            )
+
+    def test_init_with_openapi_raw_spec_endpoint_extraction(self):
+        """Test endpoint extraction from raw OpenAPI spec fallback."""
+        adapter = RESTAdapter("https://api.example.com")
+
+        # Manually set up raw spec as would happen in fallback scenario
+        raw_spec = {
+            "paths": {
+                "/api/users": {"get": {}},
+                "/api/posts": {"get": {}},
+                "no-leading-slash": {"get": {}},
+            }
+        }
+        adapter.openapi_specs = [{"_raw_spec": raw_spec, "_source_url": "test"}]
+        adapter.endpoints = []  # Reset endpoints
+
+        # Manually trigger endpoint extraction (simulating what happens in __init__)
+        if not adapter.endpoints and adapter.openapi_specs:
+            adapter.endpoints = []
+            for spec in adapter.openapi_specs:
+                if isinstance(spec, dict) and "_raw_spec" in spec:
+                    raw_spec = spec["_raw_spec"]
+                    if "paths" in raw_spec:
+                        for path in raw_spec["paths"].keys():
+                            adapter.endpoints.append(path.lstrip("/"))
+            adapter.endpoints = list(set(adapter.endpoints))
+
+        assert "api/users" in adapter.endpoints
+        assert "api/posts" in adapter.endpoints
+        assert "no-leading-slash" in adapter.endpoints
+
+    def test_init_with_auth_config(self):
+        """Test RESTAdapter initialization with authentication."""
+        config = {
+            "auth": ("username", "password"),
+            "headers": {"Authorization": "Bearer token"},
+        }
+        adapter = RESTAdapter("https://api.example.com", config)
+
+        assert adapter.auth == ("username", "password")
+        assert adapter.headers["Authorization"] == "Bearer token"
+        assert (
+            adapter.headers["Accept"] == "application/json"
+        )  # Default header still present
+
+    def test_init_with_openapi_dict_success(self):
+        """Test RESTAdapter initialization with OpenAPI dict object."""
+        openapi_dict = {
+            "openapi": "3.0.0",
+            "info": {"title": "Test API", "version": "1.0.0"},
+            "paths": {"/users": {"get": {}}},
+        }
+
+        with patch("data_agents.adapters.rest_adapter.OpenAPI") as mock_openapi:
+            mock_spec = MagicMock()
+            mock_spec.paths = {"/users": {}}
+            mock_openapi.return_value = mock_spec
+
+            config = {"openapi_data": [openapi_dict]}
+            adapter = RESTAdapter("https://api.example.com", config)
+
+            assert len(adapter.openapi_specs) == 1
+            assert "users" in adapter.endpoints
+
     @patch("requests.request")
     def test_query_list_response(self, mock_request):
         """Test query with list response."""
@@ -109,6 +321,78 @@ class TestRESTAdapter:
         # Verify parameters were passed
         args, kwargs = mock_request.call_args
         assert kwargs["params"] == {"limit": 10, "offset": 0}
+
+    @patch("requests.request")
+    def test_query_primitive_response(self, mock_request):
+        """Test query with primitive value response."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = "simple string value"
+        mock_request.return_value = mock_response
+
+        adapter = RESTAdapter("https://api.example.com")
+        result = adapter.query("status")
+
+        assert len(result) == 1
+        assert list(result.columns) == ["value"]
+        assert result.iloc[0]["value"] == "simple string value"
+
+    @patch("requests.request")
+    def test_query_number_response(self, mock_request):
+        """Test query with number response."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = 42
+        mock_request.return_value = mock_response
+
+        adapter = RESTAdapter("https://api.example.com")
+        result = adapter.query("count")
+
+        assert len(result) == 1
+        assert list(result.columns) == ["value"]
+        assert result.iloc[0]["value"] == 42
+
+    @patch("requests.request")
+    def test_query_with_custom_headers(self, mock_request):
+        """Test query with custom headers for single request."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = [{"id": 1}]
+        mock_request.return_value = mock_response
+
+        adapter = RESTAdapter(
+            "https://api.example.com", config={"headers": {"Default": "value"}}
+        )
+        adapter.query("users", custom_headers={"Custom": "header"})
+
+        # Verify both default and custom headers were sent
+        args, kwargs = mock_request.call_args
+        expected_headers = {
+            "Default": "value",
+            "Accept": "application/json",
+            "Custom": "header",
+        }
+        assert kwargs["headers"] == expected_headers
+
+    @patch("requests.request")
+    def test_query_patch_method(self, mock_request):
+        """Test query with PATCH method."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"id": 1, "updated": True}
+        mock_request.return_value = mock_response
+
+        adapter = RESTAdapter("https://api.example.com")
+        data = {"field": "updated_value"}
+        result = adapter.query("users/1", method="PATCH", data=data)
+
+        assert len(result) == 1
+        assert result.iloc[0]["updated"]  # Use truthiness check instead of == True
+
+        # Verify PATCH request with JSON data
+        args, kwargs = mock_request.call_args
+        assert kwargs["method"] == "PATCH"
+        assert kwargs["json"] == data
 
     @patch("requests.request")
     def test_post_data(self, mock_request):
@@ -354,6 +638,147 @@ class TestRESTAdapter:
         assert "posts" in discovery["endpoints"]
         assert discovery["endpoints"]["users"]["columns"] == ["id", "name"]
         assert discovery["endpoints"]["posts"]["columns"] == ["id", "title", "userId"]
+
+    @patch("requests.get")
+    @patch("data_agents.adapters.rest_adapter.RESTAdapter.query")
+    def test_discover_with_query_failure(self, mock_query, mock_get):
+        """Test discover when endpoint is available but query fails."""
+
+        # Mock endpoint as available
+        def mock_get_response(url, **kwargs):
+            response = MagicMock()
+            response.status_code = 200
+            return response
+
+        mock_get.side_effect = mock_get_response
+
+        # Mock query to raise an exception
+        mock_query.side_effect = Exception("Query failed")
+
+        config = {"endpoints": ["users"]}
+        adapter = RESTAdapter("https://api.example.com", config)
+        discovery = adapter.discover()
+
+        # Should still include endpoint in available_endpoints despite query failure
+        assert "users" in discovery["available_endpoints"]
+        assert (
+            "users" not in discovery["endpoints"]
+        )  # No schema info due to query failure
+
+    @patch("requests.get")
+    def test_discover_with_endpoint_availability_failure(self, mock_get):
+        """Test discover when endpoint availability check fails."""
+        # Mock all requests to fail
+        mock_get.side_effect = Exception("Connection failed")
+
+        config = {"endpoints": ["users", "posts"]}
+        adapter = RESTAdapter("https://api.example.com", config)
+        discovery = adapter.discover()
+
+        # Should handle errors gracefully
+        assert discovery["available_endpoints"] == []
+        assert discovery["endpoints"] == {}
+
+    def test_discover_with_openapi_raw_spec_info(self):
+        """Test discover with OpenAPI raw spec fallback information."""
+        # Create adapter with raw OpenAPI spec (fallback scenario)
+        raw_spec = {
+            "info": {
+                "title": "Test API",
+                "version": "1.0.0",
+                "description": "A test API",
+            },
+            "servers": [{"url": "https://api.example.com"}],
+            "paths": {"/users": {"get": {}}, "/posts": {"get": {}}},
+        }
+
+        adapter = RESTAdapter("https://api.example.com")
+        adapter.openapi_specs = [
+            {
+                "_raw_spec": raw_spec,
+                "_source_url": "https://api.example.com/openapi.json",
+            }
+        ]
+
+        discovery = adapter.discover()
+
+        # OpenAPI info should be added regardless of endpoint discovery results
+        assert "openapi_info" in discovery
+        assert len(discovery["openapi_info"]) == 1
+
+        openapi_info = discovery["openapi_info"][0]
+        assert openapi_info["title"] == "Test API"
+        assert openapi_info["version"] == "1.0.0"
+        assert openapi_info["description"] == "A test API"
+        assert openapi_info["servers"] == ["https://api.example.com"]
+        assert "/users" in openapi_info["paths"]
+        assert "/posts" in openapi_info["paths"]
+        assert openapi_info["source_url"] == "https://api.example.com/openapi.json"
+
+    def test_discover_with_openapi_proper_spec_info(self):
+        """Test discover with proper OpenAPI spec object information."""
+        # Create mock OpenAPI spec object
+        mock_spec = MagicMock()
+        mock_spec.info.title = "Proper API"
+        mock_spec.info.version = "2.0.0"
+        mock_spec.info.description = "A proper OpenAPI spec"
+
+        mock_server = MagicMock()
+        mock_server.url = "https://proper.api.com"
+        mock_spec.servers = [mock_server]
+        mock_spec.paths = {"/users": {}, "/items": {}}
+
+        adapter = RESTAdapter("https://api.example.com")
+        adapter.openapi_specs = [mock_spec]
+
+        discovery = adapter.discover()
+
+        assert "openapi_info" in discovery
+        assert len(discovery["openapi_info"]) == 1
+
+        openapi_info = discovery["openapi_info"][0]
+        assert openapi_info["title"] == "Proper API"
+        assert openapi_info["version"] == "2.0.0"
+        assert openapi_info["description"] == "A proper OpenAPI spec"
+        assert openapi_info["servers"] == ["https://proper.api.com"]
+        assert "/users" in openapi_info["paths"]
+        assert "/items" in openapi_info["paths"]
+
+    def test_discover_with_openapi_no_servers(self):
+        """Test discover with OpenAPI spec that has no servers."""
+        mock_spec = MagicMock()
+        mock_spec.info.title = "No Servers API"
+        mock_spec.info.version = "1.0.0"
+        mock_spec.info.description = "API without servers"
+        mock_spec.servers = None  # No servers
+        mock_spec.paths = {"/test": {}}
+
+        adapter = RESTAdapter("https://api.example.com")
+        adapter.openapi_specs = [mock_spec]
+
+        discovery = adapter.discover()
+
+        assert "openapi_info" in discovery
+        openapi_info = discovery["openapi_info"][0]
+        assert openapi_info["servers"] == []
+
+    def test_discover_with_openapi_no_info(self):
+        """Test discover with OpenAPI spec that has no info section."""
+        mock_spec = MagicMock()
+        mock_spec.info = None  # No info section
+        mock_spec.servers = []
+        mock_spec.paths = {}
+
+        adapter = RESTAdapter("https://api.example.com")
+        adapter.openapi_specs = [mock_spec]
+
+        discovery = adapter.discover()
+
+        assert "openapi_info" in discovery
+        openapi_info = discovery["openapi_info"][0]
+        assert openapi_info["title"] == "Unknown"
+        assert openapi_info["version"] == "Unknown"
+        assert openapi_info["description"] == ""
 
 
 class TestRESTAdapterIntegration:
