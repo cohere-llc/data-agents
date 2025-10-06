@@ -74,8 +74,8 @@ def main() -> None:
     print("=== Data Agents Router/Adapter Example ===\n")
 
     # Create a Router
-    router = Router("example-router", {"environment": "demo"})
-    print(f"Created router: {router.name}")
+    router = Router()
+    print("Created router")
 
     # 1. Create tabular data sources
     print("\n1. Creating tabular data sources...")
@@ -145,31 +145,40 @@ def main() -> None:
     # 3. Register adapters with the router
     print("3. Registering adapters with router...")
 
-    router.add_adapter(customers_adapter)
-    router.add_adapter(orders_adapter)
-    router.add_adapter(api_adapter)
+    router["customers"] = customers_adapter
+    router["orders"] = orders_adapter
+    router["services"] = api_adapter
 
-    print(f"Registered adapters: {router.list_adapters()}")
+    print(f"Registered adapters: {list(router.adapters.keys())}")
 
     # 4. Query individual adapters
     print("\n4. Querying individual adapters...")
 
     print("\n--- All Customers ---")
-    all_customers = router.query("customers", "*")
-    print(all_customers.to_string(index=False))
+    customers_adapter = router["customers"]
+    if customers_adapter:
+        all_customers = customers_adapter.query("*")
+        print(all_customers.to_string(index=False))
 
     print("\n--- Premium Customers ---")
-    premium_customers = router.query("customers", "plan == 'premium'")
-    print(premium_customers[["name", "plan", "monthly_spend"]].to_string(index=False))
+    if customers_adapter:
+        premium_customers = customers_adapter.query("plan == 'premium'")
+        print(
+            premium_customers[["name", "plan", "monthly_spend"]].to_string(index=False)
+        )
 
     print("\n--- Recent Orders (last 3) ---")
-    all_orders = router.query("orders", "*")
-    recent_orders = all_orders.tail(3)
-    print(recent_orders.to_string(index=False))
+    orders_adapter = router["orders"]
+    if orders_adapter:
+        all_orders = orders_adapter.query("*")
+        recent_orders = all_orders.tail(3)
+        print(recent_orders.to_string(index=False))
 
     print("\n--- Active Services (from API) ---")
-    active_services = router.query("services", "active")
-    print(active_services.to_string(index=False))
+    services_adapter = router["services"]
+    if services_adapter:
+        active_services = services_adapter.query("active")
+        print(active_services.to_string(index=False))
 
     # 5. Query all adapters
     print("\n5. Querying all adapters...")

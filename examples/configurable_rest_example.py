@@ -117,12 +117,12 @@ def main() -> None:
     print("-" * 45)
 
     # Create router and register all adapters
-    router = Router("multi_api_router")
+    router = Router()
     for adapter in adapters.values():
-        router.register_adapter(adapter)
+        router[adapter.name] = adapter
 
-    print(f"Router has {len(router.list_adapters())} adapters:")
-    for adapter_name in router.list_adapters():
+    print(f"Router has {len(router.adapters)} adapters:")
+    for adapter_name in router.adapters.keys():
         print(f"  - {adapter_name}")
 
     # Demonstrate queries through router
@@ -131,24 +131,30 @@ def main() -> None:
 
     try:
         # Query JSONPlaceholder users
-        users = router.query("jsonplaceholder", "users")
-        print(f"✅ JSONPlaceholder users: {len(users)} records")
+        jsonplaceholder_adapter = router["jsonplaceholder"]
+        if jsonplaceholder_adapter:
+            users = jsonplaceholder_adapter.query("users")
+            print(f"✅ JSONPlaceholder users: {len(users)} records")
     except Exception as e:
         print(f"❌ JSONPlaceholder users query failed: {e}")
 
     try:
         # Query httpbin JSON endpoint
-        httpbin_json = router.query("httpbin", "json")
-        print(f"✅ httpbin JSON: {len(httpbin_json)} records")
+        httpbin_adapter = router["httpbin"]
+        if httpbin_adapter:
+            httpbin_json = httpbin_adapter.query("json")
+            print(f"✅ HTTPBin JSON endpoint: {len(httpbin_json)} records")
     except Exception as e:
-        print(f"❌ httpbin JSON query failed: {e}")
+        print(f"❌ HTTPBin JSON query failed: {e}")
 
     try:
-        # Query REST Countries (limit to 3 countries)
-        countries = router.query(
-            "rest_countries", "v3.1/all", params={"fields": "name,capital"}
-        )
-        print(f"✅ REST Countries: {len(countries)} records")
+        # Query REST Countries
+        countries_adapter = router["rest_countries"]
+        if countries_adapter:
+            countries = countries_adapter.query(
+                "name/United States"
+            )  # Get info about USA
+            print(f"✅ REST Countries (USA): {len(countries)} records")
     except Exception as e:
         print(f"❌ REST Countries query failed: {e}")
 

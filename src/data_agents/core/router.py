@@ -18,16 +18,12 @@ class Router:
     execute queries across adapters, and retrieve metadata.
     """
 
-    def __init__(
-        self, name: str = "default", adapters: dict[str, Adapter] | None = None
-    ):
+    def __init__(self, adapters: dict[str, Adapter] | None = None):
         """Initialize the router.
 
         Args:
-            name: Name for this router instance
             adapters: Optional dictionary of adapter instances to register
         """
-        self.name = name
         self.adapters: dict[str, Adapter] = adapters or {}
 
     def __setitem__(self, key: str, adapter: Adapter) -> None:
@@ -84,19 +80,14 @@ class Router:
         return key in self.adapters
 
     def __repr__(self) -> str:
-        return f"<Router name={self.name} adapters={list(self.adapters.keys())}>"
+        return f"<Router adapters={list(self.adapters.keys())}>"
 
     def __str__(self) -> str:
-        return f"Router '{self.name}' with {len(self.adapters)} adapters"
+        return f"Router with {len(self.adapters)} adapters"
 
     def __hash__(self) -> int:
         return hash(
-            (
-                self.name,
-                frozenset(
-                    (key, hash(adapter)) for key, adapter in self.adapters.items()
-                ),
-            )
+            frozenset((key, hash(adapter)) for key, adapter in self.adapters.items())
         )
 
     def __eq__(self, other: object) -> bool:
@@ -105,13 +96,13 @@ class Router:
         return hash(self) == hash(other)
 
     def __copy__(self) -> Router:
-        return Router(self.name, self.adapters.copy())
+        return Router(self.adapters.copy())
 
     def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Router:
         from copy import deepcopy
 
         memo = memo or {}
-        return Router(self.name, deepcopy(self.adapters, memo))
+        return Router(deepcopy(self.adapters, memo))
 
     def query_all(self, query: str, **kwargs: Any) -> dict[str, pd.DataFrame]:
         """Execute a query on all registered adapters.
@@ -160,7 +151,6 @@ class Router:
             name: adapter.get_info() for name, adapter in self.adapters.items()
         }
         return {
-            "name": self.name,
             "type": "Router",
             "adapter_count": len(self.adapters),
             "adapters": adapters_info,

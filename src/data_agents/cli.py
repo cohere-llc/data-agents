@@ -24,7 +24,7 @@ def create_router(name: str, config_file: Union[str, None] = None) -> Router:
         except json.JSONDecodeError:
             print(f"Warning: Invalid JSON in configuration file {config_file}")
 
-    return Router(name)
+    return Router()
 
 
 def main() -> None:
@@ -82,12 +82,12 @@ def main() -> None:
 
     if args.command == "create":
         router = create_router(args.name, args.config)
-        print(f"Created router: {router.name}")
+        print(f"Created router: {args.name}")
         # Future: Display configuration if loaded
 
     elif args.command == "demo":
         # Create a demo router with sample data
-        router = Router(args.router_name)
+        router = Router()
 
         # Create sample datasets
         customers_data = pd.DataFrame(
@@ -116,7 +116,7 @@ def main() -> None:
         router["customers"] = customers_adapter
         router["orders"] = orders_adapter
 
-        print(f"Demo router '{router.name}' created with sample data")
+        print(f"Demo router '{args.router_name}' created with sample data")
         print(f"Available adapters: {list(router.adapters.keys())}")
 
         # Show sample queries

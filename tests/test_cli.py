@@ -11,6 +11,7 @@ import pandas as pd
 import pytest
 
 from data_agents.cli import create_router, main
+from data_agents.core.router import Router
 
 
 class TestCLI:
@@ -19,7 +20,7 @@ class TestCLI:
     def test_create_router_without_config(self):
         """Test creating router without configuration file."""
         router = create_router("test-cli-router")
-        assert router.name == "test-cli-router"
+        assert isinstance(router, Router)
         assert len(router.adapters) == 0
 
     def test_create_router_with_config(self):
@@ -33,7 +34,7 @@ class TestCLI:
 
         try:
             router = create_router("test-cli-router", config_file)
-            assert router.name == "test-cli-router"
+            assert isinstance(router, Router)
             # Router config is not stored in Router anymore
             assert len(router.adapters) == 0
         finally:
@@ -43,7 +44,7 @@ class TestCLI:
     def test_create_router_missing_config(self):
         """Test creating router with missing configuration file."""
         router = create_router("test-cli-router", "nonexistent.json")
-        assert router.name == "test-cli-router"
+        assert isinstance(router, Router)
         assert len(router.adapters) == 0
 
     def test_create_router_invalid_json_config(self):
@@ -55,7 +56,7 @@ class TestCLI:
 
         try:
             router = create_router("test-cli-router", config_file)
-            assert router.name == "test-cli-router"
+            assert isinstance(router, Router)
             assert len(router.adapters) == 0
         finally:
             # Clean up
@@ -153,7 +154,6 @@ class TestCLICommands:
 
         # Parse the JSON output
         info_data = json.loads(output)
-        assert info_data["name"] == "test-info-router"
         assert info_data["type"] == "Router"
         assert info_data["adapter_count"] == 0
 
@@ -176,7 +176,7 @@ class TestCLICommands:
             output = fake_out.getvalue()
 
             info_data = json.loads(output)
-            assert info_data["name"] == "test-router"
+            assert info_data["type"] == "Router"
             # Config doesn't appear in router info since it's not stored
         finally:
             Path(config_file).unlink()

@@ -14,8 +14,7 @@ class TestRouter:
 
     def test_init(self):
         """Test Router initialization."""
-        router = Router("test-router")
-        assert router.name == "test-router"
+        router = Router()
         assert len(router.adapters) == 0
 
     def test_init_with_adapters(self):
@@ -24,15 +23,14 @@ class TestRouter:
         adapter2 = TabularAdapter("adapter2")
         adapters = {"adapter1": adapter1, "adapter2": adapter2}
 
-        router = Router("test-router", adapters)
-        assert router.name == "test-router"
+        router = Router(adapters)
         assert len(router.adapters) == 2
         assert router.adapters["adapter1"] is adapter1
         assert router.adapters["adapter2"] is adapter2
 
     def test_setitem(self):
         """Test __setitem__ method for registering adapters."""
-        router = Router("test-router")
+        router = Router()
         adapter = TabularAdapter("test-adapter")
 
         router["test-adapter"] = adapter
@@ -41,7 +39,7 @@ class TestRouter:
 
     def test_getitem(self):
         """Test __getitem__ method for retrieving adapters."""
-        router = Router("test-router")
+        router = Router()
         adapter = TabularAdapter("test-adapter")
         router["test-adapter"] = adapter
 
@@ -54,7 +52,7 @@ class TestRouter:
 
     def test_delitem(self):
         """Test __delitem__ method for removing adapters."""
-        router = Router("test-router")
+        router = Router()
         adapter = TabularAdapter("test-adapter")
         router["test-adapter"] = adapter
 
@@ -69,7 +67,7 @@ class TestRouter:
 
     def test_len(self):
         """Test __len__ method."""
-        router = Router("test-router")
+        router = Router()
         assert len(router) == 0
 
         adapter1 = TabularAdapter("adapter1")
@@ -81,7 +79,7 @@ class TestRouter:
 
     def test_iter(self):
         """Test __iter__ method."""
-        router = Router("test-router")
+        router = Router()
         adapter1 = TabularAdapter("adapter1")
         adapter2 = TabularAdapter("adapter2")
         router["adapter1"] = adapter1
@@ -94,7 +92,7 @@ class TestRouter:
 
     def test_contains(self):
         """Test __contains__ method."""
-        router = Router("test-router")
+        router = Router()
         adapter = TabularAdapter("test-adapter")
         router["test-adapter"] = adapter
 
@@ -103,27 +101,27 @@ class TestRouter:
 
     def test_repr(self):
         """Test __repr__ method."""
-        router = Router("test-router")
+        router = Router()
         adapter = TabularAdapter("test-adapter")
         router["test-adapter"] = adapter
 
         repr_str = repr(router)
-        assert "Router name=test-router" in repr_str
+        assert "Router" in repr_str
         assert "test-adapter" in repr_str
 
     def test_str(self):
         """Test __str__ method."""
-        router = Router("test-router")
+        router = Router()
         adapter = TabularAdapter("test-adapter")
         router["test-adapter"] = adapter
 
         str_repr = str(router)
-        assert "Router 'test-router' with 1 adapters" == str_repr
+        assert "Router with 1 adapters" == str_repr
 
     def test_hash(self):
         """Test __hash__ method."""
-        router1 = Router("test-router")
-        router2 = Router("test-router")
+        router1 = Router()
+        router2 = Router()
         adapter = TabularAdapter("test-adapter")
 
         # Same name, no adapters
@@ -135,13 +133,13 @@ class TestRouter:
         assert hash(router1) == hash(router2)
 
         # Different names should have different hashes (usually)
-        router3 = Router("different-name")
+        router3 = Router()
         assert hash(router1) != hash(router3)
 
     def test_eq(self):
         """Test __eq__ method."""
-        router1 = Router("test-router")
-        router2 = Router("test-router")
+        router1 = Router()
+        router2 = Router()
         adapter = TabularAdapter("test-adapter")
 
         # Same name, no adapters
@@ -153,7 +151,7 @@ class TestRouter:
         assert router1 == router2
 
         # Different names
-        router3 = Router("different-name")
+        router3 = Router()
         assert router1 != router3
 
         # Test with non-Router object
@@ -161,12 +159,11 @@ class TestRouter:
 
     def test_copy(self):
         """Test __copy__ method."""
-        router = Router("test-router")
+        router = Router()
         adapter = TabularAdapter("test-adapter")
         router["test-adapter"] = adapter
 
         router_copy = copy(router)
-        assert router_copy.name == router.name
         assert len(router_copy.adapters) == len(router.adapters)
         # Shallow copy
         assert router_copy.adapters["test-adapter"] is router.adapters["test-adapter"]
@@ -174,12 +171,11 @@ class TestRouter:
 
     def test_deepcopy(self):
         """Test __deepcopy__ method."""
-        router = Router("test-router")
+        router = Router()
         adapter = TabularAdapter("test-adapter")
         router["test-adapter"] = adapter
 
         router_deepcopy = deepcopy(router)
-        assert router_deepcopy.name == router.name
         assert len(router_deepcopy.adapters) == len(router.adapters)
         # Deep copy
         assert (
@@ -190,7 +186,7 @@ class TestRouter:
 
     def test_query_all(self):
         """Test querying all adapters."""
-        router = Router("test-router")
+        router = Router()
         data1 = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
         data2 = pd.DataFrame({"col1": [3, 4], "col2": ["c", "d"]})
 
@@ -209,7 +205,7 @@ class TestRouter:
 
     def test_query_all_with_error(self):
         """Test query_all when one adapter raises an error."""
-        router = Router("test-router")
+        router = Router()
         data = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
 
         good_adapter = TabularAdapter("good_adapter", data)
@@ -228,7 +224,7 @@ class TestRouter:
 
     def test_discover_all(self):
         """Test discovering all adapters."""
-        router = Router("test-router")
+        router = Router()
         data1 = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
         data2 = pd.DataFrame({"col1": [3, 4], "col2": ["c", "d"]})
 
@@ -247,7 +243,7 @@ class TestRouter:
 
     def test_discover_all_with_error(self):
         """Test discover_all when one adapter raises an error."""
-        router = Router("test-router")
+        router = Router()
         data = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
 
         good_adapter = TabularAdapter("good_adapter", data)
@@ -266,13 +262,12 @@ class TestRouter:
 
     def test_to_dict(self):
         """Test router information dictionary."""
-        router = Router("test-router")
+        router = Router()
         data = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
         adapter = TabularAdapter("test-adapter", data)
         router["test-adapter"] = adapter
 
         info = router.to_dict()
-        assert info["name"] == "test-router"
         assert info["type"] == "Router"
         assert info["adapter_count"] == 1
         assert "adapters" in info
