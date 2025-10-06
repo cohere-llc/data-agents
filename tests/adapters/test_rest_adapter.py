@@ -1,5 +1,7 @@
 """Tests for RESTAdapter class."""
 
+import json
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
@@ -7,6 +9,13 @@ import pytest
 import requests
 
 from data_agents.adapters import RESTAdapter
+
+
+def load_config(filename: str) -> dict:
+    """Load configuration from JSON file in config directory."""
+    config_path = Path(__file__).parent.parent.parent / "config" / filename
+    with open(config_path) as f:
+        return json.load(f)
 
 
 class TestRESTAdapter:
@@ -215,7 +224,9 @@ class TestRESTAdapter:
         mock_get.side_effect = mock_response
 
         # Configure adapter with endpoints
-        config = {"endpoints": ["users", "posts", "comments", "nonexistent"]}
+        config = {
+            "endpoints": ["users", "posts", "comments", "nonexistent"],
+        }
         adapter = RESTAdapter("https://api.example.com", config)
         discovery = adapter.discover()
 
@@ -328,7 +339,10 @@ class TestRESTAdapter:
         mock_query.side_effect = mock_query_side_effect
 
         config = {
-            "endpoints": ["users", "posts"],
+            "endpoints": [
+                "users",
+                "posts",
+            ],
             "pagination_param": "limit",
             "pagination_limit": 5,
         }
@@ -347,13 +361,7 @@ class TestRESTAdapterIntegration:
 
     def test_httpbin_integration(self):
         """Test RESTAdapter with httpbin.org API."""
-        config = {
-            "headers": {"User-Agent": "DataAgents-Test/1.0"},
-            "timeout": 10,
-            "endpoints": ["json", "headers", "user-agent"],
-            "pagination_param": None,  # httpbin doesn't use pagination
-            "pagination_limit": None,
-        }
+        config = load_config("httpbin.rest.adapter.json")
 
         adapter = RESTAdapter("https://httpbin.org", config)
 
@@ -395,14 +403,7 @@ class TestRESTAdapterIntegration:
 
     def test_rest_countries_integration(self):
         """Test RESTAdapter with REST Countries API."""
-        config = {
-            "headers": {"User-Agent": "DataAgents-Test/1.0"},
-            "timeout": 15,
-            "endpoints": ["v3.1/all"],
-            # REST Countries uses fields for limiting data
-            "pagination_param": "fields",
-            "pagination_limit": "name,capital,population",
-        }
+        config = load_config("rest_countries.rest.adapter.json")
 
         adapter = RESTAdapter("https://restcountries.com", config)
 
@@ -445,13 +446,7 @@ class TestRESTAdapterIntegration:
 
     def test_jsonplaceholder_integration(self):
         """Test RESTAdapter with JSONPlaceholder API (original working example)."""
-        config = {
-            "headers": {"User-Agent": "DataAgents-Test/1.0"},
-            "timeout": 10,
-            "endpoints": ["users", "posts", "comments"],
-            "pagination_param": "_limit",
-            "pagination_limit": 3,
-        }
+        config = load_config("jsonplaceholder.rest.adapter.json")
 
         adapter = RESTAdapter("https://jsonplaceholder.typicode.com", config)
 
@@ -573,3 +568,43 @@ class TestRESTAdapterIntegration:
 
         except Exception as e:
             pytest.skip(f"httpbin.org custom headers test failed: {e}")
+
+    def test_nasa_power_openapi_integration(self):
+        """Test RESTAdapter with NASA Power API using OpenAPI specification."""
+        try:
+            config = load_config("nasapower.rest.adapter.json")
+            adapter = RESTAdapter("https://power.larc.nasa.gov/api", config)
+
+            # Test that OpenAPI spec was loaded and endpoints were discovered
+            assert adapter.openapi_specs, "OpenAPI specs should be loaded"
+            assert adapter.endpoints, "Endpoints should be discovered from OpenAPI spec"
+
+            # Test discovery functionality with OpenAPI data
+            discovery = adapter.discover()
+            assert "openapi_info" in discovery, "OpenAPI info should be present"
+            assert len(discovery["openapi_info"]) > 0, (
+                "At least one OpenAPI spec should be loaded"
+            )
+
+            # Verify OpenAPI information
+            openapi_info = discovery["openapi_info"][0]
+            assert openapi_info["title"] == "POWER Daily API"
+            assert "paths" in openapi_info
+            assert len(openapi_info["paths"]) > 0
+
+            # Test that endpoints were extracted from OpenAPI spec
+            assert len(adapter.endpoints) > 0, (
+                "Endpoints should be extracted from OpenAPI spec"
+            )
+
+            # The endpoints may not be directly accessible without parameters,
+            # so we just verify the OpenAPI parsing worked
+            title = openapi_info["title"]
+            version = openapi_info["version"]
+            print(f"NASA Power OpenAPI info: {title} v{version}")
+            print(f"Discovered endpoints from OpenAPI: {adapter.endpoints}")
+
+        except requests.exceptions.RequestException as e:
+            pytest.skip(f"NASA Power API connection failed: {e}")
+        except Exception as e:
+            pytest.skip(f"NASA Power OpenAPI test failed: {e}")

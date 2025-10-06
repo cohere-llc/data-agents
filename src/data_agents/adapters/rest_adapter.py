@@ -7,6 +7,7 @@ from urllib.parse import urljoin
 
 import pandas as pd
 import requests
+from openapi3 import OpenAPI  # type: ignore[import-untyped]
 
 from ..core.adapter import Adapter
 
@@ -38,6 +39,7 @@ class RESTAdapter(Adapter):
                 - pagination_param: Parameter name for pagination
                   (e.g., '_limit', 'limit')
                 - pagination_limit: Default limit for pagination (default: 10)
+                - openapi_data: OpenAPI specification data for schema discovery
         """
         super().__init__(config)
         self.base_url = base_url.rstrip("/")
@@ -52,6 +54,87 @@ class RESTAdapter(Adapter):
         self.endpoints = self.config.get("endpoints", [])
         self.pagination_param = self.config.get("pagination_param", "limit")
         self.pagination_limit = self.config.get("pagination_limit", 10)
+
+        self.openapi_data = self.config.get("openapi_data")
+        self.openapi_specs = []
+        if self.openapi_data:
+            if isinstance(self.openapi_data, str):
+                self.openapi_data = [self.openapi_data]
+            if not isinstance(self.openapi_data, list):
+                data_type = type(self.openapi_data)
+                raise ValueError(
+                    f"Invalid OpenAPI data format: expected list, got {data_type}"
+                )
+
+            # Load OpenAPI specs from URLs or data
+            for openapi_source in self.openapi_data:
+                if isinstance(openapi_source, str) and (
+                    openapi_source.startswith("http://")
+                    or openapi_source.startswith("https://")
+                ):
+                    # Fetch OpenAPI spec from URL
+                    try:
+                        response = requests.get(
+                            openapi_source, timeout=self.timeout, verify=self.verify
+                        )
+                        response.raise_for_status()
+                        spec_json = response.json()
+                        # Try with validation disabled for potentially malformed specs
+                        try:
+                            spec = OpenAPI(spec_json, validate=True)
+                        except Exception:
+                            # Fall back to no validation if spec has issues
+                            spec = OpenAPI(spec_json, validate=False)
+                        self.openapi_specs.append(spec)
+                    except Exception as e:
+                        print("Warning: Failed to load OpenAPI spec")
+                        print(f"Source: {openapi_source}")
+                        print(f"Error: {e}")
+                        # Store basic info for fallback
+                        try:
+                            response = requests.get(
+                                openapi_source, timeout=self.timeout, verify=self.verify
+                            )
+                            response.raise_for_status()
+                            spec_json = response.json()
+                            # Store as raw JSON for basic path extraction
+                            self.openapi_specs.append(
+                                {"_raw_spec": spec_json, "_source_url": openapi_source}
+                            )
+                        except Exception:
+                            pass
+                else:
+                    # Assume it's OpenAPI spec content
+                    try:
+                        import json
+
+                        if isinstance(openapi_source, str):
+                            spec_json = json.loads(openapi_source)
+                        else:
+                            spec_json = openapi_source
+                        try:
+                            spec = OpenAPI(spec_json, validate=True)
+                        except Exception:
+                            spec = OpenAPI(spec_json, validate=False)
+                        self.openapi_specs.append(spec)
+                    except Exception as e:
+                        print(f"Warning: Failed to parse OpenAPI spec: {e}")
+
+            # Extract endpoints from OpenAPI specs if not explicitly provided
+            if not self.endpoints and self.openapi_specs:
+                self.endpoints = []
+                for spec in self.openapi_specs:
+                    if isinstance(spec, dict) and "_raw_spec" in spec:
+                        # Handle raw spec fallback
+                        raw_spec = spec["_raw_spec"]
+                        if "paths" in raw_spec:
+                            for path in raw_spec["paths"].keys():
+                                self.endpoints.append(path.lstrip("/"))
+                    elif hasattr(spec, "paths") and spec.paths:
+                        # Handle proper OpenAPI object
+                        for path in spec.paths:
+                            self.endpoints.append(path.lstrip("/"))
+                self.endpoints = list(set(self.endpoints))  # Deduplicate
 
         # Set default headers
         if "Accept" not in self.headers:
@@ -187,6 +270,38 @@ class RESTAdapter(Adapter):
             except Exception:
                 # Endpoint not available, skip
                 continue
+
+        # Add OpenAPI information if available
+        if self.openapi_specs:
+            openapi_info = []
+            for spec in self.openapi_specs:
+                if isinstance(spec, dict) and "_raw_spec" in spec:
+                    # Handle raw spec fallback
+                    raw_spec = spec["_raw_spec"]
+                    spec_info = {
+                        "title": raw_spec.get("info", {}).get("title", "Unknown"),
+                        "version": raw_spec.get("info", {}).get("version", "Unknown"),
+                        "description": raw_spec.get("info", {}).get("description", ""),
+                        "servers": [
+                            server.get("url") for server in raw_spec.get("servers", [])
+                        ],
+                        "paths": list(raw_spec.get("paths", {}).keys()),
+                        "source_url": spec.get("_source_url", "Unknown"),
+                    }
+                else:
+                    # Handle proper OpenAPI object
+                    servers = []
+                    if spec.servers:
+                        servers = [server.url for server in spec.servers]
+                    spec_info = {
+                        "title": spec.info.title if spec.info else "Unknown",
+                        "version": spec.info.version if spec.info else "Unknown",
+                        "description": spec.info.description if spec.info else "",
+                        "servers": servers,
+                        "paths": list(spec.paths.keys()) if spec.paths else [],
+                    }
+                openapi_info.append(spec_info)
+            discovery_info["openapi_info"] = openapi_info
 
         return discovery_info
 

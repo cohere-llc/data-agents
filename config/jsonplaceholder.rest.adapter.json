@@ -1,0 +1,9 @@
+{
+    "headers": {
+        "User-Agent": "DataAgents-Test/1.0"
+    },
+    "timeout": 10,
+    "endpoints": ["users", "posts", "comments"],
+    "pagination_param": "_limit",
+    "pagination_limit": 3
+}
