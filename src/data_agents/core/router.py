@@ -1,12 +1,13 @@
-"""Router implementation for managing data adapters."""
+"""Router module for managing data adapters."""
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Any
 
 import pandas as pd
 
-from .adapter import Adapter
+from data_agents.core.adapter import Adapter
 
 
 class Router:
@@ -17,77 +18,100 @@ class Router:
     execute queries across adapters, and retrieve metadata.
     """
 
-    def __init__(self, name: str = "default", config: dict[str, Any] | None = None):
+    def __init__(
+        self, name: str = "default", adapters: dict[str, Adapter] | None = None
+    ):
         """Initialize the router.
 
         Args:
             name: Name for this router instance
-            config: Optional configuration dictionary
+            adapters: Optional dictionary of adapter instances to register
         """
         self.name = name
-        self.config = config or {}
-        self.adapters: dict[str, Adapter] = {}
+        self.adapters: dict[str, Adapter] = adapters or {}
 
-    def register_adapter(self, adapter: Adapter) -> None:
+    def __setitem__(self, key: str, adapter: Adapter) -> None:
         """Register an adapter with the router.
 
         Args:
+            key: Name/identifier for the adapter
             adapter: Adapter instance to register
         """
-        self.adapters[adapter.name] = adapter
+        self.adapters[key] = adapter
 
-    def unregister_adapter(self, name: str) -> bool:
+    def __delitem__(self, key: str) -> bool:
         """Unregister an adapter from the router.
 
         Args:
-            name: Name of the adapter to unregister
+            key: Name of the adapter to unregister
 
         Returns:
             True if adapter was found and removed, False otherwise
         """
-        if name in self.adapters:
-            del self.adapters[name]
+        if key in self.adapters:
+            del self.adapters[key]
             return True
         return False
 
-    def get_adapter(self, name: str) -> Adapter | None:
-        """Get a specific adapter by name.
+    def __getitem__(self, key: str) -> Adapter | None:
+        """Get an adapter by name.
 
         Args:
-            name: Name of the adapter to retrieve
+            key: Adapter name
 
         Returns:
             Adapter instance if found, None otherwise
         """
-        return self.adapters.get(name)
+        return self.adapters.get(key)
 
-    def list_adapters(self) -> list[str]:
-        """Get a list of all registered adapter names.
+    def __len__(self) -> int:
+        """Return the number of registered adapters."""
+        return len(self.adapters)
 
-        Returns:
-            List of adapter names
-        """
-        return list(self.adapters.keys())
+    def __iter__(self) -> Iterator[Adapter]:
+        """Iterate over registered adapters."""
+        return iter(self.adapters.values())
 
-    def query(self, adapter_name: str, query: str, **kwargs: Any) -> pd.DataFrame:
-        """Execute a query on a specific adapter.
+    def __contains__(self, key: str) -> bool:
+        """Check if an adapter with the given name is registered.
 
         Args:
-            adapter_name: Name of the adapter to query
-            query: Query string to execute
-            **kwargs: Additional query parameters
+            key: Name of the adapter to check
 
         Returns:
-            DataFrame containing query results
-
-        Raises:
-            ValueError: If adapter is not found
+            True if adapter is registered, False otherwise
         """
-        adapter = self.get_adapter(adapter_name)
-        if adapter is None:
-            raise ValueError(f"Adapter '{adapter_name}' not found")
+        return key in self.adapters
 
-        return adapter.query(query, **kwargs)
+    def __repr__(self) -> str:
+        return f"<Router name={self.name} adapters={list(self.adapters.keys())}>"
+
+    def __str__(self) -> str:
+        return f"Router '{self.name}' with {len(self.adapters)} adapters"
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.name,
+                frozenset(
+                    (key, hash(adapter)) for key, adapter in self.adapters.items()
+                ),
+            )
+        )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Router):
+            return NotImplemented
+        return hash(self) == hash(other)
+
+    def __copy__(self) -> Router:
+        return Router(self.name, self.adapters.copy())
+
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> Router:
+        from copy import deepcopy
+
+        memo = memo or {}
+        return Router(self.name, deepcopy(self.adapters, memo))
 
     def query_all(self, query: str, **kwargs: Any) -> dict[str, pd.DataFrame]:
         """Execute a query on all registered adapters.
@@ -110,24 +134,6 @@ class Router:
 
         return results
 
-    def discover(self, adapter_name: str) -> dict[str, Any]:
-        """Get discovery information for a specific adapter.
-
-        Args:
-            adapter_name: Name of the adapter
-
-        Returns:
-            Discovery information dictionary
-
-        Raises:
-            ValueError: If adapter is not found
-        """
-        adapter = self.get_adapter(adapter_name)
-        if adapter is None:
-            raise ValueError(f"Adapter '{adapter_name}' not found")
-
-        return adapter.discover()
-
     def discover_all(self) -> dict[str, dict[str, Any]]:
         """Get discovery information for all registered adapters.
 
@@ -144,29 +150,8 @@ class Router:
 
         return discoveries
 
-    def add_adapter(self, adapter: Adapter) -> None:
-        """Add an adapter to the router (alias for register_adapter).
-
-        Args:
-            adapter: Adapter instance to add
-        """
-        self.register_adapter(adapter)
-
-    def process(self: Router, data: Any) -> Any:
-        """Process input data and return results.
-
-        Args:
-            data: Input data to process
-
-        Returns:
-            Processed data
-        """
-        # Placeholder implementation for backward compatibility
-        print(f"Router {self.name} processing data: {data}")
-        return f"Processed: {data}"
-
-    def get_info(self: Router) -> dict[str, Any]:
-        """Get information about the router and its adapters.
+    def to_dict(self: Router) -> dict[str, Any]:
+        """Returns information about the router and its adapters.
 
         Returns:
             Dictionary containing router information
@@ -177,7 +162,6 @@ class Router:
         return {
             "name": self.name,
             "type": "Router",
-            "config": self.config,
             "adapter_count": len(self.adapters),
             "adapters": adapters_info,
         }

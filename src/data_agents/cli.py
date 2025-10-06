@@ -3,35 +3,28 @@
 import argparse
 import json
 import sys
-from typing import Optional
+from typing import Union
 
 import pandas as pd
 
-from .adapters import TabularAdapter
-from .core import Router
+from data_agents.adapters import TabularAdapter
+from data_agents.core.router import Router
 
 
-def create_router(name: str, config_file: Optional[str] = None) -> Router:
-    """Create a router with optional configuration file.
-
-    Args:
-        name: Name for the router
-        config_file: Path to JSON configuration file
-
-    Returns:
-        Configured Router instance
-    """
-    config = {}
+def create_router(name: str, config_file: Union[str, None] = None) -> Router:
+    """Create a new router."""
+    # Future: config could be used for adapter configuration
     if config_file:
         try:
             with open(config_file) as f:
-                config = json.load(f)
+                # Load config for future use in adapter configuration
+                _config = json.load(f)  # noqa: F841
         except FileNotFoundError:
             print(f"Warning: Configuration file {config_file} not found")
         except json.JSONDecodeError:
             print(f"Warning: Invalid JSON in configuration file {config_file}")
 
-    return Router(name, config)
+    return Router(name)
 
 
 def main() -> None:
@@ -90,8 +83,7 @@ def main() -> None:
     if args.command == "create":
         router = create_router(args.name, args.config)
         print(f"Created router: {router.name}")
-        if router.config:
-            print(f"Configuration: {router.config}")
+        # Future: Display configuration if loaded
 
     elif args.command == "demo":
         # Create a demo router with sample data
@@ -120,27 +112,33 @@ def main() -> None:
         customers_adapter = TabularAdapter("customers", customers_data)
         orders_adapter = TabularAdapter("orders", orders_data)
 
-        # Add adapters to router
-        router.add_adapter(customers_adapter)
-        router.add_adapter(orders_adapter)
+        # Add adapters to router using bracket notation
+        router["customers"] = customers_adapter
+        router["orders"] = orders_adapter
 
         print(f"Demo router '{router.name}' created with sample data")
-        print(f"Available adapters: {router.list_adapters()}")
+        print(f"Available adapters: {list(router.adapters.keys())}")
 
         # Show sample queries
         print("\n--- Sample Queries ---")
 
         print("\n1. Get all customers:")
-        result = router.query("customers", "*")
-        print(result.to_string(index=False))
+        customers_adapter = router["customers"]  # type: ignore[assignment]
+        if customers_adapter is not None:
+            result = customers_adapter.query("*")
+            print(result.to_string(index=False))
 
         print("\n2. Get all orders:")
-        result = router.query("orders", "*")
-        print(result.to_string(index=False))
+        orders_adapter = router["orders"]  # type: ignore[assignment]
+        if orders_adapter is not None:
+            result = orders_adapter.query("*")
+            print(result.to_string(index=False))
 
         print("\n3. Query customers over 30:")
-        result = router.query("customers", "age > 30")
-        print(result.to_string(index=False))
+        customers_adapter = router["customers"]  # type: ignore[assignment]
+        if customers_adapter is not None:
+            result = customers_adapter.query("age > 30")
+            print(result.to_string(index=False))
 
         print("\n4. Get discovery information:")
         discoveries = router.discover_all()
@@ -153,35 +151,35 @@ def main() -> None:
     elif args.command == "query":
         router = create_router(args.router_name, args.config)
         try:
-            result = router.query(args.adapter_name, args.query)
+            adapter = router[args.adapter_name]
+            if adapter is None:
+                print(f"Error: Adapter '{args.adapter_name}' not found")
+                sys.exit(1)
+            result = adapter.query(args.query)
             if not result.empty:
                 print(result.to_string(index=False))
             else:
                 print("Query returned no results")
-        except ValueError as e:
-            print(f"Error: {e}")
         except Exception as e:
             print(f"Query failed: {e}")
 
     elif args.command == "list-adapters":
         router = create_router(args.router_name, args.config)
-        adapters = router.list_adapters()
-        if adapters:
+        if router.adapters:
             print("Available adapters:")
-            for adapter_name in adapters:
-                adapter = router.get_adapter(adapter_name)
+            for adapter_name, adapter in router.adapters.items():
                 print(f"  - {adapter_name} ({adapter.__class__.__name__})")
         else:
             print("No adapters registered")
 
     elif args.command == "process":
         router = create_router(args.name, args.config)
-        result = router.process(args.data)
-        print(f"Result: {result}")
+        # Process command would need to be implemented based on specific requirements
+        print("Process command not yet implemented")
 
     elif args.command == "info":
         router = create_router(args.name, args.config)
-        info = router.get_info()
+        info = router.to_dict()
         print(json.dumps(info, indent=2, default=str))
 
 
