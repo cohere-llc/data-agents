@@ -21,14 +21,12 @@ class RESTAdapter(Adapter):
 
     def __init__(
         self,
-        name: str,
         base_url: str,
         config: dict[str, Any] | None = None,
     ):
         """Initialize the REST adapter.
 
         Args:
-            name: The name/identifier for this adapter
             base_url: Base URL for the REST API
             config: Optional configuration dictionary with keys:
                 - headers: Dict of HTTP headers to include with requests
@@ -41,7 +39,7 @@ class RESTAdapter(Adapter):
                   (e.g., '_limit', 'limit')
                 - pagination_limit: Default limit for pagination (default: 10)
         """
-        super().__init__(name, config)
+        super().__init__(config)
         self.base_url = base_url.rstrip("/")
 
         # Extract configuration

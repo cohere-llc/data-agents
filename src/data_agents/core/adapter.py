@@ -16,14 +16,12 @@ class Adapter(ABC):
     this class to create custom adapters for their specific data sources.
     """
 
-    def __init__(self, name: str, config: dict[str, Any] | None = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """Initialize the adapter.
 
         Args:
-            name: The name/identifier for this adapter
             config: Optional configuration dictionary
         """
-        self.name = name
         self.config = config or {}
 
     @abstractmethod
@@ -48,14 +46,13 @@ class Adapter(ABC):
         """
         pass
 
-    def get_info(self: Adapter) -> dict[str, Any]:
-        """Get information about this adapter.
+    def to_dict(self: Adapter) -> dict[str, Any]:
+        """Returns a dictionary representation of the adapter.
 
         Returns:
             Dictionary containing adapter information
         """
         return {
-            "name": self.name,
             "type": self.__class__.__name__,
             "config": self.config,
         }

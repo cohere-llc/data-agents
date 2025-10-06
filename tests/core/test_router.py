@@ -19,8 +19,8 @@ class TestRouter:
 
     def test_init_with_adapters(self):
         """Test Router initialization with adapters."""
-        adapter1 = TabularAdapter("adapter1")
-        adapter2 = TabularAdapter("adapter2")
+        adapter1 = TabularAdapter()
+        adapter2 = TabularAdapter()
         adapters = {"adapter1": adapter1, "adapter2": adapter2}
 
         router = Router(adapters)
@@ -31,7 +31,7 @@ class TestRouter:
     def test_setitem(self):
         """Test __setitem__ method for registering adapters."""
         router = Router()
-        adapter = TabularAdapter("test-adapter")
+        adapter = TabularAdapter()
 
         router["test-adapter"] = adapter
         assert len(router.adapters) == 1
@@ -40,7 +40,7 @@ class TestRouter:
     def test_getitem(self):
         """Test __getitem__ method for retrieving adapters."""
         router = Router()
-        adapter = TabularAdapter("test-adapter")
+        adapter = TabularAdapter()
         router["test-adapter"] = adapter
 
         retrieved = router["test-adapter"]
@@ -53,7 +53,7 @@ class TestRouter:
     def test_delitem(self):
         """Test __delitem__ method for removing adapters."""
         router = Router()
-        adapter = TabularAdapter("test-adapter")
+        adapter = TabularAdapter()
         router["test-adapter"] = adapter
 
         # Test successful deletion
@@ -70,8 +70,8 @@ class TestRouter:
         router = Router()
         assert len(router) == 0
 
-        adapter1 = TabularAdapter("adapter1")
-        adapter2 = TabularAdapter("adapter2")
+        adapter1 = TabularAdapter()
+        adapter2 = TabularAdapter()
         router["adapter1"] = adapter1
         router["adapter2"] = adapter2
 
@@ -80,8 +80,8 @@ class TestRouter:
     def test_iter(self):
         """Test __iter__ method."""
         router = Router()
-        adapter1 = TabularAdapter("adapter1")
-        adapter2 = TabularAdapter("adapter2")
+        adapter1 = TabularAdapter()
+        adapter2 = TabularAdapter()
         router["adapter1"] = adapter1
         router["adapter2"] = adapter2
 
@@ -93,7 +93,7 @@ class TestRouter:
     def test_contains(self):
         """Test __contains__ method."""
         router = Router()
-        adapter = TabularAdapter("test-adapter")
+        adapter = TabularAdapter()
         router["test-adapter"] = adapter
 
         assert "test-adapter" in router
@@ -102,7 +102,7 @@ class TestRouter:
     def test_repr(self):
         """Test __repr__ method."""
         router = Router()
-        adapter = TabularAdapter("test-adapter")
+        adapter = TabularAdapter()
         router["test-adapter"] = adapter
 
         repr_str = repr(router)
@@ -112,7 +112,7 @@ class TestRouter:
     def test_str(self):
         """Test __str__ method."""
         router = Router()
-        adapter = TabularAdapter("test-adapter")
+        adapter = TabularAdapter()
         router["test-adapter"] = adapter
 
         str_repr = str(router)
@@ -122,7 +122,7 @@ class TestRouter:
         """Test __hash__ method."""
         router1 = Router()
         router2 = Router()
-        adapter = TabularAdapter("test-adapter")
+        adapter = TabularAdapter()
 
         # Same name, no adapters
         assert hash(router1) == hash(router2)
@@ -140,7 +140,7 @@ class TestRouter:
         """Test __eq__ method."""
         router1 = Router()
         router2 = Router()
-        adapter = TabularAdapter("test-adapter")
+        adapter = TabularAdapter()
 
         # Same name, no adapters
         assert router1 == router2
@@ -160,7 +160,7 @@ class TestRouter:
     def test_copy(self):
         """Test __copy__ method."""
         router = Router()
-        adapter = TabularAdapter("test-adapter")
+        adapter = TabularAdapter()
         router["test-adapter"] = adapter
 
         router_copy = copy(router)
@@ -172,7 +172,7 @@ class TestRouter:
     def test_deepcopy(self):
         """Test __deepcopy__ method."""
         router = Router()
-        adapter = TabularAdapter("test-adapter")
+        adapter = TabularAdapter()
         router["test-adapter"] = adapter
 
         router_deepcopy = deepcopy(router)
@@ -190,8 +190,8 @@ class TestRouter:
         data1 = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
         data2 = pd.DataFrame({"col1": [3, 4], "col2": ["c", "d"]})
 
-        adapter1 = TabularAdapter("adapter1", data1)
-        adapter2 = TabularAdapter("adapter2", data2)
+        adapter1 = TabularAdapter(data1)
+        adapter2 = TabularAdapter(data2)
 
         router["adapter1"] = adapter1
         router["adapter2"] = adapter2
@@ -208,7 +208,7 @@ class TestRouter:
         router = Router()
         data = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
 
-        good_adapter = TabularAdapter("good_adapter", data)
+        good_adapter = TabularAdapter(data)
         bad_adapter = MagicMock()
         bad_adapter.query.side_effect = Exception("Query failed")
 
@@ -228,8 +228,8 @@ class TestRouter:
         data1 = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
         data2 = pd.DataFrame({"col1": [3, 4], "col2": ["c", "d"]})
 
-        adapter1 = TabularAdapter("adapter1", data1)
-        adapter2 = TabularAdapter("adapter2", data2)
+        adapter1 = TabularAdapter(data1)
+        adapter2 = TabularAdapter(data2)
 
         router["adapter1"] = adapter1
         router["adapter2"] = adapter2
@@ -246,7 +246,7 @@ class TestRouter:
         router = Router()
         data = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
 
-        good_adapter = TabularAdapter("good_adapter", data)
+        good_adapter = TabularAdapter(data)
         bad_adapter = MagicMock()
         bad_adapter.discover.side_effect = Exception("Discovery failed")
 
@@ -264,7 +264,7 @@ class TestRouter:
         """Test router information dictionary."""
         router = Router()
         data = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
-        adapter = TabularAdapter("test-adapter", data)
+        adapter = TabularAdapter(data)
         router["test-adapter"] = adapter
 
         info = router.to_dict()
@@ -272,5 +272,4 @@ class TestRouter:
         assert info["adapter_count"] == 1
         assert "adapters" in info
         assert "test-adapter" in info["adapters"]
-        assert info["adapters"]["test-adapter"]["name"] == "test-adapter"
         assert info["adapters"]["test-adapter"]["type"] == "TabularAdapter"

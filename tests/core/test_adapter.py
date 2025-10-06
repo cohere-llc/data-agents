@@ -9,8 +9,8 @@ from data_agents.core.adapter import Adapter
 class ConcreteAdapter(Adapter):
     """Concrete implementation of Adapter for testing."""
 
-    def __init__(self, name: str, config: dict = None):
-        super().__init__(name, config)
+    def __init__(self, config: dict = None):
+        super().__init__(config)
         self.data = pd.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
 
     def query(self, query: str, **kwargs) -> pd.DataFrame:
@@ -36,21 +36,19 @@ class TestAdapter:
 
     def test_init(self):
         """Test Adapter initialization."""
-        adapter = ConcreteAdapter("test-adapter")
-        assert adapter.name == "test-adapter"
+        adapter = ConcreteAdapter()
         assert adapter.config == {}
 
     def test_init_with_config(self):
         """Test Adapter initialization with config."""
         config = {"setting1": "value1", "setting2": 42}
-        adapter = ConcreteAdapter("test-adapter", config)
-        assert adapter.name == "test-adapter"
+        adapter = ConcreteAdapter(config)
         assert adapter.config == config
 
     def test_query_abstract_method(self):
         """Test that query is abstract and must be implemented."""
         with pytest.raises(TypeError):
-            Adapter("test")  # Should fail because query is abstract
+            Adapter()  # Should fail because query is abstract
 
     def test_discover_abstract_method(self):
         """Test that discover is abstract and must be implemented."""
@@ -60,7 +58,7 @@ class TestAdapter:
 
     def test_concrete_query(self):
         """Test query method in concrete implementation."""
-        adapter = ConcreteAdapter("test-adapter")
+        adapter = ConcreteAdapter()
 
         # Test querying all data
         result = adapter.query("*")
@@ -77,19 +75,18 @@ class TestAdapter:
 
     def test_concrete_discover(self):
         """Test discover method in concrete implementation."""
-        adapter = ConcreteAdapter("test-adapter")
+        adapter = ConcreteAdapter()
         discovery = adapter.discover()
 
         assert discovery["adapter_type"] == "concrete"
         assert discovery["columns"] == ["col1", "col2"]
         assert discovery["shape"] == (3, 2)
 
-    def test_get_info(self):
-        """Test get_info method."""
+    def test_to_dict(self):
+        """Test to_dict method."""
         config = {"test_setting": "test_value"}
-        adapter = ConcreteAdapter("test-adapter", config)
+        adapter = ConcreteAdapter(config)
 
-        info = adapter.get_info()
-        assert info["name"] == "test-adapter"
+        info = adapter.to_dict()
         assert info["type"] == "ConcreteAdapter"
         assert info["config"] == config

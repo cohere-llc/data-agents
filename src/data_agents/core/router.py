@@ -148,7 +148,7 @@ class Router:
             Dictionary containing router information
         """
         adapters_info = {
-            name: adapter.get_info() for name, adapter in self.adapters.items()
+            name: adapter.to_dict() for name, adapter in self.adapters.items()
         }
         return {
             "type": "Router",

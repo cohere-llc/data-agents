@@ -18,18 +18,16 @@ class TabularAdapter(Adapter):
 
     def __init__(
         self,
-        name: str,
         data: pd.DataFrame | None = None,
         config: dict[str, Any] | None = None,
     ):
         """Initialize the tabular adapter.
 
         Args:
-            name: The name/identifier for this adapter
             data: Optional DataFrame to use as the data source
             config: Optional configuration dictionary
         """
-        super().__init__(name, config)
+        super().__init__(config)
         self.data = data if data is not None else pd.DataFrame()
 
     def query(self: TabularAdapter, query: str, **kwargs: Any) -> pd.DataFrame:

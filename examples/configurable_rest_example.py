@@ -118,8 +118,8 @@ def main() -> None:
 
     # Create router and register all adapters
     router = Router()
-    for adapter in adapters.values():
-        router[adapter.name] = adapter
+    for adapter_name, adapter in adapters.items():
+        router[adapter_name] = adapter
 
     print(f"Router has {len(router.adapters)} adapters:")
     for adapter_name in router.adapters.keys():

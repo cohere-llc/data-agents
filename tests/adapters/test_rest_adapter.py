@@ -14,8 +14,7 @@ class TestRESTAdapter:
 
     def test_init(self):
         """Test RESTAdapter initialization."""
-        adapter = RESTAdapter("test-api", "https://api.example.com")
-        assert adapter.name == "test-api"
+        adapter = RESTAdapter("https://api.example.com")
         assert adapter.base_url == "https://api.example.com"
         assert adapter.headers["Accept"] == "application/json"
         assert adapter.timeout == 30
@@ -31,7 +30,7 @@ class TestRESTAdapter:
             "pagination_param": "limit",
             "pagination_limit": 20,
         }
-        adapter = RESTAdapter("test-api", "https://api.example.com/", config)
+        adapter = RESTAdapter("https://api.example.com/", config)
         assert adapter.base_url == "https://api.example.com"
         assert adapter.headers["Custom-Header"] == "test-value"
         assert adapter.headers["Accept"] == "application/json"
@@ -53,7 +52,7 @@ class TestRESTAdapter:
         ]
         mock_request.return_value = mock_response
 
-        adapter = RESTAdapter("test-api", "https://api.example.com")
+        adapter = RESTAdapter("https://api.example.com")
         result = adapter.query("users")
 
         assert len(result) == 2
@@ -80,7 +79,7 @@ class TestRESTAdapter:
         }
         mock_request.return_value = mock_response
 
-        adapter = RESTAdapter("test-api", "https://api.example.com")
+        adapter = RESTAdapter("https://api.example.com")
         result = adapter.query("users/1")
 
         assert len(result) == 1
@@ -95,7 +94,7 @@ class TestRESTAdapter:
         mock_response.json.return_value = [{"id": 1, "name": "John"}]
         mock_request.return_value = mock_response
 
-        adapter = RESTAdapter("test-api", "https://api.example.com")
+        adapter = RESTAdapter("https://api.example.com")
         adapter.query("users", params={"limit": 10, "offset": 0})
 
         # Verify parameters were passed
@@ -114,7 +113,7 @@ class TestRESTAdapter:
         }
         mock_request.return_value = mock_response
 
-        adapter = RESTAdapter("test-api", "https://api.example.com")
+        adapter = RESTAdapter("https://api.example.com")
         data = {"name": "New User", "email": "new@example.com"}
         result = adapter.post_data("users", data)
 
@@ -139,7 +138,7 @@ class TestRESTAdapter:
         }
         mock_request.return_value = mock_response
 
-        adapter = RESTAdapter("test-api", "https://api.example.com")
+        adapter = RESTAdapter("https://api.example.com")
         data = {"name": "Updated User", "email": "updated@example.com"}
         result = adapter.put_data("users/123", data)
 
@@ -163,7 +162,7 @@ class TestRESTAdapter:
         }
         mock_request.return_value = mock_response
 
-        adapter = RESTAdapter("test-api", "https://api.example.com")
+        adapter = RESTAdapter("https://api.example.com")
         result = adapter.delete_data("users/123")
 
         assert len(result) == 1
@@ -182,7 +181,7 @@ class TestRESTAdapter:
         mock_response.raise_for_status.side_effect = requests.HTTPError("404 Not Found")
         mock_request.return_value = mock_response
 
-        adapter = RESTAdapter("test-api", "https://api.example.com")
+        adapter = RESTAdapter("https://api.example.com")
 
         with pytest.raises(requests.RequestException, match="HTTP request failed"):
             adapter.query("nonexistent")
@@ -195,7 +194,7 @@ class TestRESTAdapter:
         mock_response.json.side_effect = ValueError("Invalid JSON")
         mock_request.return_value = mock_response
 
-        adapter = RESTAdapter("test-api", "https://api.example.com")
+        adapter = RESTAdapter("https://api.example.com")
 
         with pytest.raises(ValueError, match="Failed to parse response as JSON"):
             adapter.query("users")
@@ -217,7 +216,7 @@ class TestRESTAdapter:
 
         # Configure adapter with endpoints
         config = {"endpoints": ["users", "posts", "comments", "nonexistent"]}
-        adapter = RESTAdapter("test-api", "https://api.example.com", config)
+        adapter = RESTAdapter("https://api.example.com", config)
         discovery = adapter.discover()
 
         # Should find users and posts endpoints (not comments or nonexistent)
@@ -262,7 +261,7 @@ class TestRESTAdapter:
             "pagination_param": "limit",
             "pagination_limit": 5,
         }
-        adapter = RESTAdapter("test-api", "https://api.example.com", config)
+        adapter = RESTAdapter("https://api.example.com", config)
         discovery = adapter.discover()
 
         # Test discovery structure
@@ -289,7 +288,7 @@ class TestRESTAdapter:
 
     def test_discover_no_config(self):
         """Test discovery with no configuration."""
-        adapter = RESTAdapter("test-api", "https://api.example.com")
+        adapter = RESTAdapter("https://api.example.com")
         discovery = adapter.discover()
 
         # Should return basic discovery with no endpoints when no endpoints configured
@@ -333,7 +332,7 @@ class TestRESTAdapter:
             "pagination_param": "limit",
             "pagination_limit": 5,
         }
-        adapter = RESTAdapter("test-api", "https://api.example.com", config)
+        adapter = RESTAdapter("https://api.example.com", config)
         discovery = adapter.discover()
 
         assert discovery["base_url"] == "https://api.example.com"
@@ -356,7 +355,7 @@ class TestRESTAdapterIntegration:
             "pagination_limit": None,
         }
 
-        adapter = RESTAdapter("httpbin", "https://httpbin.org", config)
+        adapter = RESTAdapter("https://httpbin.org", config)
 
         # Test basic query - JSON endpoint
         try:
@@ -405,7 +404,7 @@ class TestRESTAdapterIntegration:
             "pagination_limit": "name,capital,population",
         }
 
-        adapter = RESTAdapter("rest_countries", "https://restcountries.com", config)
+        adapter = RESTAdapter("https://restcountries.com", config)
 
         # Test querying all countries (with field limitation)
         try:
@@ -454,9 +453,7 @@ class TestRESTAdapterIntegration:
             "pagination_limit": 3,
         }
 
-        adapter = RESTAdapter(
-            "jsonplaceholder", "https://jsonplaceholder.typicode.com", config
-        )
+        adapter = RESTAdapter("https://jsonplaceholder.typicode.com", config)
 
         # Test users endpoint
         try:
@@ -518,14 +515,14 @@ class TestRESTAdapterIntegration:
     def test_api_error_handling(self):
         """Test error handling with various API scenarios."""
         # Test with non-existent API
-        adapter = RESTAdapter("fake_api", "https://nonexistent-api-url-12345.com")
+        adapter = RESTAdapter("https://nonexistent-api-url-12345.com")
 
         with pytest.raises(requests.RequestException):
             adapter.query("any-endpoint")
 
         # Test with real API but non-existent endpoint
         try:
-            adapter = RESTAdapter("httpbin", "https://httpbin.org")
+            adapter = RESTAdapter("https://httpbin.org")
             with pytest.raises(requests.RequestException):
                 adapter.query("nonexistent-endpoint-12345")
         except Exception:
@@ -535,7 +532,7 @@ class TestRESTAdapterIntegration:
         """Test handling of different response formats from real APIs."""
         # Test httpbin IP endpoint (returns simple string-like response)
         try:
-            adapter = RESTAdapter("httpbin", "https://httpbin.org")
+            adapter = RESTAdapter("https://httpbin.org")
             ip_result = adapter.query("ip")
             assert not ip_result.empty
             assert isinstance(ip_result, pd.DataFrame)
@@ -563,7 +560,7 @@ class TestRESTAdapterIntegration:
                 },
                 "timeout": 10,
             }
-            adapter = RESTAdapter("httpbin_custom", "https://httpbin.org", config)
+            adapter = RESTAdapter("https://httpbin.org", config)
 
             # Query headers endpoint to verify our custom headers are sent
             headers_result = adapter.query("headers")
