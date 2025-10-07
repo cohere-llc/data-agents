@@ -10,7 +10,12 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from data_agents.cli import create_adapter_from_config, create_router, load_config_file, main
+from data_agents.cli import (
+    create_adapter_from_config,
+    create_router,
+    load_config_file,
+    main,
+)
 from data_agents.core.router import Router
 
 
@@ -294,7 +299,7 @@ class TestCLIConfigurationLoading:
     def test_load_config_file_json(self):
         """Test loading JSON configuration file."""
         config_data = {"test": "value", "number": 42}
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(config_data, f)
             config_file = f.name
@@ -308,9 +313,9 @@ class TestCLIConfigurationLoading:
     def test_load_config_file_yaml(self):
         """Test loading YAML configuration file."""
         import yaml
-        
+
         config_data = {"test": "value", "list": [1, 2, 3]}
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(config_data, f)
             config_file = f.name
@@ -342,7 +347,7 @@ class TestCLIConfigurationLoading:
         """Test creating REST adapter from configuration."""
         # Create a temporary REST config file
         rest_config = {"timeout": 5, "headers": {"User-Agent": "test"}}
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(rest_config, f)
             rest_config_file = f.name
@@ -351,12 +356,12 @@ class TestCLIConfigurationLoading:
             adapter_config = {
                 "type": "rest",
                 "base_url": "https://httpbin.org",
-                "config_file": rest_config_file
+                "config_file": rest_config_file,
             }
-            
+
             adapter = create_adapter_from_config("test_rest", adapter_config)
             assert adapter is not None
-            assert hasattr(adapter, 'base_url')
+            assert hasattr(adapter, "base_url")
             assert adapter.base_url == "https://httpbin.org"
         finally:
             Path(rest_config_file).unlink()
@@ -364,45 +369,45 @@ class TestCLIConfigurationLoading:
     def test_create_adapter_from_config_rest_missing_base_url(self):
         """Test creating REST adapter without base_url."""
         adapter_config = {"type": "rest"}
-        
-        with patch('builtins.print') as mock_print:
+
+        with patch("builtins.print") as mock_print:
             adapter = create_adapter_from_config("test_rest", adapter_config)
             assert adapter is None
-            mock_print.assert_called_with("Error: REST adapter 'test_rest' missing required 'base_url'")
+            mock_print.assert_called_with(
+                "Error: REST adapter 'test_rest' missing required 'base_url'"
+            )
 
     def test_create_adapter_from_config_rest_missing_config_file(self):
         """Test creating REST adapter with non-existent config file."""
         adapter_config = {
             "type": "rest",
             "base_url": "https://httpbin.org",
-            "config_file": "nonexistent.json"
+            "config_file": "nonexistent.json",
         }
-        
-        with patch('builtins.print') as mock_print:
+
+        with patch("builtins.print") as mock_print:
             adapter = create_adapter_from_config("test_rest", adapter_config)
             assert adapter is not None  # Should still create adapter, just with warning
             mock_print.assert_called_with(
-                "Warning: Failed to load REST adapter config for 'test_rest': Configuration file nonexistent.json not found"
+                "Warning: Failed to load REST adapter config for 'test_rest': "
+                "Configuration file nonexistent.json not found"
             )
 
     def test_create_adapter_from_config_tabular_success(self):
         """Test creating tabular adapter from configuration."""
         # Create a temporary CSV file
         test_data = pd.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             test_data.to_csv(f.name, index=False)
             csv_file = f.name
 
         try:
-            adapter_config = {
-                "type": "tabular",
-                "csv_file": csv_file
-            }
-            
+            adapter_config = {"type": "tabular", "csv_file": csv_file}
+
             adapter = create_adapter_from_config("test_tabular", adapter_config)
             assert adapter is not None
-            assert hasattr(adapter, 'data')
+            assert hasattr(adapter, "data")
             assert len(adapter.data) == 3
         finally:
             Path(csv_file).unlink()
@@ -410,38 +415,41 @@ class TestCLIConfigurationLoading:
     def test_create_adapter_from_config_tabular_missing_csv_file(self):
         """Test creating tabular adapter without csv_file."""
         adapter_config = {"type": "tabular"}
-        
-        with patch('builtins.print') as mock_print:
+
+        with patch("builtins.print") as mock_print:
             adapter = create_adapter_from_config("test_tabular", adapter_config)
             assert adapter is None
-            mock_print.assert_called_with("Error: Tabular adapter 'test_tabular' missing required 'csv_file'")
+            mock_print.assert_called_with(
+                "Error: Tabular adapter 'test_tabular' missing required 'csv_file'"
+            )
 
     def test_create_adapter_from_config_tabular_nonexistent_csv(self):
         """Test creating tabular adapter with non-existent CSV file."""
-        adapter_config = {
-            "type": "tabular",
-            "csv_file": "nonexistent.csv"
-        }
-        
-        with patch('builtins.print') as mock_print:
+        adapter_config = {"type": "tabular", "csv_file": "nonexistent.csv"}
+
+        with patch("builtins.print") as mock_print:
             adapter = create_adapter_from_config("test_tabular", adapter_config)
             assert adapter is None
-            mock_print.assert_called_with("Error: CSV file nonexistent.csv not found for adapter 'test_tabular'")
+            mock_print.assert_called_with(
+                "Error: CSV file nonexistent.csv not found for adapter 'test_tabular'"
+            )
 
     def test_create_adapter_from_config_unknown_type(self):
         """Test creating adapter with unknown type."""
         adapter_config = {"type": "unknown"}
-        
-        with patch('builtins.print') as mock_print:
+
+        with patch("builtins.print") as mock_print:
             adapter = create_adapter_from_config("test_unknown", adapter_config)
             assert adapter is None
-            mock_print.assert_called_with("Error: Unknown adapter type 'unknown' for adapter 'test_unknown'")
+            mock_print.assert_called_with(
+                "Error: Unknown adapter type 'unknown' for adapter 'test_unknown'"
+            )
 
     def test_create_router_with_adapters_config(self):
         """Test creating router with adapter configurations."""
         # Create test CSV file
         test_data = pd.DataFrame({"id": [1, 2], "name": ["Alice", "Bob"]})
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
             test_data.to_csv(f.name, index=False)
             csv_file = f.name
@@ -449,14 +457,8 @@ class TestCLIConfigurationLoading:
         # Create router config
         router_config = {
             "adapters": {
-                "test_csv": {
-                    "type": "tabular",
-                    "csv_file": csv_file
-                },
-                "test_api": {
-                    "type": "rest",
-                    "base_url": "https://httpbin.org"
-                }
+                "test_csv": {"type": "tabular", "csv_file": csv_file},
+                "test_api": {"type": "rest", "base_url": "https://httpbin.org"},
             }
         }
 
@@ -465,12 +467,12 @@ class TestCLIConfigurationLoading:
             config_file = f.name
 
         try:
-            with patch('builtins.print') as mock_print:
+            with patch("builtins.print") as mock_print:
                 router = create_router("test_router", config_file)
                 assert len(router.adapters) == 2
                 assert "test_csv" in router.adapters
                 assert "test_api" in router.adapters
-                
+
                 # Check that success messages were printed
                 mock_print.assert_any_call("Added tabular adapter: test_csv")
                 mock_print.assert_any_call("Added rest adapter: test_api")
@@ -482,25 +484,39 @@ class TestCLIConfigurationLoading:
         """Test creating router with test_errors.json configuration."""
         # Use the test_errors.json file from tests/data/
         test_errors_path = Path(__file__).parent / "data" / "test_errors.json"
-        
-        with patch('builtins.print') as mock_print:
+
+        with patch("builtins.print") as mock_print:
             router = create_router("error_test_router", str(test_errors_path))
-            
-            # Should have created one adapter (missing_config) and failed to create the others
+
+            # Should have created one adapter (missing_config) and failed to create
+            # the others
             assert len(router.adapters) == 1
             assert "missing_config" in router.adapters
-            
+
             # Check error messages were printed
-            mock_print.assert_any_call("Error: CSV file nonexistent.csv not found for adapter 'missing_csv'")
-            mock_print.assert_any_call("Error: Unknown adapter type 'unknown' for adapter 'invalid_type'")
+            mock_print.assert_any_call(
+                "Error: CSV file nonexistent.csv not found for adapter 'missing_csv'"
+            )
+            mock_print.assert_any_call(
+                "Error: Unknown adapter type 'unknown' for adapter 'invalid_type'"
+            )
             mock_print.assert_any_call("Added rest adapter: missing_config")
 
-    @patch("sys.argv", ["data_agents", "create", "test-router", "--config", "tests/data/test_errors.json"])
+    @patch(
+        "sys.argv",
+        [
+            "data_agents",
+            "create",
+            "test-router",
+            "--config",
+            "tests/data/test_errors.json",
+        ],
+    )
     def test_main_create_with_error_config(self):
         """Test main CLI create command with error configuration."""
         with patch("sys.stdout", new=io.StringIO()) as fake_out:
             main()
-        
+
         output = fake_out.getvalue()
         assert "Created router: test-router" in output
         assert "Error: CSV file nonexistent.csv not found" in output
