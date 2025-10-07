@@ -54,6 +54,7 @@ dev = [
     "black>=23.0.0",
     "pandas-stubs>=2.2.2.240807",
     "types-requests>=2.32.4.20250913",
+    "types-pyyaml>=6.0.12.20250915",
 ]
 
 [tool.hatchling.build.targets.wheel]
