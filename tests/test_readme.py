@@ -160,7 +160,7 @@ class TestREADMEExamples:
         help_output = result.stdout
 
         # Check that mentioned commands exist
-        expected_commands = ["create", "demo", "query", "list-adapters", "info"]
+        expected_commands = ["demo", "query", "list-adapters", "info", "discover"]
         for command in expected_commands:
             assert command in help_output
 
@@ -350,11 +350,14 @@ class TestREADMEConsistency:
         with open(readme_path) as f:
             readme_content = f.read()
 
-        # Extract commands from CLI help
-        help_commands = re.findall(r"^\s+([\w-]+)\s+", cli_help, re.MULTILINE)
+        # Extract commands from CLI help - look for lines starting with 4 spaces
+        # followed by a command
+        help_commands = re.findall(r"^\s{4}([a-z][\w-]*)\s+", cli_help, re.MULTILINE)
 
         # Check that commands mentioned in README exist in CLI help
-        readme_commands = re.findall(r"uv run data-agents ([\w-]+)", readme_content)
+        readme_commands = re.findall(
+            r"uv run data-agents ([a-zA-Z][\w-]*)", readme_content
+        )
         for cmd in set(readme_commands):
             assert cmd in help_commands, (
                 f"Command '{cmd}' mentioned in README but not found in CLI help"
