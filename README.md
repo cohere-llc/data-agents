@@ -20,7 +20,7 @@ git clone https://github.com/cohere-llc/data-agents.git
 cd data-agents
 
 # Install with uv (recommended)
-uv pip install -e .
+uv sync
 
 # Or install with pip
 pip install -e .
@@ -29,10 +29,10 @@ pip install -e .
 ### Development installation
 
 ```bash
-# Install with development dependencies
-uv pip install -e ".[dev]"
+# Install with development dependencies using uv (recommended)
+uv sync --group dev
 
-# Or with pip
+# Or install with pip
 pip install -e ".[dev]"
 ```
 
@@ -44,22 +44,25 @@ The package provides a `data-agents` command-line tool:
 
 ```bash
 # Run a demonstration of the Router/Adapter functionality
-data-agents demo
+uv run data-agents demo
 
-# Create a new agent
-data-agents create my-agent
+# Create a new router
+uv run data-agents create my-router
 
-# Get agent information (including router and adapters)
-data-agents info my-agent
+# Create a router with adapters from configuration
+uv run data-agents create my-router --config config.json
 
-# List all adapters in an agent
-data-agents list-adapters my-agent
+# Get router information (including adapters)
+uv run data-agents info my-router
+
+# List all adapters in a router
+uv run data-agents list-adapters my-router
 
 # Query data through an adapter
-data-agents query my-agent adapter-name "query-string"
+uv run data-agents query my-router adapter-name "query-string"
 
-# Use with configuration file
-data-agents create my-agent --config config.json
+# Use with configuration file for all commands
+uv run data-agents query my-router adapter-name "*" --config config.json
 ```
 
 ### Python API
@@ -67,11 +70,11 @@ data-agents create my-agent --config config.json
 #### Basic Usage
 
 ```python
-from data_agents import DataAgent, TabularAdapter
+from data_agents import Router, TabularAdapter, RESTAdapter
 import pandas as pd
 
-# Create an agent
-agent = DataAgent("my-agent")
+# Create a router
+router = Router()
 
 # Create sample data
 customers_data = pd.DataFrame({
@@ -80,19 +83,24 @@ customers_data = pd.DataFrame({
     'age': [25, 30, 35]
 })
 
-# Create an adapter for the data
-customers_adapter = TabularAdapter("customers", customers_data)
+# Create adapters for the data
+customers_adapter = TabularAdapter(customers_data)
+api_adapter = RESTAdapter("https://api.example.com")
 
-# Add adapter to the agent
-agent.add_adapter(customers_adapter)
+# Add adapters to the router
+router["customers"] = customers_adapter
+router["api"] = api_adapter
 
 # Query the data
-all_customers = agent.query("customers", "*")
-older_customers = agent.query("customers", "age > 30")
+all_customers = customers_adapter.query("*")
+older_customers = customers_adapter.query("age >= 30")
 
-# Get information about available adapters
-info = agent.get_info()
+# Get information about the router
+info = router.to_dict()
 print(info)
+
+# Discover capabilities of all adapters
+discoveries = router.discover_all()
 ```
 
 #### Router/Adapter Architecture
@@ -112,66 +120,105 @@ import pandas as pd
 class CustomAPIAdapter(Adapter):
     """Custom adapter for REST API data."""
     
-    def __init__(self, name: str, api_url: str, config=None):
-        super().__init__(name, config)
+    def __init__(self, api_url: str, config=None):
+        super().__init__(config)
         self.api_url = api_url
     
     def query(self, query: str, **kwargs) -> pd.DataFrame:
         # Implement your custom query logic here
         # This could make HTTP requests, parse responses, etc.
-        pass
+        # Return data as a pandas DataFrame
+        return pd.DataFrame()
     
     def discover(self) -> dict:
         # Return discovery information for your data source
         return {
-            "adapter_type": "api", 
+            "adapter_type": "custom_api", 
             "base_url": self.api_url,
             "capabilities": {"supports_query": True}
         }
 
 # Use your custom adapter
-api_adapter = CustomAPIAdapter("my-api", "https://api.example.com")
-agent.add_adapter(api_adapter)
+router = Router()
+api_adapter = CustomAPIAdapter("https://api.example.com")
+router["my-api"] = api_adapter
 ```
 
 #### Working with Multiple Data Sources
 
 ```python
 # Create multiple adapters for different data sources
-customers_adapter = TabularAdapter("customers", customers_df)
-orders_adapter = TabularAdapter("orders", orders_df)
-products_adapter = TabularAdapter("products", products_df)
+customers_adapter = TabularAdapter(customers_df)
+orders_adapter = TabularAdapter(orders_df)
+products_adapter = TabularAdapter(products_df)
 
-# Add all adapters to the agent
-agent.add_adapter(customers_adapter)
-agent.add_adapter(orders_adapter)
-agent.add_adapter(products_adapter)
+# Create a router and add all adapters
+router = Router()
+router["customers"] = customers_adapter
+router["orders"] = orders_adapter
+router["products"] = products_adapter
 
 # Query specific adapters
-customer_data = agent.query("customers", "*")
-recent_orders = agent.query("orders", "date > '2023-01-01'")
+customer_data = router["customers"].query("*")
+recent_orders = router["orders"].query("date >= '2023-01-01'")
 
 # Query all adapters with the same query
-all_results = agent.query_all("*")
+all_results = router.query_all("*")
 for adapter_name, data in all_results.items():
     print(f"{adapter_name}: {len(data)} records")
 
 # Get discovery information for all adapters
-discoveries = agent.router.discover_all()
+discoveries = router.discover_all()
 ```
 
 ### Configuration
 
-You can provide configuration via JSON files:
+You can configure routers and adapters using JSON or YAML files:
+
+#### Router Configuration
+
+The CLI supports creating routers with pre-configured adapters:
 
 ```json
 {
-    "setting1": "value1",
-    "setting2": 42,
-    "nested": {
-        "key": "value"
+  "adapters": {
+    "my_api": {
+      "type": "rest",
+      "base_url": "https://api.example.com",
+      "config_file": "path/to/rest_config.json"
+    },
+    "my_data": {
+      "type": "tabular",
+      "csv_file": "path/to/data.csv"
     }
+  }
 }
+```
+
+#### REST Adapter Configuration
+
+For REST adapters, you can specify additional configuration:
+
+```json
+{
+  "headers": {
+    "User-Agent": "DataAgents/1.0"
+  },
+  "timeout": 10,
+  "endpoints": ["users", "posts", "comments"],
+  "pagination_param": "_limit",
+  "pagination_limit": 10
+}
+```
+
+#### Using Configuration Files
+
+```bash
+# Create router with adapters from config
+uv run data-agents create my-router --config router_config.json
+
+# Query with config
+uv run data-agents query my-router my_api "users" --config router_config.json
 ```
 
 ## Development
@@ -180,24 +227,24 @@ You can provide configuration via JSON files:
 
 ```bash
 # Run all tests
-pytest
+uv run pytest
 
 # Run with coverage
-pytest --cov=data_agents
+uv run pytest --cov=data_agents
 
 # Run specific test file
-pytest tests/test_data_agents.py
+uv run pytest tests/test_cli.py
 ```
 
 ### Code formatting and linting
 
 ```bash
 # Format code with ruff
-ruff format .
+uv run ruff format .
 
 # Lint code
-ruff check .
+uv run ruff check .
 
 # Type checking with mypy
-mypy src/
+uv run mypy src/
 ```

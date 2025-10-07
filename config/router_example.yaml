@@ -1,0 +1,18 @@
+adapters:
+  httpbin:
+    type: rest
+    base_url: https://httpbin.org
+    config_file: config/httpbin.rest.adapter.json
+    
+  jsonplaceholder:
+    type: rest
+    base_url: https://jsonplaceholder.typicode.com
+    config_file: config/jsonplaceholder.rest.adapter.json
+    
+  sample_data:
+    type: tabular
+    csv_file: examples/sample_data.csv
+    
+  employees:
+    type: tabular
+    csv_file: examples/sample_data.csv
