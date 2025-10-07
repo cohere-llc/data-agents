@@ -43,26 +43,35 @@ pip install -e ".[dev]"
 The package provides a `data-agents` command-line tool:
 
 ```bash
+# Get usage information
+uv run data-agents --help
+
+# Get the data-agents version
+uv run data-agents --version
+
 # Run a demonstration of the Router/Adapter functionality
 uv run data-agents demo
 
-# Create a new router
-uv run data-agents create my-router
-
-# Create a router with adapters from configuration
-uv run data-agents create my-router --config config.json
-
 # Get router information (including adapters)
-uv run data-agents info my-router
+uv run data-agents info --router-config config.router.json
 
 # List all adapters in a router
-uv run data-agents list-adapters my-router
+uv run data-agents list-adapters --router-config config.router.json
 
-# Query data through an adapter
-uv run data-agents query my-router adapter-name "query-string"
+# Discover queryable parameters with type information for all adapters in a router
+uv run data-agents discover --router-config config.router.json
 
-# Use with configuration file for all commands
-uv run data-agents query my-router adapter-name "*" --config config.json
+# Query data through all adapters in a router
+uv run data-agents query "query-string" --router-config config.router.json
+
+# Get adapter information
+uv run data-agents info --adapter-config config.adapter.json
+
+# Discover queryable parameter with type information for a single adapter
+uv run data-agents discover --adapter-config config.adapter.json
+
+# Query a single adapter
+uv run data-agents query "query-string" --adapter-config config.adapter.json
 ```
 
 ### Python API
@@ -214,11 +223,11 @@ For REST adapters, you can specify additional configuration:
 #### Using Configuration Files
 
 ```bash
-# Create router with adapters from config
-uv run data-agents create my-router --config router_config.json
+# Get router information
+uv run data-agents info --router-config router_config.json
 
-# Query with config
-uv run data-agents query my-router my_api "users" --config router_config.json
+# Query all adapters in a router
+uv run data-agents query "users" --router-config router_config.json
 ```
 
 ## Development

@@ -1,0 +1,5 @@
+{
+  "type": "rest",
+  "base_url": "https://jsonplaceholder.typicode.com",
+  "config_file": "config/jsonplaceholder.rest.adapter.json"
+}

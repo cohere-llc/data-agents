@@ -1,12 +1,14 @@
 # Data Agents CLI - Router Configuration
 
-The Data Agents CLI now supports creating routers with adapters pre-configured from JSON or YAML configuration files.
+The Data Agents CLI supports working with routers configured from JSON or YAML configuration files. You can get information about routers, list their adapters, discover queryable parameters, and query data through all adapters in a router.
 
 ## Configuration Format
 
-The configuration file should contain an `adapters` section that defines the adapters to be created and added to the router.
+### Router Configuration
 
-### JSON Format Example
+The router configuration file should contain an `adapters` section that defines the adapters to be created and added to the router.
+
+#### JSON Format Example
 
 ```json
 {
@@ -24,7 +26,7 @@ The configuration file should contain an `adapters` section that defines the ada
 }
 ```
 
-### YAML Format Example
+#### YAML Format Example
 
 ```yaml
 adapters:
@@ -36,6 +38,29 @@ adapters:
   csv_data:
     type: tabular
     csv_file: path/to/data.csv
+```
+
+### Single Adapter Configuration
+
+You can also create configuration files for individual adapters:
+
+#### REST Adapter Configuration
+
+```json
+{
+  "type": "rest",
+  "base_url": "https://jsonplaceholder.typicode.com",
+  "config_file": "config/jsonplaceholder.rest.adapter.json"
+}
+```
+
+#### Tabular Adapter Configuration
+
+```json
+{
+  "type": "tabular",
+  "csv_file": "examples/sample_data.csv"
+}
 ```
 
 ## Adapter Types
@@ -68,33 +93,54 @@ For tabular adapters, specify:
 
 ## Usage Examples
 
-### Create a router with adapters
+### Get router information
 
 ```bash
-# Using JSON configuration
-uv run data-agents create my-router --config config/router.json
+# Get complete router information with all adapters
+uv run data-agents info --router-config config/router.json
 
 # Using YAML configuration
-uv run data-agents create my-router --config config/router.yaml
+uv run data-agents info --router-config config/router.yaml
 ```
 
-### Query data through the router
+### List available adapters in a router
 
 ```bash
-# Query all data from a tabular adapter
-uv run data-agents query my-router csv_data "*" --config config/router.json
-
-# Query a specific column
-uv run data-agents query my-router csv_data "name" --config config/router.json
-
-# Query a REST endpoint
-uv run data-agents query my-router api_data "users" --config config/router.json
+uv run data-agents list-adapters --router-config config/router.json
 ```
 
-### List available adapters
+### Discover queryable parameters for all adapters
 
 ```bash
-uv run data-agents list-adapters my-router --config config/router.json
+uv run data-agents discover --router-config config/router.json
+```
+
+### Query data through all adapters in the router
+
+```bash
+# Query all adapters with the same query string
+uv run data-agents query "*" --router-config config/router.json
+
+# Query for specific data (tabular adapters support SQL-like syntax)
+uv run data-agents query "age > 30" --router-config config/router.json
+
+# Query REST endpoints
+uv run data-agents query "users" --router-config config/router.json
+```
+
+### Working with single adapters
+
+You can also work with individual adapter configuration files:
+
+```bash
+# Get information about a single adapter
+uv run data-agents info --adapter-config config/my_adapter.json
+
+# Discover parameters for a single adapter
+uv run data-agents discover --adapter-config config/my_adapter.json
+
+# Query a single adapter
+uv run data-agents query "users" --adapter-config config/my_adapter.json
 ```
 
 ## Error Handling
@@ -109,7 +155,9 @@ The CLI provides helpful error messages for common issues:
 ## Example Files
 
 See the following example files in the repository:
-- `config/router_example.json` - Complete JSON configuration example
-- `config/router_example.yaml` - Complete YAML configuration example
+- `config/example.router.json` - Complete JSON router configuration example
+- `config/example.router.yaml` - Complete YAML router configuration example
+- `config/jsonplaceholder.adapter.json` - Single adapter configuration example
 - `examples/sample_data.csv` - Sample CSV file for testing
-- `config/httpbin.rest.adapter.json` - Example REST adapter configuration
+- `config/jsonplaceholder.rest.adapter.json` - Example REST adapter configuration
+- `config/httpbin.rest.adapter.json` - Another REST adapter configuration example

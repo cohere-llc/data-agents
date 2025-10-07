@@ -4,11 +4,13 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Optional
 
 import pandas as pd
 
+from data_agents import __version__
 from data_agents.adapters import RESTAdapter, TabularAdapter
+from data_agents.core.adapter import Adapter
 from data_agents.core.router import Router
 
 
@@ -67,12 +69,11 @@ def load_config_file(config_path: str) -> dict[str, Any]:
 
 
 def create_adapter_from_config(
-    name: str, adapter_config: dict[str, Any]
-) -> Union[RESTAdapter, TabularAdapter, None]:
+    adapter_config: dict[str, Any],
+) -> Optional[Adapter]:
     """Create an adapter from configuration.
 
     Args:
-        name: Name of the adapter
         adapter_config: Configuration dictionary for the adapter
 
     Returns:
@@ -85,7 +86,7 @@ def create_adapter_from_config(
         config_file = adapter_config.get("config_file")
 
         if not base_url:
-            print(f"Error: REST adapter '{name}' missing required 'base_url'")
+            print("Error: REST adapter missing required 'base_url'")
             return None
 
         # Load REST adapter configuration if provided
@@ -94,113 +95,143 @@ def create_adapter_from_config(
             try:
                 rest_config = load_config_file(config_file)
             except (FileNotFoundError, ValueError) as e:
-                print(f"Warning: Failed to load REST adapter config for '{name}': {e}")
+                print(f"Warning: Failed to load REST adapter config: {e}")
 
         try:
             return RESTAdapter(base_url, rest_config)
         except Exception as e:
-            print(f"Error: Failed to create REST adapter '{name}': {e}")
+            print(f"Error: Failed to create REST adapter: {e}")
             return None
 
     elif adapter_type == "tabular":
         csv_file = adapter_config.get("csv_file")
 
         if not csv_file:
-            print(f"Error: Tabular adapter '{name}' missing required 'csv_file'")
+            print("Error: Tabular adapter missing required 'csv_file'")
             return None
 
         try:
             csv_path = Path(csv_file)
             if not csv_path.exists():
-                print(f"Error: CSV file {csv_file} not found for adapter '{name}'")
+                print(f"Error: CSV file {csv_file} not found")
                 return None
 
             data = pd.read_csv(csv_file)
             return TabularAdapter(data)
         except Exception as e:
-            print(f"Error: Failed to create tabular adapter '{name}': {e}")
+            print(f"Error: Failed to create tabular adapter: {e}")
             return None
     else:
-        print(f"Error: Unknown adapter type '{adapter_type}' for adapter '{name}'")
+        print(f"Error: Unknown adapter type '{adapter_type}'")
         return None
 
 
-def create_router(name: str, config_file: Union[str, None] = None) -> Router:
-    """Create a new router with adapters from configuration.
+def create_router_from_config(config_file: str) -> Router:
+    """Create a router with adapters from configuration.
 
     Args:
-        name: Name of the router
-        config_file: Path to configuration file
+        config_file: Path to router configuration file
 
     Returns:
         Router instance with configured adapters
     """
     router = Router()
 
-    if config_file:
-        try:
-            config = load_config_file(config_file)
+    try:
+        config = load_config_file(config_file)
 
-            # Load adapters from configuration
-            adapters_config = config.get("adapters", {})
-            for adapter_name, adapter_config in adapters_config.items():
-                adapter = create_adapter_from_config(adapter_name, adapter_config)
-                if adapter:
-                    router[adapter_name] = adapter
-                    adapter_type = adapter_config.get("type", "unknown")
-                    print(f"Added {adapter_type} adapter: {adapter_name}")
+        # Load adapters from configuration
+        adapters_config = config.get("adapters", {})
+        for adapter_name, adapter_config in adapters_config.items():
+            adapter = create_adapter_from_config(adapter_config)
+            if adapter:
+                router[adapter_name] = adapter
 
-        except (FileNotFoundError, ValueError) as e:
-            print(f"Warning: {e}")
+    except (FileNotFoundError, ValueError) as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
     return router
+
+
+def create_single_adapter_from_config(
+    config_file: str,
+) -> Optional[Adapter]:
+    """Create a single adapter from configuration.
+
+    Args:
+        config_file: Path to adapter configuration file
+
+    Returns:
+        Adapter instance or None if creation failed
+    """
+    try:
+        config = load_config_file(config_file)
+        return create_adapter_from_config(config)
+    except (FileNotFoundError, ValueError) as e:
+        print(f"Error: {e}")
+        return None
 
 
 def main() -> None:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="Data Agents CLI - A prototype for general data agents"
+        description="Data Agents CLI - A prototype for general data agents",
+        prog="data-agents",
     )
-    parser.add_argument("--version", action="version", version="%(prog)s 0.1.0")
+    parser.add_argument(
+        "--version", action="version", version=f"%(prog)s {__version__}"
+    )
 
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
-    # Create command
-    create_parser = subparsers.add_parser(
-        "create", help="Create a new router with adapters"
-    )
-    create_parser.add_argument("name", help="Name for the router")
-    create_parser.add_argument(
-        "--config",
-        help="Path to JSON/YAML configuration file containing adapter definitions",
-    )
-
     # Demo command - demonstrates the Router/Adapter functionality
-    demo_parser = subparsers.add_parser(
-        "demo", help="Run a demonstration of Router/Adapter functionality"
-    )
-    demo_parser.add_argument(
-        "--router-name", default="demo-router", help="Name for the demo router"
+    subparsers.add_parser(
+        "demo", help="Run a demonstration of the Router/Adapter functionality"
     )
 
-    # Query command
-    query_parser = subparsers.add_parser("query", help="Query data through a router")
-    query_parser.add_argument("router_name", help="Name for the router")
-    query_parser.add_argument("adapter_name", help="Name of the adapter to query")
-    query_parser.add_argument("query", help="Query string to execute")
-    query_parser.add_argument("--config", help="Path to JSON configuration file")
+    # Info command - supports both router and adapter configs
+    info_parser = subparsers.add_parser(
+        "info", help="Get router or adapter information"
+    )
+    info_group = info_parser.add_mutually_exclusive_group(required=True)
+    info_group.add_argument("--router-config", help="Path to router configuration file")
+    info_group.add_argument(
+        "--adapter-config", help="Path to adapter configuration file"
+    )
 
     # List adapters command
     list_parser = subparsers.add_parser(
         "list-adapters", help="List all adapters in a router"
     )
-    list_parser.add_argument("router_name", help="Name for the router")
-    list_parser.add_argument("--config", help="Path to JSON configuration file")
+    list_parser.add_argument(
+        "--router-config", required=True, help="Path to router configuration file"
+    )
 
-    # Info command
-    info_parser = subparsers.add_parser("info", help="Get router information")
-    info_parser.add_argument("name", help="Name for the router")
-    info_parser.add_argument("--config", help="Path to JSON configuration file")
+    # Discover command - supports both router and adapter configs
+    discover_parser = subparsers.add_parser(
+        "discover", help="Discover queryable parameters with type information"
+    )
+    discover_group = discover_parser.add_mutually_exclusive_group(required=True)
+    discover_group.add_argument(
+        "--router-config", help="Path to router configuration file"
+    )
+    discover_group.add_argument(
+        "--adapter-config", help="Path to adapter configuration file"
+    )
+
+    # Query command - supports both router and adapter configs
+    query_parser = subparsers.add_parser(
+        "query", help="Query data through router or adapter"
+    )
+    query_parser.add_argument("query_string", help="Query string to execute")
+    query_group = query_parser.add_mutually_exclusive_group(required=True)
+    query_group.add_argument(
+        "--router-config", help="Path to router configuration file"
+    )
+    query_group.add_argument(
+        "--adapter-config", help="Path to adapter configuration file"
+    )
 
     args = parser.parse_args()
 
@@ -208,36 +239,7 @@ def main() -> None:
         parser.print_help()
         sys.exit(1)
 
-    if args.command == "create":
-        router = create_router(args.name, args.config)
-        print(f"Created router: {args.name}")
-        if router.adapters:
-            print(f"Loaded {len(router.adapters)} adapter(s):")
-            for adapter_name, adapter in router.adapters.items():
-                print(f"  - {adapter_name} ({adapter.__class__.__name__})")
-        else:
-            print("No adapters loaded. Use --config to specify adapter configurations.")
-            print("\nExample configuration format:")
-            print(
-                json.dumps(
-                    {
-                        "adapters": {
-                            "api_data": {
-                                "type": "rest",
-                                "base_url": "https://api.example.com",
-                                "config_file": "path/to/rest_config.json",
-                            },
-                            "csv_data": {
-                                "type": "tabular",
-                                "csv_file": "path/to/data.csv",
-                            },
-                        }
-                    },
-                    indent=2,
-                )
-            )
-
-    elif args.command == "demo":
+    if args.command == "demo":
         # Create a demo router with sample data
         router = Router()
 
@@ -268,7 +270,7 @@ def main() -> None:
         router["customers"] = customers_adapter
         router["orders"] = orders_adapter
 
-        print(f"Demo router '{args.router_name}' created with sample data")
+        print("Demo router created with sample data")
         print(f"Available adapters: {list(router.adapters.keys())}")
 
         # Show sample queries
@@ -300,24 +302,23 @@ def main() -> None:
             print(f"  Shape: {discovery.get('shape', (0, 0))}")
             print(f"  Adapter Type: {discovery.get('adapter_type', 'unknown')}")
 
-    elif args.command == "query":
-        router = create_router(args.router_name, args.config)
-        try:
-            maybe_adapter = router[args.adapter_name]
-            if maybe_adapter is None:
-                print(f"Error: Adapter '{args.adapter_name}' not found")
-                sys.exit(1)
-            # At this point, adapter is guaranteed to be not None
-            result = maybe_adapter.query(args.query)
-            if not result.empty:
-                print(result.to_string(index=False))
+    elif args.command == "info":
+        if args.router_config:
+            # Get router information
+            router = create_router_from_config(args.router_config)
+            info = router.to_dict()
+            print(json.dumps(info, indent=2, default=str))
+        elif args.adapter_config:
+            # Get adapter information
+            adapter = create_single_adapter_from_config(args.adapter_config)
+            if adapter:
+                info = adapter.to_dict()
+                print(json.dumps(info, indent=2, default=str))
             else:
-                print("Query returned no results")
-        except Exception as e:
-            print(f"Query failed: {e}")
+                sys.exit(1)
 
     elif args.command == "list-adapters":
-        router = create_router(args.router_name, args.config)
+        router = create_router_from_config(args.router_config)
         if router.adapters:
             print("Available adapters:")
             for adapter_name, adapter in router.adapters.items():
@@ -325,10 +326,49 @@ def main() -> None:
         else:
             print("No adapters registered")
 
-    elif args.command == "info":
-        router = create_router(args.name, args.config)
-        info = router.to_dict()
-        print(json.dumps(info, indent=2, default=str))
+    elif args.command == "discover":
+        if args.router_config:
+            # Discover all adapters in router
+            router = create_router_from_config(args.router_config)
+            discoveries = router.discover_all()
+            for adapter_name, discovery in discoveries.items():
+                print(f"\n{adapter_name}:")
+                print(json.dumps(discovery, indent=2, default=str))
+        elif args.adapter_config:
+            # Discover single adapter
+            adapter = create_single_adapter_from_config(args.adapter_config)
+            if adapter:
+                discovery = adapter.discover()
+                print(json.dumps(discovery, indent=2, default=str))
+            else:
+                sys.exit(1)
+
+    elif args.command == "query":
+        if args.router_config:
+            # Query all adapters in router
+            router = create_router_from_config(args.router_config)
+            results = router.query_all(args.query_string)
+            for adapter_name, result in results.items():
+                print(f"\n--- Results from {adapter_name} ---")
+                if not result.empty:
+                    print(result.to_string(index=False))
+                else:
+                    print("Query returned no results")
+        elif args.adapter_config:
+            # Query single adapter
+            adapter = create_single_adapter_from_config(args.adapter_config)
+            if adapter:
+                try:
+                    result = adapter.query(args.query_string)
+                    if not result.empty:
+                        print(result.to_string(index=False))
+                    else:
+                        print("Query returned no results")
+                except Exception as e:
+                    print(f"Query failed: {e}")
+                    sys.exit(1)
+            else:
+                sys.exit(1)
 
 
 if __name__ == "__main__":
