@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Union
 
 import pandas as pd
-import yaml
 
 from data_agents.adapters import RESTAdapter, TabularAdapter
 from data_agents.core.router import Router
@@ -34,14 +33,36 @@ def load_config_file(config_path: str) -> dict[str, Any]:
     try:
         with open(config_file) as f:
             if config_file.suffix.lower() in [".yaml", ".yml"]:
-                result: dict[str, Any] = yaml.safe_load(f)
-                return result
+                try:
+                    import yaml
+                except ImportError:
+                    raise ValueError(
+                        f"YAML support not available. Please install PyYAML to read "
+                        f"{config_path}. Run: pip install PyYAML"
+                    ) from None
+
+                try:
+                    result: dict[str, Any] = yaml.safe_load(f)
+                    return result
+                except yaml.YAMLError as e:
+                    raise ValueError(
+                        f"Invalid YAML format in configuration file {config_path}: {e}"
+                    ) from None
             else:
-                result = json.load(f)
-                return result
-    except (json.JSONDecodeError, yaml.YAMLError) as e:
+                try:
+                    result = json.load(f)
+                    return result
+                except json.JSONDecodeError as e:
+                    raise ValueError(
+                        f"Invalid JSON format in configuration file {config_path}: {e}"
+                    ) from None
+    except ValueError:
+        # Re-raise ValueError exceptions (our custom messages)
+        raise
+    except Exception as e:
+        # Handle any other unexpected exceptions
         raise ValueError(
-            f"Invalid format in configuration file {config_path}: {e}"
+            f"Failed to read configuration file {config_path}: {e}"
         ) from None
 
 
@@ -176,12 +197,6 @@ def main() -> None:
     list_parser.add_argument("router_name", help="Name for the router")
     list_parser.add_argument("--config", help="Path to JSON configuration file")
 
-    # Process command (legacy)
-    process_parser = subparsers.add_parser("process", help="Process data with a router")
-    process_parser.add_argument("name", help="Name for the router")
-    process_parser.add_argument("data", help="Data to process")
-    process_parser.add_argument("--config", help="Path to JSON configuration file")
-
     # Info command
     info_parser = subparsers.add_parser("info", help="Get router information")
     info_parser.add_argument("name", help="Name for the router")
@@ -309,11 +324,6 @@ def main() -> None:
                 print(f"  - {adapter_name} ({adapter.__class__.__name__})")
         else:
             print("No adapters registered")
-
-    elif args.command == "process":
-        router = create_router(args.name, args.config)
-        # Process command would need to be implemented based on specific requirements
-        print("Process command not yet implemented")
 
     elif args.command == "info":
         router = create_router(args.name, args.config)

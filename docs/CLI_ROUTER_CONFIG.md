@@ -72,29 +72,29 @@ For tabular adapters, specify:
 
 ```bash
 # Using JSON configuration
-data-agents create my-router --config config/router.json
+uv run data-agents create my-router --config config/router.json
 
 # Using YAML configuration
-data-agents create my-router --config config/router.yaml
+uv run data-agents create my-router --config config/router.yaml
 ```
 
 ### Query data through the router
 
 ```bash
 # Query all data from a tabular adapter
-data-agents query my-router csv_data "*" --config config/router.json
+uv run data-agents query my-router csv_data "*" --config config/router.json
 
 # Query a specific column
-data-agents query my-router csv_data "name" --config config/router.json
+uv run data-agents query my-router csv_data "name" --config config/router.json
 
 # Query a REST endpoint
-data-agents query my-router api_data "users" --config config/router.json
+uv run data-agents query my-router api_data "users" --config config/router.json
 ```
 
 ### List available adapters
 
 ```bash
-data-agents list-adapters my-router --config config/router.json
+uv run data-agents list-adapters my-router --config config/router.json
 ```
 
 ## Error Handling

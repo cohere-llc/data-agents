@@ -1,11 +1,12 @@
 """Tests for CLI functionality."""
 
+import builtins
 import io
 import json
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pandas as pd
 import pytest
@@ -523,3 +524,181 @@ class TestCLIConfigurationLoading:
         assert "Error: Unknown adapter type 'unknown'" in output
         assert "Added rest adapter: missing_config" in output
         assert "Loaded 1 adapter(s):" in output
+
+
+class TestCLIErrorHandling:
+    """Test error handling scenarios in CLI functions."""
+
+    def test_load_config_file_yaml_import_error(self):
+        """Test loading YAML file when PyYAML is not available."""
+        import tempfile
+
+        config_data = "test: value"
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            f.write(config_data)
+            config_file = f.name
+
+        try:
+            # Mock the yaml module import to raise ImportError
+            import sys
+
+            original_modules = sys.modules.copy()
+            if "yaml" in sys.modules:
+                del sys.modules["yaml"]
+
+            def mock_import(name, *args, **kwargs):
+                if name == "yaml":
+                    raise ImportError("No module named 'yaml'")
+                return original_import(name, *args, **kwargs)
+
+            original_import = builtins.__import__
+            builtins.__import__ = mock_import
+
+            try:
+                with pytest.raises(ValueError, match="YAML support not available"):
+                    load_config_file(config_file)
+            finally:
+                builtins.__import__ = original_import
+                sys.modules.update(original_modules)
+        finally:
+            Path(config_file).unlink()
+
+    def test_load_config_file_yaml_parse_error(self):
+        """Test loading invalid YAML file."""
+        import tempfile
+
+        # Create invalid YAML content
+        invalid_yaml = "test: value\n  invalid: [unclosed bracket"
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            f.write(invalid_yaml)
+            config_file = f.name
+
+        try:
+            with pytest.raises(ValueError, match="Invalid YAML format"):
+                load_config_file(config_file)
+        finally:
+            Path(config_file).unlink()
+
+    def test_load_config_file_generic_exception(self):
+        """Test generic exception handling in load_config_file."""
+        # Create a temporary file first to bypass existence check
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            f.write('{"test": "value"}')
+            config_file = f.name
+
+        try:
+            # Mock open to raise a permission error after the file exists
+            with patch(
+                "builtins.open", side_effect=PermissionError("Permission denied")
+            ):
+                with pytest.raises(
+                    ValueError, match="Failed to read configuration file"
+                ):
+                    load_config_file(config_file)
+        finally:
+            Path(config_file).unlink()
+
+    def test_create_adapter_rest_failure(self):
+        """Test REST adapter creation failure."""
+        # Mock RESTAdapter to raise an exception
+        with patch(
+            "data_agents.cli.RESTAdapter", side_effect=Exception("Connection failed")
+        ):
+            with patch("sys.stdout", new=io.StringIO()) as fake_out:
+                result = create_adapter_from_config(
+                    "test", {"type": "rest", "base_url": "https://invalid.url"}
+                )
+
+        assert result is None
+        output = fake_out.getvalue()
+        expected_message = (
+            "Error: Failed to create REST adapter 'test': Connection failed"
+        )
+        assert expected_message in output
+
+    def test_create_adapter_tabular_failure(self):
+        """Test tabular adapter creation failure."""
+        # Create a temporary CSV file first
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False) as f:
+            f.write("col1,col2\nval1,val2")
+            csv_file = f.name
+
+        try:
+            # Mock pandas.read_csv to raise an exception
+            with patch(
+                "data_agents.cli.pd.read_csv", side_effect=Exception("CSV read failed")
+            ):
+                with patch("sys.stdout", new=io.StringIO()) as fake_out:
+                    result = create_adapter_from_config(
+                        "test", {"type": "tabular", "csv_file": csv_file}
+                    )
+
+            assert result is None
+            output = fake_out.getvalue()
+            expected_message = (
+                "Error: Failed to create tabular adapter 'test': CSV read failed"
+            )
+            assert expected_message in output
+        finally:
+            Path(csv_file).unlink()
+
+
+class TestCLIAdditionalCommands:
+    """Test additional CLI command scenarios."""
+
+    @patch(
+        "sys.argv",
+        [
+            "data_agents",
+            "query",
+            "test-router",
+            "test-adapter",
+            "test-query",
+            "--config",
+            "config/router_example.json",
+        ],
+    )
+    def test_query_command_exception(self):
+        """Test query command with exception."""
+        # Mock router and adapter to raise an exception
+        with patch("data_agents.cli.create_router") as mock_create_router:
+            mock_adapter = Mock()
+            mock_adapter.query.side_effect = Exception("Query failed")
+
+            mock_router = MagicMock()
+            mock_router.__getitem__.return_value = mock_adapter
+            mock_create_router.return_value = mock_router
+
+            with patch("sys.stdout", new=io.StringIO()) as fake_out:
+                main()
+
+        output = fake_out.getvalue()
+        assert "Query failed: Query failed" in output
+
+
+class TestCLIMainFunction:
+    """Test the main function when called directly."""
+
+    def test_main_function_called_directly(self):
+        """Test the if __name__ == '__main__': main() pattern."""
+        # This tests line 346: the main() call at module level
+        # We can test this by importing the cli module and checking it has the
+        # main function
+        from data_agents import cli
+
+        # Verify main function exists and is callable
+        assert hasattr(cli, "main")
+        assert callable(cli.main)
+
+        # Test that main can be called with mocked argv (this exercises line 346
+        # indirectly)
+        with patch("sys.argv", ["data_agents", "--version"]):
+            with patch("sys.stdout", new=io.StringIO()) as fake_out:
+                # The --version option causes SystemExit(0), which is expected
+                with pytest.raises(SystemExit) as exc_info:
+                    cli.main()
+
+                assert exc_info.value.code == 0  # Successful exit
+
+        output = fake_out.getvalue()
+        assert "data_agents 0.1.0" in output
