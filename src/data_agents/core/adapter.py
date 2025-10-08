@@ -41,8 +41,19 @@ class Adapter(ABC):
     def discover(self) -> dict[str, Any]:
         """Discover capabilities and schema information for the data source.
 
+        This method should return structured information about what can be queried,
+        how to query it, and what the returned data looks like.
+
         Returns:
-            Dictionary containing discovery information about the data source
+            Dictionary containing discovery information with the following structure:
+            - adapter_type: Type of adapter (e.g., 'rest', 'tabular')
+            - record_types: Dict mapping record type names to their descriptions
+              - For TabularAdapter: table names and their schemas
+              - For RESTAdapter: endpoint names and their schemas
+            - query_parameters: Dict describing supported query parameters
+            - data_format: Description of the returned data format
+            - capabilities: Dict of supported operations and features
+            - sample_data: Optional sample records for each record type
         """
         pass
 

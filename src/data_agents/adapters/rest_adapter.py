@@ -230,22 +230,15 @@ class RESTAdapter(Adapter):
         This method performs comprehensive API discovery by:
         1. Testing endpoint availability
         2. Gathering schema information from the same endpoints
-        3. Combining both into a unified discovery result
+        3. Returning standardized discovery information
 
         Returns:
-            Dictionary containing:
-            - base_url: The API base URL
-            - available_endpoints: List of endpoints that respond successfully
-            - endpoints: Schema information for each endpoint including columns,
-              dtypes, and samples
-            - sample_data: Sample records from each endpoint
+            Dictionary containing standardized discovery information including
+            record types (endpoints), query parameters, and data format.
         """
-        discovery_info: dict[str, Any] = {
-            "base_url": self.base_url,
-            "available_endpoints": [],
-            "endpoints": {},
-            "sample_data": {},
-        }
+        record_types = {}
+        sample_data = {}
+        available_endpoints = []
 
         # Use configured endpoints for both availability and schema discovery
         if self.endpoints:
@@ -260,7 +253,7 @@ class RESTAdapter(Adapter):
                         verify=self.verify,
                     )
                     if response.status_code == 200:
-                        discovery_info["available_endpoints"].append(endpoint)
+                        available_endpoints.append(endpoint)
 
                         # 2. Gather schema information for available endpoints
                         try:
@@ -271,21 +264,98 @@ class RESTAdapter(Adapter):
 
                             sample_df = self.query(endpoint, params=params)
                             if not sample_df.empty:
-                                discovery_info["endpoints"][endpoint] = {
+                                record_types[endpoint] = {
+                                    "description": f"REST endpoint: {endpoint}",
                                     "columns": list(sample_df.columns),
                                     "dtypes": sample_df.dtypes.to_dict(),
                                     "sample_count": len(sample_df),
+                                    "endpoint_url": urljoin(
+                                        self.base_url + "/", endpoint
+                                    ),
                                 }
-                                discovery_info["sample_data"][endpoint] = (
-                                    sample_df.head(1).to_dict("records")
+                                sample_data[endpoint] = sample_df.head(1).to_dict(
+                                    "records"
                                 )
                         except Exception:
                             # Endpoint is available but schema discovery failed
-                            # Still keep it in available_endpoints
-                            continue
+                            # Still list it as available
+                            record_types[endpoint] = {
+                                "description": (
+                                    f"REST endpoint: {endpoint} "
+                                    "(schema discovery failed)"
+                                ),
+                                "endpoint_url": urljoin(self.base_url + "/", endpoint),
+                            }
                 except Exception:
                     # Endpoint not available, skip
                     continue
+
+        # Build query parameters information
+        query_parameters = {
+            "endpoint_path": {
+                "description": "Endpoint path to query",
+                "type": "string",
+                "examples": available_endpoints[:3],
+                "required": True,
+            },
+            "params": {
+                "description": "URL query parameters as key-value pairs",
+                "type": "dict",
+                "examples": [{"limit": 10}, {"page": 1}, {"filter": "value"}],
+                "required": False,
+            },
+            "method": {
+                "description": "HTTP method for the request",
+                "type": "string",
+                "examples": ["GET", "POST", "PUT", "DELETE"],
+                "default": "GET",
+                "required": False,
+            },
+            "custom_headers": {
+                "description": "Additional HTTP headers for the request",
+                "type": "dict",
+                "examples": [{"Authorization": "Bearer token"}],
+                "required": False,
+            },
+        }
+
+        # Add pagination parameters if configured
+        if self.pagination_param:
+            query_parameters[self.pagination_param] = {
+                "description": "Pagination parameter for limiting results",
+                "type": "integer",
+                "default": self.pagination_limit,
+                "required": False,
+            }
+
+        discovery_info = {
+            "adapter_type": "rest",
+            "record_types": record_types,
+            "query_parameters": query_parameters,
+            "data_format": {
+                "type": "pandas.DataFrame",
+                "description": (
+                    "Returns JSON API responses converted to pandas DataFrame"
+                ),
+                "structure": "API response data normalized into tabular format",
+            },
+            "capabilities": {
+                "supports_query": True,
+                "supports_http_methods": ["GET", "POST", "PUT", "DELETE"],
+                "supports_pagination": bool(self.pagination_param),
+                "supports_authentication": bool(self.auth),
+                "supports_custom_headers": True,
+            },
+            "sample_data": sample_data,
+            # Legacy fields for backward compatibility
+            "base_url": self.base_url,
+            "available_endpoints": available_endpoints,
+            "endpoints": {
+                ep: record_types[ep]
+                for ep in record_types
+                if ep in available_endpoints
+            },
+        }
 
         # Add OpenAPI information if available
         if self.openapi_specs:

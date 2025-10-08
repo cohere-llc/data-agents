@@ -90,14 +90,31 @@ class TestTabularAdapter:
         discovery = adapter.discover()
 
         assert discovery["adapter_type"] == "tabular"
-        assert "columns" in discovery
-        assert "dtypes" in discovery
-        assert "shape" in discovery
-        assert "sample" in discovery
+        assert "record_types" in discovery
+        assert "query_parameters" in discovery
+        assert "data_format" in discovery
         assert "capabilities" in discovery
-        assert discovery["columns"] == ["col1", "col2"]
-        assert discovery["shape"] == (3, 2)
+        assert "sample_data" in discovery
+
+        # Check record types (table schema)
+        assert "data" in discovery["record_types"]
+        table_info = discovery["record_types"]["data"]
+        assert table_info["columns"] == ["col1", "col2"]
+        assert table_info["shape"] == (3, 2)
+        assert table_info["row_count"] == 3
+
+        # Check capabilities
         assert discovery["capabilities"]["supports_query"] is True
+        assert discovery["capabilities"]["supports_filtering"] is True
+        
+        # Check query parameters
+        assert "column_selection" in discovery["query_parameters"]
+        assert "filter_query" in discovery["query_parameters"]
+        assert "wildcard" in discovery["query_parameters"]
+
+        # Check sample data
+        assert "data" in discovery["sample_data"]
+        assert len(discovery["sample_data"]["data"]) == 3
 
     def test_discover_empty_data(self):
         """Test discovering empty tabular data."""
@@ -105,9 +122,10 @@ class TestTabularAdapter:
         discovery = adapter.discover()
 
         assert discovery["adapter_type"] == "tabular"
-        assert discovery["columns"] == []
-        assert discovery["shape"] == (0, 0)
-        assert discovery["sample"] == {}  # Empty dict, not empty list
+        assert discovery["record_types"] == {}  # No record types for empty data
+        assert "query_parameters" in discovery
+        assert "capabilities" in discovery
+        assert discovery["sample_data"] == {}  # No sample data for empty adapter
 
     def test_add_data(self):
         """Test adding data to adapter."""

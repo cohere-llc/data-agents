@@ -59,19 +59,68 @@ class TabularAdapter(Adapter):
         """Discover capabilities and schema information for the tabular data.
 
         Returns:
-            Dictionary containing column names, types, basic stats, and capabilities
+            Dictionary containing standardized discovery information including
+            record types (table schema), query parameters, and data format.
         """
+        # For TabularAdapter, we have one "table" which is the loaded DataFrame
+        table_name = "data"  # Default table name
+
+        record_types = {}
+        sample_data = {}
+
+        if not self.data.empty:
+            record_types[table_name] = {
+                "description": "Main data table",
+                "columns": list(self.data.columns),
+                "dtypes": self.data.dtypes.to_dict(),
+                "shape": self.data.shape,
+                "row_count": len(self.data),
+            }
+            sample_data[table_name] = self.data.head(3).to_dict("records")
+
         return {
             "adapter_type": "tabular",
-            "columns": list(self.data.columns),
-            "dtypes": self.data.dtypes.to_dict(),
-            "shape": self.data.shape,
-            "sample": self.data.head().to_dict() if not self.data.empty else {},
+            "record_types": record_types,
+            "query_parameters": {
+                "column_selection": {
+                    "description": "Select specific columns by name",
+                    "type": "string",
+                    "examples": list(self.data.columns)[:5]
+                    if not self.data.empty
+                    else [],
+                },
+                "filter_query": {
+                    "description": "Pandas query string for filtering rows",
+                    "type": "string",
+                    "examples": [
+                        "column_name > 10",
+                        "column_name == 'value'",
+                        "column_name.isin(['a', 'b'])",
+                    ]
+                    if not self.data.empty
+                    else [],
+                },
+                "wildcard": {
+                    "description": "Use '*' or 'all' to return all data",
+                    "type": "string",
+                    "examples": ["*", "all"],
+                },
+            },
+            "data_format": {
+                "type": "pandas.DataFrame",
+                "description": (
+                    "Returns data as a pandas DataFrame with columns and rows"
+                ),
+                "structure": "Tabular data with named columns and indexed rows",
+            },
             "capabilities": {
                 "supports_query": True,
                 "supports_filtering": True,
                 "supports_column_selection": True,
+                "supports_aggregation": False,
+                "supports_joins": False,
             },
+            "sample_data": sample_data,
         }
 
     def add_data(self, data: pd.DataFrame) -> None:

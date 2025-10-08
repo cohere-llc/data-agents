@@ -706,9 +706,11 @@ class TestRESTAdapter:
 
         # Should still include endpoint in available_endpoints despite query failure
         assert "users" in discovery["available_endpoints"]
-        assert (
-            "users" not in discovery["endpoints"]
-        )  # No schema info due to query failure
+        # Endpoint should be in record_types but marked as schema discovery failed
+        assert "users" in discovery["record_types"]
+        assert "schema discovery failed" in discovery["record_types"]["users"]["description"]
+        # Should also be in legacy endpoints field for backward compatibility
+        assert "users" in discovery["endpoints"]
 
     @patch("requests.get")
     def test_discover_with_endpoint_availability_failure(self, mock_get):
