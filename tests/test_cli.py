@@ -445,7 +445,14 @@ class TestCLIAdapterCreation:
         adapter = create_adapter_from_config(config)
         assert adapter is None
         captured = capsys.readouterr()
-        assert "Error: Unknown adapter type 'unknown'" in captured.out
+        assert "Error: Unknown adapter type 'unknown'. Supported types: rest, tabular, nasa_power" in captured.out
+
+    def test_create_adapter_from_config_nasa_power_valid(self):
+        """Test creating NASA POWER adapter with valid config."""
+        config = {"type": "nasa_power"}
+        adapter = create_adapter_from_config(config)
+        assert adapter is not None
+        assert adapter.__class__.__name__ == "NasaPowerAdapter"
 
     def test_create_single_adapter_from_config_success(self):
         """Test creating single adapter from config file."""
