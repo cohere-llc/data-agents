@@ -3,12 +3,28 @@
     "httpbin": {
       "type": "rest",
       "base_url": "https://httpbin.org",
-      "config_file": "config/httpbin.rest.adapter.json"
+      "headers": {
+        "User-Agent": "DataAgents-Test/1.0"
+      },
+      "timeout": 10,
+      "endpoints": ["json", "headers", "user-agent"],
+      "pagination_param": null,
+      "pagination_limit": null
     },
     "jsonplaceholder": {
       "type": "rest", 
       "base_url": "https://jsonplaceholder.typicode.com",
-      "config_file": "config/jsonplaceholder.rest.adapter.json"
+      "headers": {
+        "User-Agent": "DataAgents-Test/1.0"
+      },
+      "timeout": 10,
+      "endpoints": [
+        "users",
+        "posts",
+        "comments"
+      ],
+      "pagination_param": "_limit",
+      "pagination_limit": 3
     },
     "sample_data": {
       "type": "tabular",

@@ -16,7 +16,10 @@ The router configuration file should contain an `adapters` section that defines 
     "api_data": {
       "type": "rest",
       "base_url": "https://api.example.com",
-      "config_file": "path/to/rest_config.json"
+      "headers": {
+        "User-Agent": "DataAgents-test/1.0"
+      },
+      "endpoints": ["foo", "bar"]
     },
     "csv_data": {
       "type": "tabular",
@@ -50,7 +53,7 @@ You can also create configuration files for individual adapters:
 {
   "type": "rest",
   "base_url": "https://jsonplaceholder.typicode.com",
-  "config_file": "config/jsonplaceholder.rest.adapter.json"
+  "config_file": "config/jsonplaceholder.adapter.json"
 }
 ```
 
@@ -159,5 +162,5 @@ See the following example files in the repository:
 - `config/example.router.yaml` - Complete YAML router configuration example
 - `config/jsonplaceholder.adapter.json` - Single adapter configuration example
 - `examples/sample_data.csv` - Sample CSV file for testing
-- `config/jsonplaceholder.rest.adapter.json` - Example REST adapter configuration
-- `config/httpbin.rest.adapter.json` - Another REST adapter configuration example
+- `config/jsonplaceholder.adapter.json` - Example REST adapter configuration
+- `config/httpbin.adapter.json` - Another REST adapter configuration example

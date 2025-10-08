@@ -786,7 +786,7 @@ class TestRESTAdapterIntegration:
 
     def test_httpbin_integration(self):
         """Test RESTAdapter with httpbin.org API."""
-        config = load_config("httpbin.rest.adapter.json")
+        config = load_config("httpbin.adapter.json")
 
         adapter = RESTAdapter("https://httpbin.org", config)
 
@@ -828,7 +828,7 @@ class TestRESTAdapterIntegration:
 
     def test_rest_countries_integration(self):
         """Test RESTAdapter with REST Countries API."""
-        config = load_config("rest_countries.rest.adapter.json")
+        config = load_config("rest_countries.adapter.json")
 
         adapter = RESTAdapter("https://restcountries.com", config)
 
@@ -871,7 +871,7 @@ class TestRESTAdapterIntegration:
 
     def test_jsonplaceholder_integration(self):
         """Test RESTAdapter with JSONPlaceholder API (original working example)."""
-        config = load_config("jsonplaceholder.rest.adapter.json")
+        config = load_config("jsonplaceholder.adapter.json")
 
         adapter = RESTAdapter("https://jsonplaceholder.typicode.com", config)
 
@@ -997,7 +997,7 @@ class TestRESTAdapterIntegration:
     def test_nasa_power_openapi_integration(self):
         """Test RESTAdapter with NASA Power API using OpenAPI specification."""
         try:
-            config = load_config("nasapower.rest.adapter.json")
+            config = load_config("nasapower.adapter.json")
             adapter = RESTAdapter("https://power.larc.nasa.gov/api", config)
 
             # Test that OpenAPI spec was loaded and endpoints were discovered

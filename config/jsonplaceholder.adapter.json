@@ -1,5 +1,15 @@
 {
-  "type": "rest",
-  "base_url": "https://jsonplaceholder.typicode.com",
-  "config_file": "config/jsonplaceholder.rest.adapter.json"
+    "type": "rest",
+    "base_url": "https://jsonplaceholder.typicode.com",
+    "headers": {
+        "User-Agent": "DataAgents-Test/1.0"
+    },
+    "timeout": 10,
+    "endpoints": [
+        "users",
+        "posts",
+        "comments"
+    ],
+    "pagination_param": "_limit",
+    "pagination_limit": 3
 }

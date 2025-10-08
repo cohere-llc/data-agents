@@ -64,7 +64,7 @@ class TestCLIRouterConfigExamples:
         rest_config = {
             "type": "rest",
             "base_url": "https://jsonplaceholder.typicode.com",
-            "config_file": "config/jsonplaceholder.rest.adapter.json",
+            "config_file": "config/jsonplaceholder.adapter.json",
         }
 
         assert rest_config["type"] == "rest"
@@ -102,8 +102,8 @@ class TestCLIRouterConfigExamples:
             "config/example.router.yaml",
             "config/jsonplaceholder.adapter.json",
             "examples/sample_data.csv",
-            "config/jsonplaceholder.rest.adapter.json",
-            "config/httpbin.rest.adapter.json",
+            "config/jsonplaceholder.adapter.json",
+            "config/httpbin.adapter.json",
         ]
 
         for file_path in expected_files:

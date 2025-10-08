@@ -1,3 +1,5 @@
 {
+    "type": "rest",
+    "base_url": "https://power.larc.nasa.gov/api/temporal/daily",
     "openapi_data": [ "https://power.larc.nasa.gov/api/temporal/daily/openapi.json" ]
 }
