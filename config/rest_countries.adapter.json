@@ -1,4 +1,6 @@
 {
+    "type": "rest",
+    "base_url": "https://restcountries.com",
     "headers": {
         "User-Agent": "DataAgents-Test/1.0"
     },

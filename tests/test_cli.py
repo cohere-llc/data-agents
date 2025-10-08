@@ -376,18 +376,6 @@ class TestCLIAdapterCreation:
         finally:
             os.unlink(rest_config_file)
 
-    def test_create_adapter_from_config_rest_invalid_config_file(self, capsys):
-        """Test creating REST adapter with invalid config file."""
-        config = {
-            "type": "rest",
-            "base_url": "https://api.example.com",
-            "config_file": "nonexistent.json",
-        }
-        adapter = create_adapter_from_config(config)
-        assert adapter is not None  # Should still create adapter with warning
-        captured = capsys.readouterr()
-        assert "Warning: Failed to load REST adapter config" in captured.out
-
     def test_create_adapter_from_config_rest_creation_error(self, capsys):
         """Test REST adapter creation failure."""
         config = {

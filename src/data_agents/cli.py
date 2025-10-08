@@ -83,22 +83,13 @@ def create_adapter_from_config(
 
     if adapter_type == "rest":
         base_url = adapter_config.get("base_url")
-        config_file = adapter_config.get("config_file")
 
         if not base_url:
             print("Error: REST adapter missing required 'base_url'")
             return None
 
-        # Load REST adapter configuration if provided
-        rest_config = {}
-        if config_file:
-            try:
-                rest_config = load_config_file(config_file)
-            except (FileNotFoundError, ValueError) as e:
-                print(f"Warning: Failed to load REST adapter config: {e}")
-
         try:
-            return RESTAdapter(base_url, rest_config)
+            return RESTAdapter(base_url, adapter_config)
         except Exception as e:
             print(f"Error: Failed to create REST adapter: {e}")
             return None
