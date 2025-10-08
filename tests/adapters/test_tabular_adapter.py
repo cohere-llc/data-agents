@@ -18,28 +18,28 @@ class TestTabularAdapter:
     def test_init_with_data(self):
         """Test TabularAdapter initialization with data."""
         data = pd.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
-        adapter = TabularAdapter(data)
+        adapter = TabularAdapter({"data": data})
         pd.testing.assert_frame_equal(adapter.data, data)
 
     def test_init_with_config(self):
         """Test TabularAdapter initialization with configuration."""
         config = {"setting1": "value1", "setting2": 42}
         data = pd.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
-        adapter = TabularAdapter(data, config)
+        adapter = TabularAdapter({"data": data}, config)
         assert adapter.config == config
         pd.testing.assert_frame_equal(adapter.data, data)
 
     def test_query_all(self):
         """Test querying all data."""
         data = pd.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
-        adapter = TabularAdapter(data)
+        adapter = TabularAdapter({"data": data})
         result = adapter.query("*")
         pd.testing.assert_frame_equal(result, data)
 
     def test_query_column(self):
         """Test querying specific column."""
         data = pd.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
-        adapter = TabularAdapter(data)
+        adapter = TabularAdapter({"data": data})
         result = adapter.query("col1")
         expected = data[["col1"]]
         pd.testing.assert_frame_equal(result, expected)
@@ -49,7 +49,7 @@ class TestTabularAdapter:
         data = pd.DataFrame(
             {"col1": [1, 2, 3], "col2": ["a", "b", "c"], "col3": [10, 20, 30]}
         )
-        adapter = TabularAdapter(data)
+        adapter = TabularAdapter({"data": data})
         # Note: TabularAdapter doesn't support comma-separated columns
         # in current implementation
         # This test would need either modification of TabularAdapter or
@@ -61,7 +61,7 @@ class TestTabularAdapter:
     def test_query_filter(self):
         """Test querying with filter."""
         data = pd.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
-        adapter = TabularAdapter(data)
+        adapter = TabularAdapter({"data": data})
         result = adapter.query("col1 > 1")
         expected = data[data["col1"] > 1]
         pd.testing.assert_frame_equal(result, expected)
@@ -69,7 +69,7 @@ class TestTabularAdapter:
     def test_query_invalid_column(self):
         """Test querying with invalid column name."""
         data = pd.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
-        adapter = TabularAdapter(data)
+        adapter = TabularAdapter({"data": data})
 
         # TabularAdapter returns empty DataFrame instead of raising exception
         result = adapter.query("nonexistent_column")
@@ -78,7 +78,7 @@ class TestTabularAdapter:
     def test_query_invalid_filter(self):
         """Test querying with invalid filter expression."""
         data = pd.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
-        adapter = TabularAdapter(data)
+        adapter = TabularAdapter({"data": data})
 
         # TabularAdapter returns empty DataFrame for invalid queries
         result = adapter.query("invalid_column > 1")
@@ -87,7 +87,7 @@ class TestTabularAdapter:
     def test_discover(self):
         """Test discovering tabular data information."""
         data = pd.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
-        adapter = TabularAdapter(data)
+        adapter = TabularAdapter({"data": data})
         discovery = adapter.discover()
 
         assert discovery["adapter_type"] == "tabular"
@@ -140,7 +140,7 @@ class TestTabularAdapter:
         original_data = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
         new_data = pd.DataFrame({"col3": [3, 4], "col4": ["c", "d"]})
 
-        adapter = TabularAdapter(original_data)
+        adapter = TabularAdapter({"data": original_data})
         adapter.add_data(new_data)
         pd.testing.assert_frame_equal(adapter.data, new_data)
 
@@ -148,7 +148,7 @@ class TestTabularAdapter:
         """Test adapter information dictionary."""
         data = pd.DataFrame({"col1": [1, 2, 3], "col2": ["a", "b", "c"]})
         config = {"setting": "value"}
-        adapter = TabularAdapter(data, config)
+        adapter = TabularAdapter({"data": data}, config)
 
         info = adapter.to_dict()
         assert info["type"] == "TabularAdapter"
@@ -177,25 +177,8 @@ class TestTabularAdapterMultiTable:
 
     def test_init_with_invalid_data_type(self):
         """Test initialization with completely invalid data type."""
-        with pytest.raises(ValueError, match="data must be a DataFrame or dict of DataFrames"):
+        with pytest.raises(ValueError, match="data must be a dict of DataFrames"):
             TabularAdapter("invalid data type")
-
-    def test_backward_compatibility_data_property(self):
-        """Test that the data property provides backward compatibility."""
-        df1 = pd.DataFrame({"id": [1, 2], "name": ["Alice", "Bob"]})
-        df2 = pd.DataFrame({"product_id": [1, 2], "product": ["Widget", "Gadget"]})
-        
-        # Single DataFrame initialization
-        adapter_single = TabularAdapter(df1)
-        pd.testing.assert_frame_equal(adapter_single.data, df1)
-        
-        # Multiple tables - should return first table
-        adapter_multi = TabularAdapter({"users": df1, "products": df2})
-        pd.testing.assert_frame_equal(adapter_multi.data, df1)
-        
-        # Empty adapter
-        adapter_empty = TabularAdapter()
-        assert adapter_empty.data.empty
 
     def test_query_table_by_name(self):
         """Test querying entire tables by name."""

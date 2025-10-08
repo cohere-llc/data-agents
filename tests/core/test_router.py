@@ -190,8 +190,8 @@ class TestRouter:
         data1 = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
         data2 = pd.DataFrame({"col1": [3, 4], "col2": ["c", "d"]})
 
-        adapter1 = TabularAdapter(data1)
-        adapter2 = TabularAdapter(data2)
+        adapter1 = TabularAdapter({"data": data1})
+        adapter2 = TabularAdapter({"data": data2})
 
         router["adapter1"] = adapter1
         router["adapter2"] = adapter2
@@ -208,7 +208,7 @@ class TestRouter:
         router = Router()
         data = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
 
-        good_adapter = TabularAdapter(data)
+        good_adapter = TabularAdapter({"data": data})
         bad_adapter = MagicMock()
         bad_adapter.query.side_effect = Exception("Query failed")
 
@@ -228,8 +228,8 @@ class TestRouter:
         data1 = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
         data2 = pd.DataFrame({"col1": [3, 4], "col2": ["c", "d"]})
 
-        adapter1 = TabularAdapter(data1)
-        adapter2 = TabularAdapter(data2)
+        adapter1 = TabularAdapter({"data": data1})
+        adapter2 = TabularAdapter({"data": data2})
 
         router["adapter1"] = adapter1
         router["adapter2"] = adapter2
@@ -246,7 +246,7 @@ class TestRouter:
         router = Router()
         data = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
 
-        good_adapter = TabularAdapter(data)
+        good_adapter = TabularAdapter({"data": data})
         bad_adapter = MagicMock()
         bad_adapter.discover.side_effect = Exception("Discovery failed")
 
@@ -264,7 +264,7 @@ class TestRouter:
         """Test router information dictionary."""
         router = Router()
         data = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
-        adapter = TabularAdapter(data)
+        adapter = TabularAdapter({"data": data})
         router["test-adapter"] = adapter
 
         info = router.to_dict()

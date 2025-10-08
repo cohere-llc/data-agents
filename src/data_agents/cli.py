@@ -108,7 +108,7 @@ def create_adapter_from_config(
                 return None
 
             data = pd.read_csv(csv_file)
-            return TabularAdapter(data)
+            return TabularAdapter({"data": data})
         except Exception as e:
             print(f"Error: Failed to create tabular adapter: {e}")
             return None
@@ -254,8 +254,8 @@ def main() -> None:
         )
 
         # Create adapters
-        customers_adapter = TabularAdapter(customers_data)
-        orders_adapter = TabularAdapter(orders_data)
+        customers_adapter = TabularAdapter({"customers": customers_data})
+        orders_adapter = TabularAdapter({"orders": orders_data})
 
         # Add adapters to router using bracket notation
         router["customers"] = customers_adapter

@@ -19,15 +19,14 @@ class TabularAdapter(Adapter):
 
     def __init__(
         self,
-        data: pd.DataFrame | dict[str, pd.DataFrame] | None = None,
+        data: dict[str, pd.DataFrame] | None = None,
         config: dict[str, Any] | None = None,
     ):
         """Initialize the tabular adapter.
 
         Args:
-            data: Optional DataFrame or dict of named DataFrames to use as data sources.
-                  If a single DataFrame is provided, it will be stored as "data".
-                  If a dict is provided, each key-value pair represents a named table.
+            data: Optional dict of named DataFrames to use as data sources.
+                  Each key-value pair represents a named table.
             config: Optional configuration dictionary
         """
         super().__init__(config)
@@ -36,10 +35,7 @@ class TabularAdapter(Adapter):
         self.tables: dict[str, pd.DataFrame] = {}
 
         if data is not None:
-            if isinstance(data, pd.DataFrame):
-                # Single DataFrame - store as "data" table
-                self.tables["data"] = data.copy()
-            elif isinstance(data, dict):
+            if isinstance(data, dict):
                 # Multiple named DataFrames
                 for name, df in data.items():
                     if isinstance(df, pd.DataFrame):
@@ -51,7 +47,7 @@ class TabularAdapter(Adapter):
                         )
             else:
                 raise ValueError(
-                    f"data must be a DataFrame or dict of DataFrames, got {type(data)}"
+                    f"data must be a dict of DataFrames, got {type(data)}"
                 )
 
     @property

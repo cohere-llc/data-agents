@@ -90,7 +90,7 @@ def main() -> None:
         }
     )
 
-    local_adapter = TabularAdapter("local_scores", local_data)
+    local_adapter = TabularAdapter({"local_scores": local_data})
     router.register_adapter(local_adapter)
 
     print(f"Router has {len(router.list_adapters())} adapters:")

@@ -39,7 +39,7 @@ class TestREADMEExamples:
         )
 
         # Create adapters for the data
-        customers_adapter = TabularAdapter(customers_data)
+        customers_adapter = TabularAdapter({"customers": customers_data})
         api_adapter = RESTAdapter("https://api.example.com")
 
         # Add adapters to the router
@@ -119,9 +119,9 @@ class TestREADMEExamples:
         )
 
         # Create multiple adapters for different data sources
-        customers_adapter = TabularAdapter(customers_df)
-        orders_adapter = TabularAdapter(orders_df)
-        products_adapter = TabularAdapter(products_df)
+        customers_adapter = TabularAdapter({"customers": customers_df})
+        orders_adapter = TabularAdapter({"orders": orders_df})
+        products_adapter = TabularAdapter({"products": products_df})
 
         # Create a router and add all adapters
         router = Router()
