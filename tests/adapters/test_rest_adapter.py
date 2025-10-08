@@ -560,10 +560,10 @@ class TestRESTAdapter:
         discovery = adapter.discover()
 
         # Should find users and posts endpoints (not comments or nonexistent)
-        assert "users" in discovery["available_endpoints"]
-        assert "posts" in discovery["available_endpoints"]
-        assert "comments" not in discovery["available_endpoints"]
-        assert "nonexistent" not in discovery["available_endpoints"]
+        assert "users" in discovery["endpoints"]
+        assert "posts" in discovery["endpoints"]
+        assert "comments" not in discovery["endpoints"]
+        assert "nonexistent" not in discovery["endpoints"]
 
     @patch("requests.get")
     @patch("data_agents.adapters.rest_adapter.RESTAdapter.query")
@@ -606,25 +606,21 @@ class TestRESTAdapter:
 
         # Test discovery structure
         assert discovery["base_url"] == "https://api.example.com"
-        assert "available_endpoints" in discovery
         assert "endpoints" in discovery
-        assert "sample_data" in discovery
 
-        # Test available endpoints
-        assert "users" in discovery["available_endpoints"]
-        assert "posts" in discovery["available_endpoints"]
-        assert "comments" not in discovery["available_endpoints"]
-        assert "nonexistent" not in discovery["available_endpoints"]
-
-        # Test schema information
+        # Test available endpoints (now in endpoints dict)
         assert "users" in discovery["endpoints"]
         assert "posts" in discovery["endpoints"]
-        assert discovery["endpoints"]["users"]["columns"] == ["id", "name"]
-        assert discovery["endpoints"]["posts"]["columns"] == ["id", "title", "userId"]
+        assert "comments" not in discovery["endpoints"]
+        assert "nonexistent" not in discovery["endpoints"]
 
-        # Test sample data
-        assert "users" in discovery["sample_data"]
-        assert "posts" in discovery["sample_data"]
+        # Test endpoint structure (new format)
+        assert discovery["endpoints"]["users"]["description"] == "REST endpoint: users"
+        assert discovery["endpoints"]["posts"]["description"] == "REST endpoint: posts"
+        assert "response_format" in discovery["endpoints"]["users"]
+        assert "response_format" in discovery["endpoints"]["posts"]
+        assert discovery["endpoints"]["users"]["response_format"]["columns"] == ["id", "name"]
+        assert discovery["endpoints"]["posts"]["response_format"]["columns"] == ["id", "title", "userId"]
 
     def test_discover_no_config(self):
         """Test discovery with no configuration."""
@@ -633,9 +629,7 @@ class TestRESTAdapter:
 
         # Should return basic discovery with no endpoints when no endpoints configured
         assert discovery["base_url"] == "https://api.example.com"
-        assert discovery["available_endpoints"] == []
         assert discovery["endpoints"] == {}
-        assert discovery["sample_data"] == {}
 
     @patch("requests.get")
     @patch("data_agents.adapters.rest_adapter.RESTAdapter.query")
@@ -681,8 +675,8 @@ class TestRESTAdapter:
         assert discovery["base_url"] == "https://api.example.com"
         assert "users" in discovery["endpoints"]
         assert "posts" in discovery["endpoints"]
-        assert discovery["endpoints"]["users"]["columns"] == ["id", "name"]
-        assert discovery["endpoints"]["posts"]["columns"] == ["id", "title", "userId"]
+        assert discovery["endpoints"]["users"]["response_format"]["columns"] == ["id", "name"]
+        assert discovery["endpoints"]["posts"]["response_format"]["columns"] == ["id", "title", "userId"]
 
     @patch("requests.get")
     @patch("data_agents.adapters.rest_adapter.RESTAdapter.query")
@@ -704,11 +698,10 @@ class TestRESTAdapter:
         adapter = RESTAdapter("https://api.example.com", config)
         discovery = adapter.discover()
 
-        # Should still include endpoint in available_endpoints despite query failure
-        assert "users" in discovery["available_endpoints"]
-        # Endpoint should be in record_types but marked as schema discovery failed
-        assert "users" in discovery["record_types"]
-        assert "schema discovery failed" in discovery["record_types"]["users"]["description"]
+        # Should still include endpoint in endpoints despite query failure
+        assert "users" in discovery["endpoints"]
+        # Endpoint should be available but have basic information only
+        assert discovery["endpoints"]["users"]["description"] == "REST endpoint: users"
         # Should also be in legacy endpoints field for backward compatibility
         assert "users" in discovery["endpoints"]
 
@@ -723,7 +716,6 @@ class TestRESTAdapter:
         discovery = adapter.discover()
 
         # Should handle errors gracefully
-        assert discovery["available_endpoints"] == []
         assert discovery["endpoints"] == {}
 
     def test_discover_with_openapi_raw_spec_info(self):
@@ -751,16 +743,9 @@ class TestRESTAdapter:
 
         # OpenAPI info should be added regardless of endpoint discovery results
         assert "openapi_info" in discovery
-        assert len(discovery["openapi_info"]) == 1
-
-        openapi_info = discovery["openapi_info"][0]
-        assert openapi_info["title"] == "Test API"
-        assert openapi_info["version"] == "1.0.0"
-        assert openapi_info["description"] == "A test API"
-        assert openapi_info["servers"] == ["https://api.example.com"]
-        assert "/users" in openapi_info["paths"]
-        assert "/posts" in openapi_info["paths"]
-        assert openapi_info["source_url"] == "https://api.example.com/openapi.json"
+        assert discovery["openapi_info"]["title"] == "Test API"
+        assert discovery["openapi_info"]["version"] == "1.0.0"
+        assert discovery["openapi_info"]["description"] == "A test API"
 
     def test_discover_with_openapi_proper_spec_info(self):
         """Test discover with proper OpenAPI spec object information."""
@@ -781,15 +766,9 @@ class TestRESTAdapter:
         discovery = adapter.discover()
 
         assert "openapi_info" in discovery
-        assert len(discovery["openapi_info"]) == 1
-
-        openapi_info = discovery["openapi_info"][0]
-        assert openapi_info["title"] == "Proper API"
-        assert openapi_info["version"] == "2.0.0"
-        assert openapi_info["description"] == "A proper OpenAPI spec"
-        assert openapi_info["servers"] == ["https://proper.api.com"]
-        assert "/users" in openapi_info["paths"]
-        assert "/items" in openapi_info["paths"]
+        assert discovery["openapi_info"]["title"] == "Proper API"
+        assert discovery["openapi_info"]["version"] == "2.0.0"
+        assert discovery["openapi_info"]["description"] == "A proper OpenAPI spec"
 
     def test_discover_with_openapi_no_servers(self):
         """Test discover with OpenAPI spec that has no servers."""
@@ -806,8 +785,9 @@ class TestRESTAdapter:
         discovery = adapter.discover()
 
         assert "openapi_info" in discovery
-        openapi_info = discovery["openapi_info"][0]
-        assert openapi_info["servers"] == []
+        assert discovery["openapi_info"]["title"] == "No Servers API"
+        assert discovery["openapi_info"]["version"] == "1.0.0"
+        assert discovery["openapi_info"]["description"] == "API without servers"
 
     def test_discover_with_openapi_no_info(self):
         """Test discover with OpenAPI spec that has no info section."""
@@ -821,11 +801,8 @@ class TestRESTAdapter:
 
         discovery = adapter.discover()
 
-        assert "openapi_info" in discovery
-        openapi_info = discovery["openapi_info"][0]
-        assert openapi_info["title"] == "Unknown"
-        assert openapi_info["version"] == "Unknown"
-        assert openapi_info["description"] == ""
+        # When there's no info section, openapi_info should not be present
+        assert "openapi_info" not in discovery
 
 
 class TestRESTAdapterIntegration:
