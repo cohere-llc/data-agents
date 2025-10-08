@@ -123,17 +123,35 @@ class RESTAdapter(Adapter):
             # Extract endpoints from OpenAPI specs if not explicitly provided
             if not self.endpoints and self.openapi_specs:
                 self.endpoints = []
+                # Extract the path part of the base URL to compare against OpenAPI paths
+                from urllib.parse import urlparse
+
+                base_parsed = urlparse(self.base_url)
+                base_path = base_parsed.path.rstrip("/")
+
                 for spec in self.openapi_specs:
                     if isinstance(spec, dict) and "_raw_spec" in spec:
                         # Handle raw spec fallback
                         raw_spec = spec["_raw_spec"]
                         if "paths" in raw_spec:
                             for path in raw_spec["paths"].keys():
-                                self.endpoints.append(path.lstrip("/"))
+                                # Remove base path if the OpenAPI path includes it
+                                if base_path and path.startswith(base_path):
+                                    endpoint = path[len(base_path) :].lstrip("/")
+                                else:
+                                    endpoint = path.lstrip("/")
+                                if endpoint:  # Only add non-empty endpoints
+                                    self.endpoints.append(endpoint)
                     elif hasattr(spec, "paths") and spec.paths:
                         # Handle proper OpenAPI object
                         for path in spec.paths:
-                            self.endpoints.append(path.lstrip("/"))
+                            # Remove base path if the OpenAPI path includes it
+                            if base_path and path.startswith(base_path):
+                                endpoint = path[len(base_path) :].lstrip("/")
+                            else:
+                                endpoint = path.lstrip("/")
+                            if endpoint:  # Only add non-empty endpoints
+                                self.endpoints.append(endpoint)
                 self.endpoints = list(set(self.endpoints))  # Deduplicate
 
         # Set default headers

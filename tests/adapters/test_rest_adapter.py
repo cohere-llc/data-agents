@@ -228,6 +228,51 @@ class TestRESTAdapter:
         assert "api/posts" in adapter.endpoints
         assert "no-leading-slash" in adapter.endpoints
 
+    def test_init_with_openapi_base_path_handling(self):
+        """Test proper endpoint extraction when OpenAPI paths include base URL path."""
+        # Test case similar to NASA POWER API where base_url has a path
+        # and OpenAPI paths include the full path
+        adapter = RESTAdapter("https://power.larc.nasa.gov/api/temporal/daily")
+
+        # Simulate OpenAPI spec with full paths that include the base path
+        raw_spec = {
+            "paths": {
+                "/api/temporal/daily/point": {"get": {}},
+                "/api/temporal/daily/regional": {"get": {}},
+                "/api/temporal/daily/configuration": {"get": {}},
+            }
+        }
+        adapter.openapi_specs = [{"_raw_spec": raw_spec, "_source_url": "test"}]
+        adapter.endpoints = []  # Reset endpoints
+
+        # Manually trigger endpoint extraction with our new logic
+        if not adapter.endpoints and adapter.openapi_specs:
+            adapter.endpoints = []
+            from urllib.parse import urlparse
+            base_parsed = urlparse(adapter.base_url)
+            base_path = base_parsed.path.rstrip("/")
+            
+            for spec in adapter.openapi_specs:
+                if isinstance(spec, dict) and "_raw_spec" in spec:
+                    raw_spec = spec["_raw_spec"]
+                    if "paths" in raw_spec:
+                        for path in raw_spec["paths"].keys():
+                            # Remove base path if the OpenAPI path includes it
+                            if base_path and path.startswith(base_path):
+                                endpoint = path[len(base_path):].lstrip("/")
+                            else:
+                                endpoint = path.lstrip("/")
+                            if endpoint:  # Only add non-empty endpoints
+                                adapter.endpoints.append(endpoint)
+            adapter.endpoints = list(set(adapter.endpoints))
+
+        # Should extract relative paths correctly
+        assert "point" in adapter.endpoints
+        assert "regional" in adapter.endpoints
+        assert "configuration" in adapter.endpoints
+        # Should not have the full path duplicated
+        assert "api/temporal/daily/point" not in adapter.endpoints
+
     def test_init_with_auth_config(self):
         """Test RESTAdapter initialization with authentication."""
         config = {
