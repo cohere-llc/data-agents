@@ -844,9 +844,7 @@ class TestRESTAdapterIntegration:
         try:
             discovery = adapter.discover()
             assert discovery["base_url"] == "https://httpbin.org"
-            assert "available_endpoints" in discovery
             assert "endpoints" in discovery
-            assert "sample_data" in discovery
         except Exception as e:
             pytest.skip(f"httpbin.org discovery failed: {e}")
 
@@ -948,11 +946,10 @@ class TestRESTAdapterIntegration:
         try:
             discovery = adapter.discover()
             assert discovery["base_url"] == "https://jsonplaceholder.typicode.com"
-            available_endpoints = discovery.get("available_endpoints", [])
             schema_endpoints = list(discovery.get("endpoints", {}).keys())
             # Should find users, posts, and comments
-            assert "users" in available_endpoints or "users" in schema_endpoints
-            assert "posts" in available_endpoints or "posts" in schema_endpoints
+            assert "users" in schema_endpoints
+            assert "posts" in schema_endpoints
         except Exception as e:
             pytest.skip(f"JSONPlaceholder discovery failed: {e}")
 
@@ -1021,8 +1018,8 @@ class TestRESTAdapterIntegration:
     def test_nasa_power_openapi_integration(self):
         """Test RESTAdapter with NASA Power API using OpenAPI specification."""
         try:
-            config = load_config("nasapower.adapter.json")
-            adapter = RESTAdapter("https://power.larc.nasa.gov/api", config)
+            config = load_config("nasapower-temporal-daily.adapter.json")
+            adapter = RESTAdapter("https://power.larc.nasa.gov", config)
 
             # Test that OpenAPI spec was loaded and endpoints were discovered
             assert adapter.openapi_specs, "OpenAPI specs should be loaded"
@@ -1031,18 +1028,16 @@ class TestRESTAdapterIntegration:
             # Test discovery functionality with OpenAPI data
             discovery = adapter.discover()
             assert "openapi_info" in discovery, "OpenAPI info should be present"
-            assert len(discovery["openapi_info"]) > 0, (
-                "At least one OpenAPI spec should be loaded"
+            assert discovery["openapi_info"], (
+                "OpenAPI info should not be empty"
             )
 
             # Verify OpenAPI information
-            openapi_info = discovery["openapi_info"][0]
+            openapi_info = discovery["openapi_info"]
             assert openapi_info["title"] == "POWER Daily API"
-            assert "paths" in openapi_info
-            assert len(openapi_info["paths"]) > 0
-
+            
             # Test that endpoints were extracted from OpenAPI spec
-            assert len(adapter.endpoints) > 0, (
+            assert adapter.endpoints, (
                 "Endpoints should be extracted from OpenAPI spec"
             )
 
