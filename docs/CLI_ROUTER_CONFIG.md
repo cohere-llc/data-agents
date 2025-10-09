@@ -213,7 +213,9 @@ This will show:
 
 ### Querying NASA POWER Data
 
-NASA POWER queries use parameter names (like 'T2M' for temperature, 'PRECTOTCORR' for precipitation) with additional parameters passed as query arguments.
+NASA POWER queries use parameter names (like 'T2M' for temperature, 'PRECTOTCORR' for precipitation) followed by additional parameters as key=value pairs in the query string.
+
+**Query Format**: `"PARAMETER_NAME key=value key2=value2 ..."`
 
 #### Point Data Queries
 
@@ -221,49 +223,46 @@ Query data for a specific location (latitude/longitude):
 
 ```bash
 # Temperature data for New York City
-uv run data-agents query "T2M" \
-  --adapter-config config/nasa_power.adapter.json \
-  --params '{"latitude": 40.7128, "longitude": -74.0060, "start": "20240101", "end": "20240107", "community": "AG", "temporal": "daily", "spatial_type": "point"}'
+uv run data-agents query "T2M latitude=40.7128 longitude=-74.0060 start=20240101 end=20240107 community=AG temporal=daily spatial_type=point" \
+  --adapter-config config/nasa_power.adapter.json
 
 # Precipitation data for Los Angeles
-uv run data-agents query "PRECTOTCORR" \
-  --adapter-config config/nasa_power.adapter.json \
-  --params '{"latitude": 34.0522, "longitude": -118.2437, "start": "20240601", "end": "20240630", "community": "AG", "temporal": "daily", "spatial_type": "point"}'
+uv run data-agents query "PRECTOTCORR latitude=34.0522 longitude=-118.2437 start=20240601 end=20240630 community=AG temporal=daily spatial_type=point" \
+  --adapter-config config/nasa_power.adapter.json
 
 # Solar irradiance for Phoenix
-uv run data-agents query "ALLSKY_SFC_SW_DWN" \
-  --adapter-config config/nasa_power.adapter.json \
-  --params '{"latitude": 33.4484, "longitude": -112.0740, "start": "20240301", "end": "20240331", "community": "RE", "temporal": "daily", "spatial_type": "point"}'
+uv run data-agents query "ALLSKY_SFC_SW_DWN latitude=33.4484 longitude=-112.0740 start=20240301 end=20240331 community=RE temporal=daily spatial_type=point" \
+  --adapter-config config/nasa_power.adapter.json
 ```
 
 #### Regional Data Queries
 
-Query data for a geographic region:
+Query data for a geographic region (requires minimum region size):
 
 ```bash
-# Temperature data for Northeast US region
-uv run data-agents query "T2M" \
-  --adapter-config config/nasa_power.adapter.json \
-  --params '{"latitude_min": 40.0, "latitude_max": 45.0, "longitude_min": -80.0, "longitude_max": -70.0, "start": "20240101", "end": "20240102", "community": "AG", "temporal": "daily", "spatial_type": "regional"}'
+# Temperature data for Northeast US region (2-degree minimum region)
+uv run data-agents query "T2M latitude_min=40.0 latitude_max=42.0 longitude_min=-76.0 longitude_max=-74.0 start=20240101 end=20240102 community=AG temporal=daily spatial_type=regional" \
+  --adapter-config config/nasa_power.adapter.json
 
 # Wind speed for Great Plains region
-uv run data-agents query "WS2M" \
-  --adapter-config config/nasa_power.adapter.json \
-  --params '{"latitude_min": 35.0, "latitude_max": 45.0, "longitude_min": -105.0, "longitude_max": -95.0, "start": "20240101", "end": "20240101", "community": "RE", "temporal": "daily", "spatial_type": "regional"}'
+uv run data-agents query "WS2M latitude_min=35.0 latitude_max=45.0 longitude_min=-105.0 longitude_max=-95.0 start=20240101 end=20240101 community=RE temporal=daily spatial_type=regional" \
+  --adapter-config config/nasa_power.adapter.json
 ```
 
 #### Monthly and Climatology Data
 
 ```bash
-# Monthly temperature averages
-uv run data-agents query "T2M" \
-  --adapter-config config/nasa_power.adapter.json \
-  --params '{"latitude": 40.7128, "longitude": -74.0060, "start": "202401", "end": "202412", "community": "AG", "temporal": "monthly", "spatial_type": "point"}'
+# Monthly temperature averages (requires YYYY format for start/end)
+uv run data-agents query "T2M latitude=40.7128 longitude=-74.0060 start=2024 end=2024 community=AG temporal=monthly spatial_type=point" \
+  --adapter-config config/nasa_power.adapter.json
 
-# Long-term climatology data (30-year averages)
-uv run data-agents query "T2M" \
-  --adapter-config config/nasa_power.adapter.json \
-  --params '{"latitude": 40.7128, "longitude": -74.0060, "community": "AG", "temporal": "climatology", "spatial_type": "point"}'
+# Long-term climatology data (start/end are optional, defaults to 2001-2020)
+uv run data-agents query "T2M latitude=40.7128 longitude=-74.0060 community=AG temporal=climatology spatial_type=point" \
+  --adapter-config config/nasa_power.adapter.json
+
+# Climatology data with custom year range
+uv run data-agents query "T2M latitude=40.7128 longitude=-74.0060 start=2010 end=2020 community=AG temporal=climatology spatial_type=point" \
+  --adapter-config config/nasa_power.adapter.json
 ```
 
 ### Required Parameters
@@ -274,9 +273,10 @@ All NASA POWER queries require:
 - **temporal**: One of 'daily', 'monthly', 'climatology', 'hourly'
 - **spatial_type**: Either 'point' or 'regional'
 
-For temporal frequencies other than 'climatology':
-- **start**: Start date in YYYYMMDD format (or YYYYMM for monthly)
-- **end**: End date in YYYYMMDD format (or YYYYMM for monthly)
+For temporal frequencies:
+- **daily/hourly**: Require start and end dates in YYYYMMDD format
+- **monthly**: Require start and end years in YYYY format
+- **climatology**: Start and end years are optional (YYYY format, defaults to 2001-2020)
 
 ### Spatial Parameters
 

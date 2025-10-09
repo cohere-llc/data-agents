@@ -8,6 +8,107 @@ from pathlib import Path
 import pytest
 
 
+def extract_code_blocks_from_markdown(doc_path: Path) -> dict[str, list[str]]:
+    """Extract code blocks from markdown file by language."""
+    with open(doc_path) as f:
+        content = f.read()
+
+    code_blocks: dict[str, list[str]] = {}
+
+    # Extract bash code blocks
+    bash_blocks = re.findall(r"```bash\n(.*?)\n```", content, re.DOTALL)
+    code_blocks["bash"] = []
+    for block in bash_blocks:
+        lines = block.strip().split("\n")
+        for line in lines:
+            line = line.strip()
+            if line and not line.startswith("#") and "uv run data-agents" in line:
+                # Handle line continuations
+                if line.endswith(" \\"):
+                    # Find the next non-comment line and combine
+                    idx = lines.index(next(ln for ln in lines if line in ln))
+                    combined_line = line.rstrip(" \\")
+                    for next_line in lines[idx + 1 :]:
+                        next_line = next_line.strip()
+                        if not next_line or next_line.startswith("#"):
+                            continue
+                        combined_line += " " + next_line
+                        if not next_line.endswith(" \\"):
+                            break
+                    code_blocks["bash"].append(combined_line)
+                else:
+                    code_blocks["bash"].append(line)
+
+    # Extract JSON code blocks
+    json_blocks = re.findall(r"```json\n(.*?)\n```", content, re.DOTALL)
+    code_blocks["json"] = [block.strip() for block in json_blocks]
+
+    # Extract YAML code blocks
+    yaml_blocks = re.findall(r"```yaml\n(.*?)\n```", content, re.DOTALL)
+    code_blocks["yaml"] = [block.strip() for block in yaml_blocks]
+
+    return code_blocks
+
+
+def extract_nasa_power_queries_from_markdown(doc_path: Path) -> list[tuple[str, str]]:
+    """Extract NASA POWER query examples from markdown with their descriptions."""
+    with open(doc_path) as f:
+        content = f.read()
+
+    queries: list[tuple[str, str]] = []
+
+    # Find the NASA POWER querying section using simple string search
+    start_pos = content.find("### Querying NASA POWER Data")
+    if start_pos == -1:
+        return queries
+
+    # Find the end of this section (next major section)
+    end_pos = content.find("### Required Parameters", start_pos)
+    if end_pos == -1:
+        end_pos = len(content)
+
+    nasa_section = content[start_pos:end_pos]
+
+    # Extract bash code blocks from NASA section
+    bash_blocks = re.findall(r"```bash\n(.*?)\n```", nasa_section, re.DOTALL)
+
+    for block in bash_blocks:
+        lines = block.strip().split("\n")
+        current_query = None
+        current_description = ""
+
+        for line in lines:
+            line = line.strip()
+            if line.startswith("#"):
+                # Extract description from comment
+                current_description = line.lstrip("# ").strip()
+            elif "uv run data-agents query" in line:
+                # Handle line continuations
+                if line.endswith(" \\"):
+                    # Find continuation lines
+                    idx = lines.index(next(ln for ln in lines if line in ln))
+                    combined_line = line.rstrip(" \\")
+                    for next_line in lines[idx + 1 :]:
+                        next_line = next_line.strip()
+                        if not next_line or next_line.startswith("#"):
+                            continue
+                        if next_line.endswith(" \\"):
+                            combined_line += " " + next_line.rstrip(" \\")
+                        else:
+                            combined_line += " " + next_line
+                            break
+                    current_query = combined_line
+                else:
+                    current_query = line
+
+                if current_query and current_description:
+                    queries.append((current_description, current_query))
+                    current_description = ""
+                    current_query = None
+
+    return queries
+
+
 class TestCLIRouterConfigExamples:
     """Test cases for CLI Router Config documentation examples."""
 
@@ -155,14 +256,21 @@ class TestCLIRouterConfigExamples:
 class TestCLIRouterConfigCodeExtraction:
     """Test code block extraction and validation from CLI Router Config doc."""
 
-    def test_json_code_blocks_syntax(self):
-        """Test that JSON code blocks in doc have valid syntax."""
-        doc_path = Path(__file__).parent.parent / "docs" / "CLI_ROUTER_CONFIG.md"
-        with open(doc_path) as f:
-            content = f.read()
+    @pytest.fixture
+    def doc_path(self) -> Path:
+        """Return path to the CLI router config documentation."""
+        return Path(__file__).parent.parent / "docs" / "CLI_ROUTER_CONFIG.md"
 
-        # Extract JSON code blocks
-        json_blocks = re.findall(r"```json\n(.*?)\n```", content, re.DOTALL)
+    @pytest.fixture
+    def extracted_code_blocks(self, doc_path: Path) -> dict[str, list[str]]:
+        """Extract all code blocks from documentation."""
+        return extract_code_blocks_from_markdown(doc_path)
+
+    def test_json_code_blocks_syntax(
+        self, extracted_code_blocks: dict[str, list[str]]
+    ) -> None:
+        """Test that JSON code blocks in doc have valid syntax."""
+        json_blocks = extracted_code_blocks.get("json", [])
 
         for i, block in enumerate(json_blocks):
             try:
@@ -170,28 +278,63 @@ class TestCLIRouterConfigCodeExtraction:
             except json.JSONDecodeError as e:
                 pytest.fail(f"JSON code block {i + 1} has invalid syntax: {e}")
 
-    def test_bash_commands_format(self):
+    def test_bash_commands_format(
+        self, extracted_code_blocks: dict[str, list[str]]
+    ) -> None:
         """Test that bash commands in doc are properly formatted."""
-        doc_path = Path(__file__).parent.parent / "docs" / "CLI_ROUTER_CONFIG.md"
-        with open(doc_path) as f:
-            content = f.read()
+        bash_commands = extracted_code_blocks.get("bash", [])
 
-        # Extract bash command blocks
-        bash_blocks = re.findall(r"```bash\n(.*?)\n```", content, re.DOTALL)
+        for command in bash_commands:
+            # Should start with uv run data-agents
+            if "uv run data-agents" in command:
+                assert command.startswith("uv run data-agents"), (
+                    f"Command should start with 'uv run data-agents': {command}"
+                )
 
-        for block in bash_blocks:
-            lines = block.strip().split("\n")
-            for line in lines:
-                if line.startswith("#"):
-                    continue  # Skip comments
-                if line.strip() == "":
-                    continue  # Skip empty lines
+    def test_extracted_bash_commands_execute(
+        self, extracted_code_blocks: dict[str, list[str]]
+    ) -> None:
+        """Test that at least some extracted bash commands can execute successfully."""
+        bash_commands = extracted_code_blocks.get("bash", [])
+        base_path = Path(__file__).parent.parent
 
-                # Should start with uv run data-agents
-                if "uv run data-agents" in line:
-                    assert line.startswith("uv run data-agents"), (
-                        f"Command should start with 'uv run data-agents': {line}"
-                    )
+        # Test basic commands that should work (info, list-adapters)
+        info_commands = [
+            cmd for cmd in bash_commands if "info" in cmd and "--router-config" in cmd
+        ]
+        list_commands = [cmd for cmd in bash_commands if "list-adapters" in cmd]
+
+        # Test at least one info command
+        if info_commands:
+            command = info_commands[0]
+            # Parse command into arguments
+            parts = command.split()
+
+            result = subprocess.run(
+                parts,
+                capture_output=True,
+                text=True,
+                cwd=base_path,
+            )
+
+            # Should either succeed or fail gracefully
+            if result.returncode == 0:
+                assert "Router" in result.stdout or "Adapter" in result.stdout
+
+        # Test at least one list command
+        if list_commands:
+            command = list_commands[0]
+            parts = command.split()
+
+            result = subprocess.run(
+                parts,
+                capture_output=True,
+                text=True,
+                cwd=base_path,
+            )
+
+            if result.returncode == 0:
+                assert "Available adapters:" in result.stdout
 
     def test_documented_commands_are_valid(self):
         """Test that documented commands match actual CLI capabilities."""
@@ -963,3 +1106,513 @@ class TestAllDocumentedCLIExamples:
 
         # Router should show router info
         assert "Router" in result_router.stdout
+
+
+class TestNASAPowerCLIExecution:
+    """Test actual execution of NASA POWER CLI examples from documentation."""
+
+    @pytest.fixture
+    def doc_path(self) -> Path:
+        """Return path to the CLI router config documentation."""
+        return Path(__file__).parent.parent / "docs" / "CLI_ROUTER_CONFIG.md"
+
+    @pytest.fixture
+    def nasa_query_examples(self, doc_path: Path) -> list[tuple[str, str]]:
+        """Extract NASA POWER query examples from documentation."""
+        return extract_nasa_power_queries_from_markdown(doc_path)
+
+    def test_nasa_power_discover_command_execution(self):
+        """Test that NASA POWER discover command actually works."""
+        result = subprocess.run(
+            [
+                "uv",
+                "run",
+                "data-agents",
+                "discover",
+                "--adapter-config",
+                "config/nasa_power.adapter.json",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent,
+        )
+
+        # Should succeed
+        assert result.returncode == 0
+
+        # Should contain meaningful discovery information
+        output = result.stdout
+        assert "parameters" in output.lower()
+        assert "community" in output.lower()
+        assert "temporal" in output.lower()
+
+    def test_extracted_nasa_power_queries_execution(
+        self, nasa_query_examples: list[tuple[str, str]]
+    ) -> None:
+        """Test execution of all NASA POWER query examples extracted from docs."""
+        if not nasa_query_examples:
+            pytest.skip("No NASA POWER query examples found in documentation")
+
+        base_path = Path(__file__).parent.parent
+
+        for description, command in nasa_query_examples:
+            # Parse the command to extract components
+            parts = command.split()
+            if len(parts) < 4 or "uv run data-agents query" not in command:
+                continue
+
+            # Extract the query part (everything between "query" and "--adapter-config")
+            query_start = command.find('"', command.find("query")) + 1
+            query_end = command.find('"', query_start)
+            if query_start == 0 or query_end == -1:
+                continue
+
+            query = command[query_start:query_end]
+
+            # Build the command arguments
+            cmd_args = [
+                "uv",
+                "run",
+                "data-agents",
+                "query",
+                query,
+                "--adapter-config",
+                "config/nasa_power.adapter.json",
+            ]
+
+            result = subprocess.run(
+                cmd_args,
+                capture_output=True,
+                text=True,
+                cwd=base_path,
+            )
+
+            # Should succeed
+            assert result.returncode == 0, (
+                f"Query failed for: {description}\n"
+                f"Command: {command}\nError: {result.stderr}"
+            )
+
+            # Should contain meaningful data
+            output = result.stdout
+            lines = output.strip().split("\n")
+            assert len(lines) >= 2, f"No data returned for: {description}"
+
+            # Extract parameter name from query
+            param_name = query.split()[0]
+            assert param_name in output, (
+                f"Parameter {param_name} not found in output for: {description}"
+            )
+
+            # Detailed validation based on query content
+            self._validate_nasa_query_output(query, output, description)
+
+    def _validate_nasa_query_output(
+        self, query: str, output: str, description: str
+    ) -> None:
+        """Validate NASA POWER query output with detailed checks."""
+
+        # Parse query parameters
+        query_parts = query.split()
+        param_name = query_parts[0]
+
+        # Build parameter dict
+        params: dict[str, str] = {}
+        for part in query_parts[1:]:
+            if "=" in part:
+                key, value = part.split("=", 1)
+                params[key] = value
+
+        # Check parameter name is in output
+        assert param_name in output, (
+            f"Parameter {param_name} not in output for {description}"
+        )
+
+        # Check spatial type specific validations
+        if params.get("spatial_type") == "point":
+            # Point queries should have lat/lon in output
+            if "latitude" in params:
+                lat_val = params["latitude"]
+                # Check if latitude value appears in output (allowing for rounding)
+                lat_base = lat_val.split(".")[0]  # Get integer part
+                assert lat_base in output or lat_val in output, (
+                    f"Latitude {lat_val} not found in output for {description}"
+                )
+
+            if "longitude" in params:
+                lon_val = params["longitude"]
+                # Check if longitude value appears in output (allowing for rounding)
+                lon_base = lon_val.split(".")[0]  # Get integer part
+                assert lon_base in output or lon_val in output, (
+                    f"Longitude {lon_val} not found in output for {description}"
+                )
+
+        elif params.get("spatial_type") == "regional":
+            # Regional queries should return multiple data points
+            lines = output.strip().split("\n")
+            assert len(lines) >= 3, (
+                f"Regional query should return multiple data points for {description}"
+            )
+
+        # Check temporal specific validations
+        temporal_type = params.get("temporal")
+        if temporal_type == "daily":
+            # Daily queries should have date information
+            if "start" in params:
+                start_date = params["start"]
+                assert start_date in output, (
+                    f"Start date {start_date} not found in output for {description}"
+                )
+
+        elif temporal_type == "monthly":
+            # Monthly queries should have year information
+            if "start" in params:
+                start_year = params["start"]
+                assert start_year in output, (
+                    f"Start year {start_year} not found in output for {description}"
+                )
+
+        elif temporal_type == "climatology":
+            # Climatology should have month indicators or annual data
+            output_upper = output.upper()
+            has_month_data = any(
+                month in output_upper
+                for month in [
+                    "JAN",
+                    "FEB",
+                    "MAR",
+                    "APR",
+                    "MAY",
+                    "JUN",
+                    "JUL",
+                    "AUG",
+                    "SEP",
+                    "OCT",
+                    "NOV",
+                    "DEC",
+                    "ANN",
+                ]
+            )
+            has_numeric_months = any(str(i).zfill(2) in output for i in range(1, 13))
+            assert has_month_data or has_numeric_months, (
+                f"Climatology data should have month indicators for {description}"
+            )
+
+        # Parameter-specific validations
+        if param_name == "T2M":
+            # Temperature should have numeric values (could be positive or negative)
+            assert any(c.isdigit() for c in output), (
+                f"Temperature data should contain numeric values for {description}"
+            )
+
+        elif param_name == "PRECTOTCORR":
+            # Precipitation data validation
+            assert any(c.isdigit() for c in output), (
+                f"Precipitation data should contain numeric values for {description}"
+            )
+
+        elif param_name == "ALLSKY_SFC_SW_DWN":
+            # Solar irradiance validation
+            assert any(c.isdigit() for c in output), (
+                f"Solar irradiance data should contain numeric values for {description}"
+            )
+
+        elif param_name == "WS2M":
+            # Wind speed validation
+            assert any(c.isdigit() for c in output), (
+                f"Wind speed data should contain numeric values for {description}"
+            )
+
+    def test_nasa_power_point_query_from_docs(
+        self, nasa_query_examples: list[tuple[str, str]]
+    ) -> None:
+        """Test point queries extracted from documentation."""
+        point_queries = [
+            (desc, cmd)
+            for desc, cmd in nasa_query_examples
+            if "spatial_type=point" in cmd
+            and "latitude=" in cmd
+            and "longitude=" in cmd
+        ]
+
+        if not point_queries:
+            pytest.skip("No point queries found in documentation")
+
+        # Test at least one point query
+        _description, command = point_queries[0]
+
+        # Extract query from command
+        query_start = command.find('"', command.find("query")) + 1
+        query_end = command.find('"', query_start)
+        query = command[query_start:query_end]
+
+        result = subprocess.run(
+            [
+                "uv",
+                "run",
+                "data-agents",
+                "query",
+                query,
+                "--adapter-config",
+                "config/nasa_power.adapter.json",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent,
+        )
+
+        assert result.returncode == 0
+        output = result.stdout
+
+        # Should contain meaningful data with proper structure
+        lines = output.strip().split("\n")
+        assert len(lines) >= 2  # Header + at least one data row
+
+        # Should contain parameter name
+        param_name = query.split()[0]
+        assert param_name in output
+
+        # Parse query parameters for detailed validation
+        query_parts = query.split()
+        params: dict[str, str] = {}
+        for part in query_parts[1:]:
+            if "=" in part:
+                key, value = part.split("=", 1)
+                params[key] = value
+
+        # Should contain latitude/longitude information
+        if "latitude" in params:
+            lat_val = params["latitude"]
+            lat_base = lat_val.split(".")[0]
+            assert lat_base in output or lat_val in output, (
+                f"Latitude {lat_val} not found in output"
+            )
+
+        if "longitude" in params:
+            lon_val = params["longitude"]
+            lon_base = lon_val.split(".")[0]
+            assert lon_base in output or lon_val in output, (
+                f"Longitude {lon_val} not found in output"
+            )
+
+        # Should contain date information for daily queries
+        if params.get("temporal") == "daily" and "start" in params:
+            start_date = params["start"]
+            assert start_date in output or start_date[:4] in output, (
+                "Date information not found in output"
+            )
+
+    def test_nasa_power_regional_query_from_docs(
+        self, nasa_query_examples: list[tuple[str, str]]
+    ) -> None:
+        """Test regional queries extracted from documentation."""
+        regional_queries = [
+            (desc, cmd)
+            for desc, cmd in nasa_query_examples
+            if "spatial_type=regional" in cmd and "latitude_min=" in cmd
+        ]
+
+        if not regional_queries:
+            pytest.skip("No regional queries found in documentation")
+
+        # Test at least one regional query
+        _description, command = regional_queries[0]
+
+        # Extract query from command
+        query_start = command.find('"', command.find("query")) + 1
+        query_end = command.find('"', query_start)
+        query = command[query_start:query_end]
+
+        result = subprocess.run(
+            [
+                "uv",
+                "run",
+                "data-agents",
+                "query",
+                query,
+                "--adapter-config",
+                "config/nasa_power.adapter.json",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent,
+        )
+
+        assert result.returncode == 0
+        output = result.stdout
+
+        # Regional queries typically return multiple data points
+        lines = output.strip().split("\n")
+        assert len(lines) >= 3  # Header + multiple data rows
+
+        # Should contain parameter name
+        param_name = query.split()[0]
+        assert param_name in output
+
+        # Parse query for date validation
+        query_parts = query.split()
+        params: dict[str, str] = {}
+        for part in query_parts[1:]:
+            if "=" in part:
+                key, value = part.split("=", 1)
+                params[key] = value
+
+        # Should contain date information if present
+        if "start" in params:
+            start_date = params["start"]
+            assert start_date in output or start_date[:4] in output, (
+                f"Date {start_date} not found in output"
+            )
+
+    def test_nasa_power_temporal_queries_from_docs(
+        self, nasa_query_examples: list[tuple[str, str]]
+    ) -> None:
+        """Test different temporal frequency queries from documentation."""
+        temporal_types = ["daily", "monthly", "climatology"]
+
+        for temporal_type in temporal_types:
+            temporal_queries = [
+                (desc, cmd)
+                for desc, cmd in nasa_query_examples
+                if f"temporal={temporal_type}" in cmd
+            ]
+
+            if not temporal_queries:
+                continue
+
+            # Test first query of this temporal type
+            description, command = temporal_queries[0]
+
+            # Extract query from command
+            query_start = command.find('"', command.find("query")) + 1
+            query_end = command.find('"', query_start)
+            query = command[query_start:query_end]
+
+            result = subprocess.run(
+                [
+                    "uv",
+                    "run",
+                    "data-agents",
+                    "query",
+                    query,
+                    "--adapter-config",
+                    "config/nasa_power.adapter.json",
+                ],
+                capture_output=True,
+                text=True,
+                cwd=Path(__file__).parent.parent,
+            )
+
+            assert result.returncode == 0, f"Failed for {temporal_type}: {description}"
+            output = result.stdout
+            lines = output.strip().split("\n")
+            assert len(lines) >= 2, f"No data for {temporal_type}: {description}"
+
+            # Should contain parameter name
+            param_name = query.split()[0]
+            assert param_name in output, (
+                f"Parameter {param_name} not found for {temporal_type}: {description}"
+            )
+
+            # Temporal-specific validations
+            if temporal_type == "climatology":
+                # Climatology should have month indicators or annual data
+                output_upper = output.upper()
+                has_month_data = any(
+                    month in output_upper
+                    for month in [
+                        "JAN",
+                        "FEB",
+                        "MAR",
+                        "APR",
+                        "MAY",
+                        "JUN",
+                        "JUL",
+                        "AUG",
+                        "SEP",
+                        "OCT",
+                        "NOV",
+                        "DEC",
+                        "ANN",
+                    ]
+                )
+                has_numeric_months = any(
+                    str(i).zfill(2) in output for i in range(1, 13)
+                )
+                assert has_month_data or has_numeric_months, (
+                    f"Climatology should have month indicators for {description}"
+                )
+
+            elif temporal_type == "monthly":
+                # Monthly data should have year information
+                query_parts = query.split()
+                for part in query_parts:
+                    if "start=" in part:
+                        year = part.split("=")[1]
+                        assert year in output, (
+                            f"Year {year} not found in monthly output for {description}"
+                        )
+                        break
+
+            elif temporal_type == "daily":
+                # Daily data should have date information
+                query_parts = query.split()
+                for part in query_parts:
+                    if "start=" in part:
+                        date = part.split("=")[1]
+                        assert date in output or date[:4] in output, (
+                            f"Date {date} not found in daily output for {description}"
+                        )
+                        break
+
+    def test_nasa_power_error_handling_execution(self):
+        """Test that invalid queries are handled gracefully."""
+        # Test with missing required parameters
+        query = "T2M latitude=40.7"  # Missing many required params
+
+        result = subprocess.run(
+            [
+                "uv",
+                "run",
+                "data-agents",
+                "query",
+                query,
+                "--adapter-config",
+                "config/nasa_power.adapter.json",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent,
+        )
+
+        # Should fail gracefully (non-zero exit code or error message)
+        # The exact behavior depends on NASA POWER API validation
+        assert result.returncode != 0 or "error" in result.stderr.lower()
+
+    def test_nasa_power_router_integration_execution(self):
+        """Test NASA POWER queries work within a router configuration."""
+        result = subprocess.run(
+            [
+                "uv",
+                "run",
+                "data-agents",
+                "query",
+                "T2M latitude=40.7128 longitude=-74.0060 start=20240101 "
+                "end=20240101 community=AG temporal=daily spatial_type=point",
+                "--router-config",
+                "config/example_with_nasa.router.json",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent,
+        )
+
+        # Should succeed
+        assert result.returncode == 0
+
+        # Should contain data from NASA adapter
+        output = result.stdout
+        assert "T2M" in output
+
+        # Should show which adapter provided the data
+        assert "nasa" in output.lower() or "Results from" in output

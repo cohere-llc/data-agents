@@ -200,17 +200,9 @@ class NasaPowerAdapter(Adapter):
                     "inputs": param_info.get("inputs"),
                     "available_in": param_info.get("available_in", []),
                 },
-                "required_kwargs": [
-                    "temporal",  # daily, monthly, climatology, hourly
-                    "community",  # AG, RE, SB
-                    "spatial_type",  # point, regional
-                    "start",  # start date (YYYYMMDD)
-                    "end",  # end date (YYYYMMDD)
-                    # Spatial parameters depend on spatial_type:
-                    # For point: latitude, longitude
-                    # For regional: latitude_min, latitude_max,
-                    #               longitude_min, longitude_max
-                ],
+                "required_kwargs": self._get_required_kwargs_for_parameter(
+                    param_code, param_info
+                ),
                 "optional_kwargs": [
                     "format",  # output format
                     "units",  # metric or imperial
@@ -219,6 +211,9 @@ class NasaPowerAdapter(Adapter):
                     "wind_elevation",  # wind elevation correction
                     "wind_surface",  # wind surface type
                 ],
+                "temporal_requirements": self._get_temporal_requirements_for_parameter(
+                    param_code, param_info
+                ),
                 "spatial_parameters": {
                     "point": ["latitude", "longitude"],
                     "regional": [
@@ -239,6 +234,103 @@ class NasaPowerAdapter(Adapter):
             "spatial_types": self.SPATIAL_TYPES,
             "record_types": record_types,
         }
+
+    def _get_required_kwargs_for_parameter(
+        self, param_code: str, param_info: dict[str, Any]
+    ) -> list[str]:
+        """
+        Get the required kwargs for a specific parameter based on its availability.
+
+        Args:
+            param_code: Parameter code
+            param_info: Parameter information dictionary
+
+        Returns:
+            List of required parameter names
+        """
+        # Base required parameters for all queries
+        base_required = ["temporal", "community", "spatial_type"]
+
+        # Get available temporal frequencies for this parameter
+        available_temporals = set()
+        for availability in param_info.get("available_in", []):
+            if isinstance(availability, dict) and "temporal" in availability:
+                available_temporals.add(availability["temporal"])
+
+        # If parameter is only available for climatology, start/end are optional
+        # Otherwise, start/end are required
+        if available_temporals and available_temporals == {"climatology"}:
+            # For climatology-only parameters, start/end are optional
+            return base_required
+        else:
+            # For daily, monthly, hourly, or mixed availability, start/end are required
+            return base_required + ["start", "end"]
+
+    def _get_temporal_requirements_for_parameter(
+        self, param_code: str, param_info: dict[str, Any]
+    ) -> dict[str, dict[str, Any]]:
+        """
+        Get the temporal-specific requirements for a parameter.
+
+        Args:
+            param_code: Parameter code
+            param_info: Parameter information dictionary
+
+        Returns:
+            Dictionary mapping temporal frequencies to their requirements
+        """
+        requirements = {}
+
+        for availability in param_info.get("available_in", []):
+            if isinstance(availability, dict) and "temporal" in availability:
+                temporal = availability["temporal"]
+
+                if temporal == "daily":
+                    requirements[temporal] = {
+                        "start_format": "YYYYMMDD",
+                        "end_format": "YYYYMMDD",
+                        "start_required": True,
+                        "end_required": True,
+                        "description": (
+                            "Daily data requires start and end dates in YYYYMMDD format"
+                        ),
+                    }
+                elif temporal == "monthly":
+                    requirements[temporal] = {
+                        "start_format": "YYYY",
+                        "end_format": "YYYY",
+                        "start_required": True,
+                        "end_required": True,
+                        "description": (
+                            "Monthly data requires start and end years in YYYY format"
+                        ),
+                    }
+                elif temporal == "hourly":
+                    requirements[temporal] = {
+                        "start_format": "YYYYMMDD",
+                        "end_format": "YYYYMMDD",
+                        "start_required": True,
+                        "end_required": True,
+                        "description": (
+                            "Hourly data requires start and end dates in "
+                            "YYYYMMDD format"
+                        ),
+                    }
+                elif temporal == "climatology":
+                    requirements[temporal] = {
+                        "start_format": "YYYY",
+                        "end_format": "YYYY",
+                        "start_required": False,
+                        "end_required": False,
+                        "start_default": "2001",
+                        "end_default": "2020",
+                        "description": (
+                            "Climatology data has optional start/end years "
+                            "(defaults: 2001-2020)"
+                        ),
+                    }
+
+        return requirements
 
     def _build_query_url(self, temporal: str, spatial_type: str) -> str:
         """
@@ -277,20 +369,30 @@ class NasaPowerAdapter(Adapter):
         Raises:
             ValueError: If required parameters are missing or invalid
         """
-        # Base required parameters
-        base_required = ["temporal", "community", "spatial_type", "start", "end"]
+        # Base required parameters (always required)
+        base_required = ["temporal", "community", "spatial_type"]
 
         for param in base_required:
             if param not in kwargs:
                 raise ValueError(f"Missing required parameter: {param}")
 
-        # Validate specific parameter values
+        # Validate temporal parameter
         if kwargs["temporal"] not in self.TEMPORAL_ENDPOINTS:
             valid_temporals = list(self.TEMPORAL_ENDPOINTS.keys())
             raise ValueError(
                 f"Invalid temporal: {kwargs['temporal']}. "
                 f"Must be one of {valid_temporals}"
             )
+
+        # Validate start/end requirements based on temporal frequency
+        temporal = kwargs["temporal"]
+        if temporal in ["daily", "monthly", "hourly"]:
+            # These temporal frequencies require start and end
+            if "start" not in kwargs:
+                raise ValueError("Missing required parameter: start")
+            if "end" not in kwargs:
+                raise ValueError("Missing required parameter: end")
+        # For climatology, start and end are optional
 
         if kwargs["community"] not in self.COMMUNITIES:
             raise ValueError(
@@ -376,9 +478,14 @@ class NasaPowerAdapter(Adapter):
         query_params: dict[str, Any] = {
             "parameters": parameter_name,
             "community": kwargs["community"],
-            "start": kwargs["start"],
-            "end": kwargs["end"],
         }
+
+        # Add start/end only if provided (required for daily/monthly/hourly,
+        # optional for climatology)
+        if "start" in kwargs:
+            query_params["start"] = kwargs["start"]
+        if "end" in kwargs:
+            query_params["end"] = kwargs["end"]
 
         # Add spatial parameters
         if kwargs["spatial_type"] == "point":
