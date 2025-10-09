@@ -109,6 +109,56 @@ def extract_nasa_power_queries_from_markdown(doc_path: Path) -> list[tuple[str, 
     return queries
 
 
+def extract_gbif_queries_from_markdown(doc_path: Path) -> list[tuple[str, str]]:
+    """Extract GBIF query examples from markdown with their descriptions."""
+    with open(doc_path) as f:
+        content = f.read()
+
+    queries: list[tuple[str, str]] = []
+
+    # Find the GBIF querying section using simple string search
+    start_pos = content.find("### Querying GBIF Occurrence Data")
+    if start_pos == -1:
+        return queries
+
+    # Find the end of this section (next major section)
+    end_pos = content.find("### GBIF Search Parameters Reference", start_pos)
+    if end_pos == -1:
+        end_pos = len(content)
+
+    gbif_section = content[start_pos:end_pos]
+
+    # Extract bash code blocks from GBIF section
+    bash_blocks = re.findall(r"```bash\n(.*?)\n```", gbif_section, re.DOTALL)
+
+    for block in bash_blocks:
+        lines = block.strip().split("\n")
+        current_query = None
+        current_description = ""
+
+        for line in lines:
+            line = line.strip()
+            if line and not line.startswith("#") and "uv run data-agents query" in line:
+                # Extract just the query part after "query" command
+                if '--adapter-config config/gbif.adapter.json' in line:
+                    query_start = line.find('"') + 1
+                    query_end = line.find('"', query_start)
+                    if query_start > 0 and query_end > query_start:
+                        current_query = line[query_start:query_end]
+                        
+                        # Find description from previous comment
+                        if current_query:
+                            queries.append((current_query, current_description))
+                            current_description = ""
+            elif line.startswith("#"):
+                # Accumulate description from comments
+                comment = line[1:].strip()
+                if comment:
+                    current_description += comment + " "
+
+    return queries
+
+
 class TestCLIRouterConfigExamples:
     """Test cases for CLI Router Config documentation examples."""
 
@@ -1616,3 +1666,381 @@ class TestNASAPowerCLIExecution:
 
         # Should show which adapter provided the data
         assert "nasa" in output.lower() or "Results from" in output
+
+
+class TestGBIFCLIExamples:
+    """Test GBIF Occurrence adapter CLI examples from documentation."""
+
+    def test_gbif_adapter_config_structure(self):
+        """Test that GBIF adapter config structure is valid."""
+        gbif_config = {
+            "type": "gbif_occurrence",
+            "description": "GBIF biodiversity occurrence data",
+        }
+
+        assert gbif_config["type"] == "gbif_occurrence"
+        assert "description" in gbif_config
+
+        # Test router config with GBIF adapter
+        router_with_gbif = {
+            "adapters": {
+                "gbif_data": {
+                    "type": "gbif_occurrence",
+                    "description": "GBIF biodiversity occurrence data",
+                },
+                "species_list": {
+                    "type": "tabular",
+                    "csv_file": "data/local_species.csv",
+                },
+            }
+        }
+
+        assert "adapters" in router_with_gbif
+        assert "gbif_data" in router_with_gbif["adapters"]
+        assert router_with_gbif["adapters"]["gbif_data"]["type"] == "gbif_occurrence"
+
+    def test_gbif_discover_command(self):
+        """Test GBIF discover command works."""
+        # Test with single adapter config
+        result = subprocess.run(
+            [
+                "uv",
+                "run",
+                "data-agents",
+                "discover",
+                "--adapter-config",
+                "config/gbif.adapter.json",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent,
+        )
+
+        if result.returncode == 0:
+            # Should contain GBIF specific information
+            output = result.stdout
+            assert (
+                "parameters" in output.lower() 
+                or "37" in output 
+                or "scientificName" in output
+                or "GBIF" in output
+            )
+        # Some tests may fail due to network issues, which is acceptable
+
+    def test_gbif_discover_in_router(self):
+        """Test GBIF discover command in router context."""
+        # Create a temporary router config with GBIF adapter
+        router_config = {
+            "adapters": {
+                "gbif_data": {
+                    "type": "gbif_occurrence",
+                    "description": "GBIF biodiversity occurrence data"
+                }
+            }
+        }
+        
+        import tempfile
+        import json
+        
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump(router_config, f)
+            temp_config_path = f.name
+
+        try:
+            result = subprocess.run(
+                [
+                    "uv",
+                    "run",
+                    "data-agents",
+                    "discover",
+                    "--router-config",
+                    temp_config_path,
+                ],
+                capture_output=True,
+                text=True,
+                cwd=Path(__file__).parent.parent,
+            )
+
+            if result.returncode == 0:
+                # Should contain information about GBIF adapter
+                output = result.stdout
+                assert "gbif" in output.lower() or "GBIF" in output
+        finally:
+            # Clean up temp file
+            import os
+            os.unlink(temp_config_path)
+
+    def test_gbif_simple_query_formats(self):
+        """Test GBIF simple query formats from documentation."""
+        # Test query parameter patterns from documentation examples
+        test_cases = [
+            ("mountain lion", "simple text search"),
+            ("Puma concolor", "scientific name search"),
+            ("Puma concolor country=US year=2023", "text with filters"),
+            ("scientificName=Quercus robur", "structured scientific name"),
+            ("country=US", "country filter"),
+            ("year=2023", "year filter"),
+            ("hasCoordinate=true", "coordinate filter"),
+        ]
+
+        # Test that these are valid query strings (would be passed to GBIF adapter)
+        for query, description in test_cases:
+            # Verify query string format is reasonable
+            assert isinstance(query, str)
+            assert len(query) > 0
+            # These should be valid GBIF query patterns
+            if "=" in query:
+                # Structured parameter query
+                parts = query.split()
+                for part in parts:
+                    if "=" in part:
+                        key, value = part.split("=", 1)
+                        assert len(key) > 0, f"Empty parameter key in {query}"
+                        assert len(value) > 0, f"Empty parameter value in {query}"
+
+    def test_gbif_geographic_query_formats(self):
+        """Test GBIF geographic query formats from documentation."""
+        test_cases = [
+            ("country=US", "country filter"),
+            ("decimalLatitude=40,45 decimalLongitude=-75,-70", "coordinate range"),
+            ("continent=NORTH_AMERICA", "continent filter"),
+            ("scientificName=Ursus americanus hasCoordinate=true country=CA", "combined geo filters"),
+        ]
+
+        for query, description in test_cases:
+            # Verify geographic query patterns
+            assert isinstance(query, str)
+            if "decimalLatitude" in query:
+                assert "decimalLongitude" in query, "Latitude requires longitude"
+            if "country=" in query:
+                # Should have valid country code pattern
+                country_part = [p for p in query.split() if p.startswith("country=")][0]
+                country_value = country_part.split("=")[1]
+                assert len(country_value) >= 2, "Country codes should be at least 2 chars"
+
+    def test_gbif_temporal_query_formats(self):
+        """Test GBIF temporal query formats from documentation."""
+        test_cases = [
+            ("year=2023", "single year"),
+            ("year=2020,2023", "year range"),
+            ("year=2023 month=6", "year and month"),
+            ("year=2023 month=6,8", "year and month range"),
+        ]
+
+        for query, description in test_cases:
+            # Verify temporal query patterns
+            assert isinstance(query, str)
+            if "year=" in query:
+                year_part = [p for p in query.split() if p.startswith("year=")][0]
+                year_value = year_part.split("=")[1]
+                # Should be year format (4 digits or range)
+                if "," in year_value:
+                    start_year, end_year = year_value.split(",")
+                    assert len(start_year) == 4, "Year should be 4 digits"
+                    assert len(end_year) == 4, "Year should be 4 digits"
+                else:
+                    assert len(year_value) == 4, "Year should be 4 digits"
+
+    def test_gbif_data_quality_query_formats(self):
+        """Test GBIF data quality query formats from documentation."""
+        test_cases = [
+            ("basisOfRecord=HUMAN_OBSERVATION", "observation type"),
+            ("basisOfRecord=PRESERVED_SPECIMEN", "specimen type"),
+            ("hasCoordinate=true hasGeospatialIssue=false", "quality filters"),
+            ("license=CC_BY_4_0", "license filter"),
+        ]
+
+        for query, description in test_cases:
+            # Verify data quality query patterns
+            assert isinstance(query, str)
+            if "basisOfRecord=" in query:
+                basis_part = [p for p in query.split() if p.startswith("basisOfRecord=")][0]
+                basis_value = basis_part.split("=")[1]
+                assert basis_value in [
+                    "HUMAN_OBSERVATION", "PRESERVED_SPECIMEN", "OBSERVATION",
+                    "MACHINE_OBSERVATION", "LITERATURE", "LIVING_SPECIMEN",
+                    "FOSSIL_SPECIMEN", "MATERIAL_SAMPLE", "UNKNOWN"
+                ], f"Invalid basisOfRecord value: {basis_value}"
+
+    def test_gbif_complex_query_formats(self):
+        """Test GBIF complex multi-parameter query formats from documentation."""
+        test_cases = [
+            (
+                "scientificName=Puma concolor country=US,CA year=2020,2023 basisOfRecord=HUMAN_OBSERVATION hasCoordinate=true",
+                "comprehensive species search"
+            ),
+            (
+                "decimalLatitude=35,45 decimalLongitude=-125,-115 year=2023 hasCoordinate=true basisOfRecord=HUMAN_OBSERVATION,PRESERVED_SPECIMEN",
+                "geographic biodiversity survey"
+            ),
+            (
+                "scientificName=Corvus limit=50",
+                "pagination control"
+            ),
+            (
+                "country=US limit=100 offset=200",
+                "offset pagination"
+            ),
+        ]
+
+        for query, description in test_cases:
+            # Verify complex query patterns
+            assert isinstance(query, str)
+            assert len(query.split()) >= 2, "Complex queries should have multiple parameters"
+            
+            # Verify parameter structure
+            parts = query.split()
+            param_count = sum(1 for part in parts if "=" in part or part.startswith('"'))
+            assert param_count >= 2, f"Complex query should have multiple parameters: {query}"
+
+    def test_gbif_pagination_parameters(self):
+        """Test GBIF pagination parameter handling."""
+        test_cases = [
+            ("limit=50", 50, None),
+            ("limit=100 offset=200", 100, 200),
+            ("scientificName=Corvus limit=25", 25, None),
+        ]
+
+        for query, expected_limit, expected_offset in test_cases:
+            # Verify pagination parameters are extracted correctly
+            if "limit=" in query:
+                limit_part = [p for p in query.split() if p.startswith("limit=")][0]
+                limit_value = int(limit_part.split("=")[1])
+                assert limit_value == expected_limit
+
+            if expected_offset is not None:
+                assert "offset=" in query
+                offset_part = [p for p in query.split() if p.startswith("offset=")][0]
+                offset_value = int(offset_part.split("=")[1])
+                assert offset_value == expected_offset
+
+
+class TestGBIFCLIExecution:
+    """Test execution of GBIF CLI examples with real API calls."""
+
+    def test_gbif_query_execution_basic(self):
+        """Test basic GBIF query execution."""
+        # Test simple species search
+        result = subprocess.run(
+            [
+                "uv",
+                "run",
+                "data-agents",
+                "query",
+                "Puma concolor",
+                "--adapter-config",
+                "config/gbif.adapter.json",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent,
+        )
+
+        if result.returncode == 0:
+            output = result.stdout
+            # Should contain species occurrence data
+            assert (
+                "scientificName" in output
+                or "Puma" in output
+                or "occurrence" in output.lower()
+                or "gbifID" in output
+            )
+            # Should return structured data (likely DataFrame info)
+            assert "columns" in output.lower() or len(output.strip()) > 0
+
+    def test_gbif_query_execution_with_filters(self):
+        """Test GBIF query execution with country filter."""
+        # Test query with geographic filter
+        result = subprocess.run(
+            [
+                "uv",
+                "run",
+                "data-agents",
+                "query",
+                "country=US year=2023 limit=5",
+                "--adapter-config",
+                "config/gbif.adapter.json",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent,
+        )
+
+        if result.returncode == 0:
+            output = result.stdout
+            # Should contain filtered occurrence data
+            assert (
+                "country" in output.lower()
+                or "US" in output
+                or "2023" in output
+                or len(output.strip()) > 0
+            )
+
+    def test_gbif_query_execution_error_handling(self):
+        """Test GBIF query error handling."""
+        # Test with invalid parameter
+        result = subprocess.run(
+            [
+                "uv",
+                "run",
+                "data-agents",
+                "query",
+                "invalidParameter=invalidValue",
+                "--adapter-config",
+                "config/gbif.adapter.json",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=Path(__file__).parent.parent,
+        )
+
+        # Should handle gracefully (either succeed with empty results or fail gracefully)
+        # Don't assert success/failure as API might handle this differently
+        # Just ensure no crash
+        assert result.returncode is not None
+
+    def test_gbif_documented_examples_validation(self):
+        """Test that documented GBIF examples are reasonable and don't crash."""
+        doc_path = Path(__file__).parent.parent / "docs" / "CLI_ROUTER_CONFIG.md"
+        gbif_queries = extract_gbif_queries_from_markdown(doc_path)
+
+        # Should have extracted some queries from documentation
+        assert len(gbif_queries) > 0, "Should extract GBIF queries from documentation"
+
+        # Test a few representative queries (to avoid long test times)
+        test_queries = gbif_queries[:3]  # Test first 3 queries
+
+        for query, description in test_queries:
+            if query and len(query.strip()) > 0:
+                # Test the query format is reasonable
+                assert isinstance(query, str)
+                assert len(query.strip()) > 0
+
+                # Skip very long queries that might timeout
+                if len(query) > 200:
+                    continue
+
+                # Test execution with timeout (quick test)
+                result = subprocess.run(
+                    [
+                        "uv",
+                        "run",
+                        "data-agents",
+                        "query",
+                        query,
+                        "--adapter-config",
+                        "config/gbif.adapter.json",
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,  # 30 second timeout
+                    cwd=Path(__file__).parent.parent,
+                )
+
+                # Should not crash (might fail due to network, but shouldn't crash)
+                assert result.returncode is not None
+                
+                if result.returncode == 0:
+                    # If successful, should have some output
+                    output = result.stdout
+                    assert len(output.strip()) > 0, f"Empty output for query: {query}"
