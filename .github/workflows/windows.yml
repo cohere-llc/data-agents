@@ -37,8 +37,22 @@ jobs:
         uv run mypy src/
 
     - name: Test with pytest
+      env:
+        OPENAQ_API_KEY: ${{ secrets.OPENAQ_API_KEY }}
       run: |
         uv run pytest -v
+
+    - name: Test OpenAQ API integration (if token available)
+      env:
+        OPENAQ_API_KEY: ${{ secrets.OPENAQ_API_KEY }}
+      run: |
+        uv run pytest tests/integration/test_openaq_auth.py -v --tb=short
+
+    - name: Run OpenAQ integration example
+      env:
+        OPENAQ_API_KEY: ${{ secrets.OPENAQ_API_KEY }}
+      run: |
+        uv run python examples/openaq_integration_test.py
 
   build:
     needs: test

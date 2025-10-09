@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any
+import os
+from typing import Any, Tuple, Union
 from urllib.parse import urljoin
 
 import pandas as pd
@@ -19,6 +20,9 @@ class RESTAdapter(Adapter):
     responses to pandas DataFrames. It's designed to work with JSON APIs
     and includes support for authentication, custom headers, and query parameters.
     """
+    
+    # Type annotations for instance attributes
+    auth: tuple[str, str] | None
 
     def __init__(
         self,
@@ -31,7 +35,15 @@ class RESTAdapter(Adapter):
             base_url: Base URL for the REST API
             config: Optional configuration dictionary with keys:
                 - headers: Dict of HTTP headers to include with requests
-                - auth: Authentication tuple (username, password) for basic auth
+                - auth: Authentication configuration. Can be:
+                  - Tuple (username, password) for basic auth
+                  - String for bearer token
+                  - Dict with keys:
+                    - type: 'bearer', 'api_key', or 'basic'
+                    - token: Token value (for bearer/api_key)
+                    - key: Header name for API key (default: 'X-API-Key')
+                    - env_var: Environment variable name containing token
+                    - username/password: For basic auth
                 - timeout: Request timeout in seconds (default: 30)
                 - verify: Whether to verify SSL certificates (default: True)
                 - endpoints: List of endpoints to discover (used for both availability
@@ -46,9 +58,11 @@ class RESTAdapter(Adapter):
 
         # Extract configuration
         self.headers = self.config.get("headers", {})
-        self.auth = self.config.get("auth")
         self.timeout = self.config.get("timeout", 30)
         self.verify = self.config.get("verify", True)
+
+        # Configure authentication
+        self._setup_authentication()
 
         # Schema and endpoint discovery configuration
         self.endpoints = self.config.get("endpoints", [])
@@ -172,6 +186,68 @@ class RESTAdapter(Adapter):
         # Set default headers
         if "Accept" not in self.headers:
             self.headers["Accept"] = "application/json"
+
+    def _setup_authentication(self) -> None:
+        """Configure authentication based on the auth configuration.
+        
+        Supports:
+        - Basic auth: tuple (username, password)
+        - Bearer token: string token or dict with type='bearer'
+        - API key: dict with type='api_key', key header name, and token
+        - Environment variables for secure token storage
+        """
+        auth_config = self.config.get("auth")
+        self.auth = None  # For basic auth
+        
+        if not auth_config:
+            return
+            
+        # Handle tuple format for basic auth (backward compatibility)
+        if isinstance(auth_config, tuple) and len(auth_config) == 2:
+            self.auth = auth_config
+            return
+            
+        # Handle string format as bearer token
+        if isinstance(auth_config, str):
+            token = auth_config
+            # Check if it's an environment variable reference
+            if token.startswith("${") and token.endswith("}"):
+                env_var = token[2:-1]
+                token = os.getenv(env_var)
+                if not token:
+                    raise ValueError(f"Environment variable '{env_var}' not found")
+            self.headers["Authorization"] = f"Bearer {token}"
+            return
+            
+        # Handle dict format for advanced auth configurations
+        if isinstance(auth_config, dict):
+            auth_type = auth_config.get("type", "bearer")
+            
+            if auth_type == "basic":
+                username = auth_config.get("username")
+                password = auth_config.get("password")
+                if username and password:
+                    self.auth = (username, password)
+                return
+                
+            # Get token from config or environment variable
+            token = auth_config.get("token")
+            env_var = auth_config.get("env_var")
+            
+            if env_var:
+                token = os.getenv(env_var)
+                if not token:
+                    raise ValueError(f"Environment variable '{env_var}' not found")
+            elif not token:
+                raise ValueError("Either 'token' or 'env_var' must be provided for token-based auth")
+                
+            if auth_type == "bearer":
+                self.headers["Authorization"] = f"Bearer {token}"
+            elif auth_type == "api_key":
+                key_header = auth_config.get("key", "X-API-Key")
+                self.headers[key_header] = token
+            else:
+                raise ValueError(f"Unsupported auth type: {auth_type}")
 
     def query(self: RESTAdapter, query: str, **kwargs: Any) -> pd.DataFrame:
         """Execute a query against the REST API.
