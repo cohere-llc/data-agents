@@ -60,4 +60,4 @@
 | Vocabulary (registry of controlled vocabulary - not sure what this means) | https://techdocs.gbif.org/openapi/vocabulary.json                    |
 
 - env-agents only queries against the `occurrence/search` endpoint
-- 
+- the OpenAPI spec seems pretty comprehensive. No issues using it to discover API for searching

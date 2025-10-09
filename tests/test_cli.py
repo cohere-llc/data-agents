@@ -469,6 +469,22 @@ class TestCLIAdapterCreation:
         assert adapter is not None
         assert adapter.__class__.__name__ == "GBIFOccurrenceAdapter"
 
+    def test_create_adapter_from_config_gbif_occurrence_failure(self, capsys):
+        """Test GBIF adapter creation failure handling."""
+        config = {"type": "gbif_occurrence"}
+
+        with patch(
+            "data_agents.cli.GBIFOccurrenceAdapter",
+            side_effect=Exception("GBIF Adapter Error"),
+        ):
+            adapter = create_adapter_from_config(config)
+            assert adapter is None
+            captured = capsys.readouterr()
+            assert (
+                "Error: Failed to create GBIF Occurrence adapter: GBIF Adapter Error"
+                in captured.out
+            )
+
     def test_create_single_adapter_from_config_success(self):
         """Test creating single adapter from config file."""
         # Create a CSV file
@@ -973,5 +989,38 @@ class TestCLIGBIFOccurrence:
             assert "gbif_mammals" in captured.out
             assert "GBIFOccurrenceAdapter" in captured.out
             # CLI doesn't show descriptions in list-adapters output
+        finally:
+            os.unlink(config_file)
+
+    @patch("data_agents.adapters.GBIFOccurrenceAdapter.query")
+    def test_query_gbif_adapter_empty_results(self, mock_query, capsys):
+        """Test GBIF adapter query that returns empty results."""
+        # Mock empty query response
+        mock_df = pd.DataFrame()
+        mock_df.attrs = {"total_count": 0, "limit": 20, "offset": 0}
+        mock_query.return_value = mock_df
+
+        config = {"type": "gbif_occurrence"}
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(config, f)
+            config_file = f.name
+
+        try:
+            with patch(
+                "sys.argv",
+                [
+                    "data-agents",
+                    "query",
+                    "scientificName=NonexistentSpecies",
+                    "--adapter-config",
+                    config_file,
+                ],
+            ):
+                main()
+
+            captured = capsys.readouterr()
+            assert "Query returned no results" in captured.out
+            mock_query.assert_called_once_with("scientificName=NonexistentSpecies")
         finally:
             os.unlink(config_file)

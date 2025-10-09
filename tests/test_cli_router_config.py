@@ -141,10 +141,12 @@ def extract_gbif_queries_from_markdown(doc_path: Path) -> list[tuple[str, str]]:
             if line and not line.startswith("#") and "uv run data-agents query" in line:
                 # Extract just the query part after "query" command
                 if "--adapter-config config/gbif.adapter.json" in line:
-                    query_start = line.find('"') + 1
-                    query_end = line.find('"', query_start)
-                    if query_start > 0 and query_end > query_start:
-                        current_query = line[query_start:query_end]
+                    first_quote = line.find('"')
+                    if first_quote != -1:
+                        query_start = first_quote + 1
+                        query_end = line.find('"', query_start)
+                        if query_end != -1 and query_end > query_start:
+                            current_query = line[query_start:query_end]
 
                         # Find description from previous comment
                         if current_query:
@@ -1902,9 +1904,7 @@ class TestGBIFCLIExamples:
 
             # Verify parameter structure
             parts = query.split()
-            param_count = sum(
-                1 for part in parts if "=" in part or part.startswith('"')
-            )
+            param_count = sum(1 for part in parts if "=" in part)
             assert param_count >= 2, (
                 f"Complex query should have multiple parameters: {query}"
             )
