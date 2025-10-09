@@ -451,7 +451,8 @@ class TestCLIAdapterCreation:
         captured = capsys.readouterr()
         assert (
             "Error: Unknown adapter type 'unknown'. "
-            "Supported types: rest, tabular, nasa_power, gbif_occurrence" in captured.out
+            "Supported types: rest, tabular, nasa_power, gbif_occurrence"
+            in captured.out
         )
 
     def test_create_adapter_from_config_nasa_power_valid(self):
@@ -820,7 +821,7 @@ class TestCLIGBIFOccurrence:
     def test_create_gbif_adapter_from_config_success(self):
         """Test creating GBIF adapter from config file works correctly."""
         config = {"type": "gbif_occurrence", "description": "GBIF biodiversity data"}
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(config, f)
             config_file = f.name
@@ -836,16 +837,18 @@ class TestCLIGBIFOccurrence:
     def test_query_gbif_adapter_basic(self, mock_query, capsys):
         """Test basic GBIF adapter query execution through CLI."""
         # Mock successful query response
-        mock_df = pd.DataFrame({
-            'gbifID': ['1', '2'], 
-            'scientificName': ['Puma concolor', 'Panthera leo'],
-            'country': ['US', 'ZA']
-        })
-        mock_df.attrs = {'total_count': 2, 'limit': 20, 'offset': 0}
+        mock_df = pd.DataFrame(
+            {
+                "gbifID": ["1", "2"],
+                "scientificName": ["Puma concolor", "Panthera leo"],
+                "country": ["US", "ZA"],
+            }
+        )
+        mock_df.attrs = {"total_count": 2, "limit": 20, "offset": 0}
         mock_query.return_value = mock_df
-        
+
         config = {"type": "gbif_occurrence"}
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(config, f)
             config_file = f.name
@@ -855,14 +858,14 @@ class TestCLIGBIFOccurrence:
                 "sys.argv",
                 [
                     "data-agents",
-                    "query", 
+                    "query",
                     "scientificName=Puma concolor",
                     "--adapter-config",
                     config_file,
                 ],
             ):
                 main()
-                
+
             captured = capsys.readouterr()
             assert "gbifID" in captured.out
             assert "Puma concolor" in captured.out
@@ -875,17 +878,19 @@ class TestCLIGBIFOccurrence:
     def test_query_gbif_adapter_complex(self, mock_query, capsys):
         """Test complex GBIF adapter query with multiple parameters."""
         # Mock successful query response
-        mock_df = pd.DataFrame({
-            'gbifID': ['123'], 
-            'scientificName': ['Homo sapiens'],
-            'country': ['US'],
-            'year': [2023]
-        })
-        mock_df.attrs = {'total_count': 1, 'limit': 20, 'offset': 0}
+        mock_df = pd.DataFrame(
+            {
+                "gbifID": ["123"],
+                "scientificName": ["Homo sapiens"],
+                "country": ["US"],
+                "year": [2023],
+            }
+        )
+        mock_df.attrs = {"total_count": 1, "limit": 20, "offset": 0}
         mock_query.return_value = mock_df
-        
+
         config = {"type": "gbif_occurrence"}
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(config, f)
             config_file = f.name
@@ -895,19 +900,21 @@ class TestCLIGBIFOccurrence:
                 "sys.argv",
                 [
                     "data-agents",
-                    "query", 
+                    "query",
                     "scientificName=Homo sapiens&country=US&year=2023",
                     "--adapter-config",
                     config_file,
                 ],
             ):
                 main()
-                
+
             captured = capsys.readouterr()
             assert "gbifID" in captured.out
             assert "Homo sapiens" in captured.out
             # CLI doesn't print metadata - only DataFrame content
-            mock_query.assert_called_once_with("scientificName=Homo sapiens&country=US&year=2023")
+            mock_query.assert_called_once_with(
+                "scientificName=Homo sapiens&country=US&year=2023"
+            )
         finally:
             os.unlink(config_file)
 
@@ -947,7 +954,7 @@ class TestCLIGBIFOccurrence:
             "adapters": {
                 "gbif_mammals": {
                     "type": "gbif_occurrence",
-                    "description": "GBIF mammal occurrences"
+                    "description": "GBIF mammal occurrences",
                 }
             }
         }

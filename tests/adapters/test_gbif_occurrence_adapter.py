@@ -25,7 +25,15 @@ def test_gbif_adapter_basic():
     assert len(parameters) > 0, "Should discover at least some parameters"
 
     # Check specific parameters are present
-    expected_params = ["q", "scientificName", "taxonKey", "country", "year", "month", "day"]
+    expected_params = [
+        "q",
+        "scientificName",
+        "taxonKey",
+        "country",
+        "year",
+        "month",
+        "day",
+    ]
     for param in expected_params:
         assert param in parameters, f"Parameter {param} should be in discovery"
         param_info = parameters[param]
@@ -67,11 +75,11 @@ def test_gbif_adapter_simple_query():
                 "year": 2023,
                 "month": 6,
                 "day": 15,
-                "basisOfRecord": "HUMAN_OBSERVATION"
+                "basisOfRecord": "HUMAN_OBSERVATION",
             }
         ],
         "count": 1,
-        "endOfRecords": True
+        "endOfRecords": True,
     }
 
     with patch.object(requests.Session, "get") as mock_get:
@@ -82,7 +90,7 @@ def test_gbif_adapter_simple_query():
 
         # Test simple text query
         result = adapter.query("Puma concolor")
-        
+
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 1
         assert result.iloc[0]["scientificName"] == "Puma concolor"
@@ -109,11 +117,11 @@ def test_gbif_adapter_scientific_name_query():
                 "scientificName": "Quercus robur",
                 "taxonKey": 2880384,
                 "country": "DE",
-                "year": 2022
+                "year": 2022,
             }
         ],
         "count": 1,
-        "endOfRecords": True
+        "endOfRecords": True,
     }
 
     with patch.object(requests.Session, "get") as mock_get:
@@ -124,7 +132,7 @@ def test_gbif_adapter_scientific_name_query():
 
         # Test scientific name query
         result = adapter.search_by_scientific_name("Quercus robur")
-        
+
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 1
         assert result.iloc[0]["scientificName"] == "Quercus robur"
@@ -149,11 +157,11 @@ def test_gbif_adapter_location_query():
                 "scientificName": "Corvus corax",
                 "country": "US",
                 "decimalLatitude": 40.7589,
-                "decimalLongitude": -73.9851
+                "decimalLongitude": -73.9851,
             }
         ],
         "count": 1,
-        "endOfRecords": True
+        "endOfRecords": True,
     }
 
     with patch.object(requests.Session, "get") as mock_get:
@@ -164,7 +172,7 @@ def test_gbif_adapter_location_query():
 
         # Test location query with country
         result = adapter.search_by_location(country="US")
-        
+
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 1
         assert result.iloc[0]["country"] == "US"
@@ -188,11 +196,11 @@ def test_gbif_adapter_year_range_query():
                 "key": 111222333,
                 "scientificName": "Falco peregrinus",
                 "year": 2020,
-                "month": 5
+                "month": 5,
             }
         ],
         "count": 1,
-        "endOfRecords": True
+        "endOfRecords": True,
     }
 
     with patch.object(requests.Session, "get") as mock_get:
@@ -203,7 +211,7 @@ def test_gbif_adapter_year_range_query():
 
         # Test year range query
         result = adapter.search_by_year_range(2020, 2022)
-        
+
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 1
         assert result.iloc[0]["year"] == 2020
@@ -230,11 +238,11 @@ def test_gbif_adapter_complex_query():
                 "year": 2021,
                 "month": 8,
                 "basisOfRecord": "HUMAN_OBSERVATION",
-                "hasCoordinate": True
+                "hasCoordinate": True,
             }
         ],
         "count": 1,
-        "endOfRecords": True
+        "endOfRecords": True,
     }
 
     with patch.object(requests.Session, "get") as mock_get:
@@ -250,9 +258,9 @@ def test_gbif_adapter_complex_query():
             year=2021,
             basisOfRecord="HUMAN_OBSERVATION",
             hasCoordinate=True,
-            limit=50
+            limit=50,
         )
-        
+
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 1
         assert result.iloc[0]["scientificName"] == "Ursus americanus"
@@ -278,14 +286,11 @@ def test_gbif_adapter_pagination():
 
     # Mock response with pagination
     mock_data = {
-        "results": [
-            {"key": i, "scientificName": f"Species {i}"}
-            for i in range(20)
-        ],
+        "results": [{"key": i, "scientificName": f"Species {i}"} for i in range(20)],
         "count": 100,
         "endOfRecords": False,
         "offset": 0,
-        "limit": 20
+        "limit": 20,
     }
 
     with patch.object(requests.Session, "get") as mock_get:
@@ -296,7 +301,7 @@ def test_gbif_adapter_pagination():
 
         # Test with custom limit and offset
         result = adapter.query("test", limit=20, offset=40)
-        
+
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 20
 
@@ -315,11 +320,7 @@ def test_gbif_adapter_empty_response():
     adapter = GBIFOccurrenceAdapter()
 
     # Mock empty response
-    mock_data = {
-        "results": [],
-        "count": 0,
-        "endOfRecords": True
-    }
+    mock_data = {"results": [], "count": 0, "endOfRecords": True}
 
     with patch.object(requests.Session, "get") as mock_get:
         mock_response = Mock()
@@ -329,7 +330,7 @@ def test_gbif_adapter_empty_response():
 
         # Test query with no results
         result = adapter.query("NonexistentSpecies")
-        
+
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 0
         assert list(result.columns) == []  # Empty DataFrame with no columns
@@ -348,7 +349,9 @@ def test_gbif_adapter_error_handling():
         mock_response.raise_for_status.side_effect = requests.HTTPError("Server error")
         mock_get.return_value = mock_response
 
-        with pytest.raises(requests.RequestException, match="GBIF Occurrence API request failed"):
+        with pytest.raises(
+            requests.RequestException, match="GBIF Occurrence API request failed"
+        ):
             adapter.query("test query")
 
     # Test JSON decode error (not wrapped by adapter)
@@ -365,7 +368,9 @@ def test_gbif_adapter_error_handling():
     with patch.object(requests.Session, "get") as mock_get:
         mock_get.side_effect = requests.ConnectionError("Connection failed")
 
-        with pytest.raises(requests.RequestException, match="GBIF Occurrence API request failed"):
+        with pytest.raises(
+            requests.RequestException, match="GBIF Occurrence API request failed"
+        ):
             adapter.query("test query")
 
     print("Error handling test passed!")
@@ -377,7 +382,7 @@ def test_gbif_adapter_parameter_validation():
 
     # Test various parameter values (GBIF doesn't enforce limits like NASA)
     mock_data = {"results": [], "count": 0, "endOfRecords": True}
-    
+
     with patch.object(requests.Session, "get") as mock_get:
         mock_response = Mock()
         mock_response.status_code = 200
@@ -403,7 +408,7 @@ def test_gbif_adapter_boolean_parameters():
     adapter = GBIFOccurrenceAdapter()
 
     mock_data = {"results": [], "count": 0, "endOfRecords": True}
-    
+
     with patch.object(requests.Session, "get") as mock_get:
         mock_response = Mock()
         mock_response.status_code = 200
@@ -412,12 +417,9 @@ def test_gbif_adapter_boolean_parameters():
 
         # Test boolean parameters
         adapter.query(
-            "test",
-            hasCoordinate=True,
-            hasGeospatialIssue=False,
-            isInCluster=True
+            "test", hasCoordinate=True, hasGeospatialIssue=False, isInCluster=True
         )
-        
+
         call_args = mock_get.call_args
         params = call_args.kwargs["params"]
         assert params["hasCoordinate"] == "True"  # Booleans become strings
@@ -432,7 +434,7 @@ def test_gbif_adapter_array_parameters():
     adapter = GBIFOccurrenceAdapter()
 
     mock_data = {"results": [], "count": 0, "endOfRecords": True}
-    
+
     with patch.object(requests.Session, "get") as mock_get:
         mock_response = Mock()
         mock_response.status_code = 200
@@ -444,9 +446,9 @@ def test_gbif_adapter_array_parameters():
             "test",
             country=["US", "CA"],
             taxonKey=[12345, 67890],
-            year=[2020, 2021, 2022]
+            year=[2020, 2021, 2022],
         )
-        
+
         call_args = mock_get.call_args
         params = call_args.kwargs["params"]
         assert params["country"] == ["US", "CA"]
@@ -475,11 +477,15 @@ def test_gbif_adapter_discovery_structure():
 
     # Check parameter structure
     parameters = discovery["parameters"]
-    
+
     # Test a few specific parameters
     assert "q" in parameters
     q_param = parameters["q"]
-    assert q_param["description"] == "Simple full-text search parameter. The value can be a simple word or a phrase."
+    assert (
+        q_param["description"]
+        == "Simple full-text search parameter. The value can be a simple word "
+        "or a phrase."
+    )
     assert q_param["type"] == "string"
 
     assert "scientificName" in parameters
@@ -509,7 +515,7 @@ def test_gbif_adapter_url_construction():
     # The actual URL construction happens in the requests call,
     # so we test it indirectly through mocking
     mock_data = {"results": [], "count": 0, "endOfRecords": True}
-    
+
     with patch.object(requests.Session, "get") as mock_get:
         mock_response = Mock()
         mock_response.status_code = 200
@@ -517,7 +523,7 @@ def test_gbif_adapter_url_construction():
         mock_get.return_value = mock_response
 
         adapter.query("test")
-        
+
         # Verify the URL was constructed correctly
         call_args = mock_get.call_args
         assert call_args[0][0] == "https://api.gbif.org/v1/occurrence/search"
@@ -539,7 +545,7 @@ def test_gbif_adapter_response_parsing_edge_cases():
             }
         ],
         "count": 1,
-        "endOfRecords": True
+        "endOfRecords": True,
     }
 
     with patch.object(requests.Session, "get") as mock_get:
@@ -549,7 +555,7 @@ def test_gbif_adapter_response_parsing_edge_cases():
         mock_get.return_value = mock_response
 
         result = adapter.query("test")
-        
+
         assert len(result) == 1
         assert result.iloc[0]["gbifID"] == 123  # GBIF API key maps to gbifID
         assert result.iloc[0]["scientificName"] == "Test species"
@@ -562,11 +568,11 @@ def test_gbif_adapter_response_parsing_edge_cases():
                 "key": 456,
                 "scientificName": "Another species",
                 "extraField": "extra data",
-                "customAttribute": 999
+                "customAttribute": 999,
             }
         ],
         "count": 1,
-        "endOfRecords": True
+        "endOfRecords": True,
     }
 
     with patch.object(requests.Session, "get") as mock_get:
@@ -576,7 +582,7 @@ def test_gbif_adapter_response_parsing_edge_cases():
         mock_get.return_value = mock_response
 
         result = adapter.query("test")
-        
+
         assert len(result) == 1
         assert result.iloc[0]["gbifID"] == 456  # GBIF API key maps to gbifID
         assert result.iloc[0]["scientificName"] == "Another species"
@@ -595,7 +601,7 @@ def test_gbif_adapter_count():
         "count": 12345,
         "endOfRecords": True,
         "offset": 0,
-        "limit": 0
+        "limit": 0,
     }
 
     with patch.object(requests.Session, "get") as mock_get:
@@ -606,18 +612,20 @@ def test_gbif_adapter_count():
 
         # First test that regular query sets metadata correctly
         df = adapter.query("", limit=0, scientificName="Puma concolor")
-        
+
         # Check metadata was set
         assert hasattr(df, "attrs"), "DataFrame should have attrs"
         assert "gbif_metadata" in df.attrs, "Should have gbif_metadata"
-        assert df.attrs["gbif_metadata"]["count"] == 12345, "Metadata count should be 12345"
-        
+        assert df.attrs["gbif_metadata"]["count"] == 12345, (
+            "Metadata count should be 12345"
+        )
+
         # Now test count method
         mock_get.reset_mock()
         mock_response.json.return_value = mock_count_data  # Reset mock data
-        
+
         result = adapter.count(scientificName="Puma concolor")
-        
+
         # The count should come from the metadata
         assert result == 12345
 
@@ -637,13 +645,11 @@ def test_gbif_adapter_metadata():
     adapter = GBIFOccurrenceAdapter()
 
     mock_data = {
-        "results": [
-            {"key": 123, "scientificName": "Test species"}
-        ],
+        "results": [{"key": 123, "scientificName": "Test species"}],
         "count": 5000,
         "endOfRecords": False,
         "offset": 20,
-        "limit": 20
+        "limit": 20,
     }
 
     with patch.object(requests.Session, "get") as mock_get:
@@ -653,7 +659,7 @@ def test_gbif_adapter_metadata():
         mock_get.return_value = mock_response
 
         result = adapter.query("test")
-        
+
         # Check that metadata is set
         if hasattr(result, "attrs") and "gbif_metadata" in result.attrs:
             metadata = result.attrs["gbif_metadata"]
@@ -678,7 +684,7 @@ def test_gbif_adapter_session_headers():
 
     # Test that headers are used in requests
     mock_data = {"results": [], "count": 0, "endOfRecords": True}
-    
+
     with patch.object(requests.Session, "get") as mock_get:
         mock_response = Mock()
         mock_response.status_code = 200
@@ -686,7 +692,7 @@ def test_gbif_adapter_session_headers():
         mock_get.return_value = mock_response
 
         adapter.query("test")
-        
+
         # Verify the session was used (headers should be automatically included)
         mock_get.assert_called_once()
 

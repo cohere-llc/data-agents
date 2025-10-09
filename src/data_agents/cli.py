@@ -9,7 +9,12 @@ from typing import Any, Optional
 import pandas as pd
 
 from data_agents import __version__
-from data_agents.adapters import GBIFOccurrenceAdapter, NasaPowerAdapter, RESTAdapter, TabularAdapter
+from data_agents.adapters import (
+    GBIFOccurrenceAdapter,
+    NasaPowerAdapter,
+    RESTAdapter,
+    TabularAdapter,
+)
 from data_agents.core.adapter import Adapter
 from data_agents.core.router import Router
 

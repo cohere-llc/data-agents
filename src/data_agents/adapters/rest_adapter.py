@@ -72,24 +72,40 @@ class RESTAdapter(Adapter):
                     openapi_source.startswith("http://")
                     or openapi_source.startswith("https://")
                 ):
-                    # Fetch OpenAPI spec from URL with shorter timeout for initialization
-                    openapi_timeout = min(5, self.timeout)  # Use max 5 seconds for OpenAPI
+                    # Fetch OpenAPI spec from URL with shorter timeout for
+                    # initialization
+                    openapi_timeout = min(
+                        5, self.timeout
+                    )  # Use max 5 seconds for OpenAPI
                     try:
                         response = requests.get(
-                            openapi_source, 
-                            timeout=(3, openapi_timeout),  # (connect_timeout, read_timeout)
+                            openapi_source,
+                            timeout=(
+                                3,
+                                openapi_timeout,
+                            ),  # (connect_timeout, read_timeout)
                             verify=self.verify,
-                            headers={"User-Agent": "data-agents/1.0"}
+                            headers={"User-Agent": "data-agents/1.0"},
                         )
                         response.raise_for_status()
                         spec_json = response.json()
                         # Try with validation disabled for potentially malformed specs
                         try:
                             spec = OpenAPI(spec_json, validate=True)
+                            self.openapi_specs.append(spec)
                         except Exception:
-                            # Fall back to no validation if spec has issues
-                            spec = OpenAPI(spec_json, validate=False)
-                        self.openapi_specs.append(spec)
+                            try:
+                                # Fall back to no validation if spec has issues
+                                spec = OpenAPI(spec_json, validate=False)
+                                self.openapi_specs.append(spec)
+                            except Exception:
+                                # If OpenAPI parsing completely fails, store
+                                # raw spec as fallback
+                                raw_spec = {
+                                    "_raw_spec": spec_json,
+                                    "_source_url": openapi_source,
+                                }
+                                self.openapi_specs.append(raw_spec)
                     except Exception as e:
                         print("Warning: Failed to load OpenAPI spec")
                         print(f"Source: {openapi_source}")
@@ -107,9 +123,15 @@ class RESTAdapter(Adapter):
                             spec_json = openapi_source
                         try:
                             spec = OpenAPI(spec_json, validate=True)
+                            self.openapi_specs.append(spec)
                         except Exception:
-                            spec = OpenAPI(spec_json, validate=False)
-                        self.openapi_specs.append(spec)
+                            try:
+                                spec = OpenAPI(spec_json, validate=False)
+                                self.openapi_specs.append(spec)
+                            except Exception as e:
+                                # For local specs, don't store fallback since
+                                # data is already available
+                                print(f"Warning: Failed to parse OpenAPI spec: {e}")
                     except Exception as e:
                         print(f"Warning: Failed to parse OpenAPI spec: {e}")
 

@@ -140,12 +140,12 @@ def extract_gbif_queries_from_markdown(doc_path: Path) -> list[tuple[str, str]]:
             line = line.strip()
             if line and not line.startswith("#") and "uv run data-agents query" in line:
                 # Extract just the query part after "query" command
-                if '--adapter-config config/gbif.adapter.json' in line:
+                if "--adapter-config config/gbif.adapter.json" in line:
                     query_start = line.find('"') + 1
                     query_end = line.find('"', query_start)
                     if query_start > 0 and query_end > query_start:
                         current_query = line[query_start:query_end]
-                        
+
                         # Find description from previous comment
                         if current_query:
                             queries.append((current_query, current_description))
@@ -1720,8 +1720,8 @@ class TestGBIFCLIExamples:
             # Should contain GBIF specific information
             output = result.stdout
             assert (
-                "parameters" in output.lower() 
-                or "37" in output 
+                "parameters" in output.lower()
+                or "37" in output
                 or "scientificName" in output
                 or "GBIF" in output
             )
@@ -1734,15 +1734,15 @@ class TestGBIFCLIExamples:
             "adapters": {
                 "gbif_data": {
                     "type": "gbif_occurrence",
-                    "description": "GBIF biodiversity occurrence data"
+                    "description": "GBIF biodiversity occurrence data",
                 }
             }
         }
-        
-        import tempfile
+
         import json
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        import tempfile
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(router_config, f)
             temp_config_path = f.name
 
@@ -1768,6 +1768,7 @@ class TestGBIFCLIExamples:
         finally:
             # Clean up temp file
             import os
+
             os.unlink(temp_config_path)
 
     def test_gbif_simple_query_formats(self):
@@ -1784,7 +1785,7 @@ class TestGBIFCLIExamples:
         ]
 
         # Test that these are valid query strings (would be passed to GBIF adapter)
-        for query, description in test_cases:
+        for query, _description in test_cases:
             # Verify query string format is reasonable
             assert isinstance(query, str)
             assert len(query) > 0
@@ -1804,10 +1805,13 @@ class TestGBIFCLIExamples:
             ("country=US", "country filter"),
             ("decimalLatitude=40,45 decimalLongitude=-75,-70", "coordinate range"),
             ("continent=NORTH_AMERICA", "continent filter"),
-            ("scientificName=Ursus americanus hasCoordinate=true country=CA", "combined geo filters"),
+            (
+                "scientificName=Ursus americanus hasCoordinate=true country=CA",
+                "combined geo filters",
+            ),
         ]
 
-        for query, description in test_cases:
+        for query, _description in test_cases:
             # Verify geographic query patterns
             assert isinstance(query, str)
             if "decimalLatitude" in query:
@@ -1816,7 +1820,9 @@ class TestGBIFCLIExamples:
                 # Should have valid country code pattern
                 country_part = [p for p in query.split() if p.startswith("country=")][0]
                 country_value = country_part.split("=")[1]
-                assert len(country_value) >= 2, "Country codes should be at least 2 chars"
+                assert len(country_value) >= 2, (
+                    "Country codes should be at least 2 chars"
+                )
 
     def test_gbif_temporal_query_formats(self):
         """Test GBIF temporal query formats from documentation."""
@@ -1827,7 +1833,7 @@ class TestGBIFCLIExamples:
             ("year=2023 month=6,8", "year and month range"),
         ]
 
-        for query, description in test_cases:
+        for query, _description in test_cases:
             # Verify temporal query patterns
             assert isinstance(query, str)
             if "year=" in query:
@@ -1850,48 +1856,58 @@ class TestGBIFCLIExamples:
             ("license=CC_BY_4_0", "license filter"),
         ]
 
-        for query, description in test_cases:
+        for query, _description in test_cases:
             # Verify data quality query patterns
             assert isinstance(query, str)
             if "basisOfRecord=" in query:
-                basis_part = [p for p in query.split() if p.startswith("basisOfRecord=")][0]
+                basis_part = [
+                    p for p in query.split() if p.startswith("basisOfRecord=")
+                ][0]
                 basis_value = basis_part.split("=")[1]
                 assert basis_value in [
-                    "HUMAN_OBSERVATION", "PRESERVED_SPECIMEN", "OBSERVATION",
-                    "MACHINE_OBSERVATION", "LITERATURE", "LIVING_SPECIMEN",
-                    "FOSSIL_SPECIMEN", "MATERIAL_SAMPLE", "UNKNOWN"
+                    "HUMAN_OBSERVATION",
+                    "PRESERVED_SPECIMEN",
+                    "OBSERVATION",
+                    "MACHINE_OBSERVATION",
+                    "LITERATURE",
+                    "LIVING_SPECIMEN",
+                    "FOSSIL_SPECIMEN",
+                    "MATERIAL_SAMPLE",
+                    "UNKNOWN",
                 ], f"Invalid basisOfRecord value: {basis_value}"
 
     def test_gbif_complex_query_formats(self):
         """Test GBIF complex multi-parameter query formats from documentation."""
         test_cases = [
             (
-                "scientificName=Puma concolor country=US,CA year=2020,2023 basisOfRecord=HUMAN_OBSERVATION hasCoordinate=true",
-                "comprehensive species search"
+                "scientificName=Puma concolor country=US,CA year=2020,2023 "
+                "basisOfRecord=HUMAN_OBSERVATION hasCoordinate=true",
+                "comprehensive species search",
             ),
             (
-                "decimalLatitude=35,45 decimalLongitude=-125,-115 year=2023 hasCoordinate=true basisOfRecord=HUMAN_OBSERVATION,PRESERVED_SPECIMEN",
-                "geographic biodiversity survey"
+                "decimalLatitude=35,45 decimalLongitude=-125,-115 year=2023 "
+                "hasCoordinate=true basisOfRecord=HUMAN_OBSERVATION,PRESERVED_SPECIMEN",
+                "geographic biodiversity survey",
             ),
-            (
-                "scientificName=Corvus limit=50",
-                "pagination control"
-            ),
-            (
-                "country=US limit=100 offset=200",
-                "offset pagination"
-            ),
+            ("scientificName=Corvus limit=50", "pagination control"),
+            ("country=US limit=100 offset=200", "offset pagination"),
         ]
 
-        for query, description in test_cases:
+        for query, _description in test_cases:
             # Verify complex query patterns
             assert isinstance(query, str)
-            assert len(query.split()) >= 2, "Complex queries should have multiple parameters"
-            
+            assert len(query.split()) >= 2, (
+                "Complex queries should have multiple parameters"
+            )
+
             # Verify parameter structure
             parts = query.split()
-            param_count = sum(1 for part in parts if "=" in part or part.startswith('"'))
-            assert param_count >= 2, f"Complex query should have multiple parameters: {query}"
+            param_count = sum(
+                1 for part in parts if "=" in part or part.startswith('"')
+            )
+            assert param_count >= 2, (
+                f"Complex query should have multiple parameters: {query}"
+            )
 
     def test_gbif_pagination_parameters(self):
         """Test GBIF pagination parameter handling."""
@@ -1994,7 +2010,8 @@ class TestGBIFCLIExecution:
             cwd=Path(__file__).parent.parent,
         )
 
-        # Should handle gracefully (either succeed with empty results or fail gracefully)
+        # Should handle gracefully (either succeed with empty results or fail
+        # gracefully)
         # Don't assert success/failure as API might handle this differently
         # Just ensure no crash
         assert result.returncode is not None
@@ -2010,7 +2027,7 @@ class TestGBIFCLIExecution:
         # Test a few representative queries (to avoid long test times)
         test_queries = gbif_queries[:3]  # Test first 3 queries
 
-        for query, description in test_queries:
+        for query, _description in test_queries:
             if query and len(query.strip()) > 0:
                 # Test the query format is reasonable
                 assert isinstance(query, str)
@@ -2039,7 +2056,7 @@ class TestGBIFCLIExecution:
 
                 # Should not crash (might fail due to network, but shouldn't crash)
                 assert result.returncode is not None
-                
+
                 if result.returncode == 0:
                     # If successful, should have some output
                     output = result.stdout
