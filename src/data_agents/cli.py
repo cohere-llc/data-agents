@@ -9,7 +9,7 @@ from typing import Any, Optional
 import pandas as pd
 
 from data_agents import __version__
-from data_agents.adapters import NasaPowerAdapter, RESTAdapter, TabularAdapter
+from data_agents.adapters import GBIFOccurrenceAdapter, NasaPowerAdapter, RESTAdapter, TabularAdapter
 from data_agents.core.adapter import Adapter
 from data_agents.core.router import Router
 
@@ -199,10 +199,17 @@ def create_adapter_from_config(
         except Exception as e:
             print(f"Error: Failed to create NASA POWER adapter: {e}")
             return None
+
+    elif adapter_type == "gbif_occurrence":
+        try:
+            return GBIFOccurrenceAdapter(adapter_config)
+        except Exception as e:
+            print(f"Error: Failed to create GBIF Occurrence adapter: {e}")
+            return None
     else:
         print(
             f"Error: Unknown adapter type '{adapter_type}'. "
-            f"Supported types: rest, tabular, nasa_power"
+            f"Supported types: rest, tabular, nasa_power, gbif_occurrence"
         )
         return None
 

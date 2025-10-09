@@ -72,10 +72,14 @@ class RESTAdapter(Adapter):
                     openapi_source.startswith("http://")
                     or openapi_source.startswith("https://")
                 ):
-                    # Fetch OpenAPI spec from URL
+                    # Fetch OpenAPI spec from URL with shorter timeout for initialization
+                    openapi_timeout = min(5, self.timeout)  # Use max 5 seconds for OpenAPI
                     try:
                         response = requests.get(
-                            openapi_source, timeout=self.timeout, verify=self.verify
+                            openapi_source, 
+                            timeout=(3, openapi_timeout),  # (connect_timeout, read_timeout)
+                            verify=self.verify,
+                            headers={"User-Agent": "data-agents/1.0"}
                         )
                         response.raise_for_status()
                         spec_json = response.json()
@@ -90,19 +94,8 @@ class RESTAdapter(Adapter):
                         print("Warning: Failed to load OpenAPI spec")
                         print(f"Source: {openapi_source}")
                         print(f"Error: {e}")
-                        # Store basic info for fallback
-                        try:
-                            response = requests.get(
-                                openapi_source, timeout=self.timeout, verify=self.verify
-                            )
-                            response.raise_for_status()
-                            spec_json = response.json()
-                            # Store as raw JSON for basic path extraction
-                            self.openapi_specs.append(
-                                {"_raw_spec": spec_json, "_source_url": openapi_source}
-                            )
-                        except Exception:
-                            pass
+                        print("Continuing without OpenAPI schema information...")
+                        # Don't retry on failure - just continue without the spec
                 else:
                     # Assume it's OpenAPI spec content
                     try:
@@ -272,12 +265,13 @@ class RESTAdapter(Adapter):
             Dictionary with endpoint information or None if not available
         """
         try:
-            # Test endpoint availability
+            # Test endpoint availability with shorter timeout
+            discovery_timeout = min(5, self.timeout)
             response = requests.get(
                 urljoin(self.base_url + "/", endpoint),
                 headers=self.headers,
                 auth=self.auth,
-                timeout=self.timeout,
+                timeout=(3, discovery_timeout),  # (connect_timeout, read_timeout)
                 verify=self.verify,
             )
 

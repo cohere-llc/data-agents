@@ -12,6 +12,7 @@
 
 ### NASA POWER
 - Desciption of API: https://power.larc.nasa.gov/api/pages/
+- License: public domain (https://www.nasa.gov/organizations/disclaimer/)
 
 | Data Product                       | OpenAPI spec URL                                                  |
 |------------------------------------|-------------------------------------------------------------------|
@@ -37,5 +38,26 @@
 - The APIs seem to be geared towards querying for small data sets (individual parameters over spatiotemporal ranges). Not sure how large the underlying datasets are.
 - Underlying data likely updated regularly. (daily?)
 - Seems like there could be quite a bit of metadata related to data collection, calibrations, attribution, etc. that does not seem to be available through the API, but may be important for research use (not sure though)
-- NASA already has an interactive way to query these data (https://power.larc.nasa.gov/data-access-viewer/)  
+- NASA already has an interactive way to query these data (https://power.larc.nasa.gov/data-access-viewer/)
 
+### GBIF Ecology
+- Description of API: https://techdocs.gbif.org/en/openapi/
+- License: Various (Public Domain, Create Commons 4.0, Unspecified)
+- The API is split up, but there appears to be only one data product (occurrence). The remaining API sections seem to be tools for visualization, registering/managing data sources, and querying metadata (I think)
+
+| Data Product | OpenAPI spec URL                                  |
+|--------------|---------------------------------------------------|
+| Occurrence   | https://techdocs.gbif.org/openapi/occurrence.json |
+
+| Utility                                                                | OpenAPI spec URL                                                        |
+|------------------------------------------------------------------------|-------------------------------------------------------------------------|
+| Registry (Datasets, Installations, Organizations, Nodes, and Networks) | https://techdocs.gbif.org/openapi/registry-principal-methods.json       |
+| Species (taxonomically groups datasets)                                | https://techdocs.gbif.org/openapi/checklistbank.json                    |
+| Occurrence Image (cute animal pics)                                    | none. access instructions : https://techdocs.gbif.org/en/openapi/images |
+| Maps (geographical visualization of data)                              | https://techdocs.gbif.org/openapi/v2-maps.json                          |
+| Literature (papers citing GBIF data)                                   | https://techdocs.gbif.org/openapi/literature.json                       |
+| Validator (not sure what this is)                                      | https://techdocs.gbif.org/openapi/validator.json                        |
+| Vocabulary (registry of controlled vocabulary - not sure what this means) | https://techdocs.gbif.org/openapi/vocabulary.json                    |
+
+- env-agents only queries against the `occurrence/search` endpoint
+- 
