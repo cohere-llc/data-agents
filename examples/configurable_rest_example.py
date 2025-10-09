@@ -164,27 +164,32 @@ def main() -> None:
     print("Example configurations for different APIs:")
 
     print("\n1. E-commerce API Configuration:")
-    print("""
+    print(
+        """
     ecommerce_config = {
         "headers": {"Authorization": "Bearer YOUR_TOKEN"},
         "endpoints": ["products", "orders", "customers"],
         "pagination_param": "limit",
         "pagination_limit": 20,
     }
-    """)
+    """
+    )
 
     print("2. Social Media API Configuration:")
-    print("""
+    print(
+        """
     social_config = {
         "headers": {"X-API-Key": "YOUR_API_KEY"},
         "endpoints": ["posts", "users", "comments"],
         "pagination_param": "per_page",
         "pagination_limit": 10,
     }
-    """)
+    """
+    )
 
     print("3. Financial API Configuration:")
-    print("""
+    print(
+        """
     finance_config = {
         "headers": {"Accept": "application/json"},
         "auth": ("username", "password"),
@@ -192,7 +197,8 @@ def main() -> None:
         "pagination_param": "count",
         "pagination_limit": 50,
     }
-    """)
+    """
+    )
 
     print("\n✨ Configuration Complete!")
     print("The RESTAdapter is now fully configurable and can work with any REST API")

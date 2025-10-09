@@ -225,12 +225,14 @@ class RESTAdapter(Adapter):
             raise ValueError(f"Failed to parse response as JSON: {e}") from e
 
     def discover(self: RESTAdapter) -> dict[str, Any]:
-        """Discover API capabilities including available endpoints and comprehensive query information.
+        """Discover API capabilities including available endpoints
+        and comprehensive query information.
 
         This method performs comprehensive API discovery by:
         1. Testing endpoint availability
         2. Extracting parameter requirements from OpenAPI specs and error responses
-        3. Providing detailed parameter information including types, formats, and examples
+        3. Providing detailed parameter information including types,
+           formats, and examples
         4. Including response format information
 
         Returns:
@@ -262,10 +264,10 @@ class RESTAdapter(Adapter):
 
     def _discover_endpoint(self, endpoint: str) -> dict[str, Any] | None:
         """Discover information for a single endpoint.
-        
+
         Args:
             endpoint: The endpoint path to discover
-            
+
         Returns:
             Dictionary with endpoint information or None if not available
         """
@@ -278,36 +280,42 @@ class RESTAdapter(Adapter):
                 timeout=self.timeout,
                 verify=self.verify,
             )
-            
+
             endpoint_url = urljoin(self.base_url + "/", endpoint)
-            
+
             # Handle different response scenarios
             if response.status_code == 200:
-                return self._handle_successful_endpoint(endpoint, endpoint_url, response)
+                return self._handle_successful_endpoint(
+                    endpoint, endpoint_url, response
+                )
             elif response.status_code in [400, 422]:
-                return self._handle_parameterized_endpoint(endpoint, endpoint_url, response)
+                return self._handle_parameterized_endpoint(
+                    endpoint, endpoint_url, response
+                )
             else:
                 return None
-                
+
         except Exception:
             return None
 
-    def _handle_successful_endpoint(self, endpoint: str, endpoint_url: str, response: requests.Response) -> dict[str, Any]:
+    def _handle_successful_endpoint(
+        self, endpoint: str, endpoint_url: str, response: requests.Response
+    ) -> dict[str, Any]:
         """Handle endpoints that respond successfully without parameters."""
-        endpoint_info = {
+        endpoint_info: dict[str, Any] = {
             "description": f"REST endpoint: {endpoint}",
             "url": endpoint_url,
             "method": "GET",
             "required_parameters": {},
             "optional_parameters": {},
         }
-        
+
         # Try to get sample data and response format
         try:
             params = {}
             if self.pagination_param and self.pagination_limit:
                 params[self.pagination_param] = self.pagination_limit
-                
+
             sample_df = self.query(endpoint, params=params)
             if not sample_df.empty:
                 # Convert sample data to a clean format
@@ -317,32 +325,34 @@ class RESTAdapter(Adapter):
                     "sample_data": sample_record,
                     "columns": list(sample_df.columns),
                 }
-                
+
                 # Add parameter info for pagination if supported
                 if self.pagination_param:
                     endpoint_info["optional_parameters"][self.pagination_param] = {
                         "type": "integer",
-                        "description": f"Limit number of results (pagination)",
+                        "description": "Limit number of results (pagination)",
                         "minimum": 1,
                     }
         except Exception:
             pass
-            
+
         # Enhance with OpenAPI spec information if available
         self._enhance_endpoint_from_openapi(endpoint, endpoint_info)
-        
+
         return endpoint_info
 
-    def _handle_parameterized_endpoint(self, endpoint: str, endpoint_url: str, response: requests.Response) -> dict[str, Any]:
+    def _handle_parameterized_endpoint(
+        self, endpoint: str, endpoint_url: str, response: requests.Response
+    ) -> dict[str, Any]:
         """Handle endpoints that require parameters (422/400 responses)."""
-        endpoint_info = {
+        endpoint_info: dict[str, Any] = {
             "description": f"REST endpoint: {endpoint}",
             "url": endpoint_url,
             "method": "GET",
             "required_parameters": {},
             "optional_parameters": {},
         }
-        
+
         # Extract parameter requirements from error response
         try:
             error_data = response.json()
@@ -358,24 +368,28 @@ class RESTAdapter(Adapter):
                             }
         except Exception:
             pass
-        
+
         # Enhance with detailed OpenAPI spec information
         self._enhance_endpoint_from_openapi(endpoint, endpoint_info)
-        
+
         return endpoint_info
 
-    def _enhance_endpoint_from_openapi(self, endpoint: str, endpoint_info: dict[str, Any]) -> None:
+    def _enhance_endpoint_from_openapi(
+        self, endpoint: str, endpoint_info: dict[str, Any]
+    ) -> None:
         """Enhance endpoint information using OpenAPI specifications."""
         if not self.openapi_specs:
             return
-            
+
         for spec in self.openapi_specs:
             if isinstance(spec, dict) and "_raw_spec" in spec:
                 # Handle raw spec fallback
                 spec_data = spec["_raw_spec"]
-                endpoint_path = f"/{endpoint}" if not endpoint.startswith("/") else endpoint
+                endpoint_path = (
+                    f"/{endpoint}" if not endpoint.startswith("/") else endpoint
+                )
                 paths = spec_data.get("paths", {})
-                
+
                 for path, path_info in paths.items():
                     if path == endpoint_path or path.endswith(f"/{endpoint}"):
                         self._extract_openapi_parameters(path_info, endpoint_info)
@@ -383,64 +397,82 @@ class RESTAdapter(Adapter):
                         break
             elif hasattr(spec, "paths") and spec.paths:
                 # Handle proper OpenAPI object
-                endpoint_path = f"/{endpoint}" if not endpoint.startswith("/") else endpoint
-                
+                endpoint_path = (
+                    f"/{endpoint}" if not endpoint.startswith("/") else endpoint
+                )
+
                 for path, path_obj in spec.paths.items():
                     if path == endpoint_path or path.endswith(f"/{endpoint}"):
                         # Extract from OpenAPI objects directly
-                        self._extract_openapi_parameters_from_object(path_obj, endpoint_info, spec)
-                        self._extract_openapi_description_from_object(path_obj, endpoint_info)
+                        self._extract_openapi_parameters_from_object(
+                            path_obj, endpoint_info, spec
+                        )
+                        self._extract_openapi_description_from_object(
+                            path_obj, endpoint_info
+                        )
                         break
 
-    def _extract_openapi_parameters_from_object(self, path_obj: Any, endpoint_info: dict[str, Any], spec: Any) -> None:
+    def _extract_openapi_parameters_from_object(
+        self, path_obj: Any, endpoint_info: dict[str, Any], spec: Any
+    ) -> None:
         """Extract parameter information from OpenAPI path object."""
         if not hasattr(path_obj, "get") or not path_obj.get:
             return
-            
+
         get_operation = path_obj.get
         if not hasattr(get_operation, "parameters") or not get_operation.parameters:
             return
-            
+
         for param in get_operation.parameters:
             param_name = param.name
             if not param_name:
                 continue
-                
+
             param_spec = {
                 "type": "string",  # Default
                 "description": param.description or f"Parameter: {param_name}",
             }
-            
+
             # Extract schema information
             if hasattr(param, "schema") and param.schema:
                 schema = param.schema
-                
+
                 # Handle schema references
                 if hasattr(schema, "ref") and schema.ref:
-                    resolved_schema = self._resolve_schema_ref_from_object(schema.ref, spec)
+                    resolved_schema = self._resolve_schema_ref_from_object(
+                        schema.ref, spec
+                    )
                     if resolved_schema:
-                        param_spec.update(self._extract_schema_info_from_object(resolved_schema))
+                        param_spec.update(
+                            self._extract_schema_info_from_object(resolved_schema)
+                        )
                 else:
                     param_spec.update(self._extract_schema_info_from_object(schema))
-                
+
             # Add example if available
             if hasattr(param, "example") and param.example is not None:
                 param_spec["example"] = param.example
-                
+
             # Determine if required
             is_required = getattr(param, "required", False)
-            target_params = endpoint_info["required_parameters"] if is_required else endpoint_info["optional_parameters"]
+            target_params = (
+                endpoint_info["required_parameters"]
+                if is_required
+                else endpoint_info["optional_parameters"]
+            )
             target_params[param_name] = param_spec
 
-    def _extract_openapi_description_from_object(self, path_obj: Any, endpoint_info: dict[str, Any]) -> None:
+    def _extract_openapi_description_from_object(
+        self, path_obj: Any, endpoint_info: dict[str, Any]
+    ) -> None:
         """Extract description from OpenAPI path object."""
         if not hasattr(path_obj, "get") or not path_obj.get:
             return
-            
+
         get_operation = path_obj.get
         summary = getattr(get_operation, "summary", "")
         description = getattr(get_operation, "description", "")
-        
+
         if summary:
             endpoint_info["description"] = summary
         elif description:
@@ -449,7 +481,7 @@ class RESTAdapter(Adapter):
     def _extract_schema_info_from_object(self, schema: Any) -> dict[str, Any]:
         """Extract schema information from OpenAPI schema object."""
         info = {}
-        
+
         if hasattr(schema, "type") and schema.type:
             info["type"] = schema.type
         if hasattr(schema, "format") and schema.format:
@@ -464,44 +496,46 @@ class RESTAdapter(Adapter):
             info["default"] = schema.default
         if hasattr(schema, "pattern") and schema.pattern:
             info["pattern"] = schema.pattern
-            
+
         return info
 
     def _resolve_schema_ref_from_object(self, ref: str, spec: Any) -> Any:
         """Resolve a schema reference from OpenAPI object."""
         if not ref.startswith("#/"):
             return None
-            
+
         path_parts = ref[2:].split("/")  # Remove '#/' and split
-        
+
         if not hasattr(spec, "components") or not spec.components:
             return None
-            
+
         current = spec.components
         for part in path_parts[1:]:  # Skip 'components' as we already have it
             if hasattr(current, part):
                 current = getattr(current, part)
             else:
                 return None
-                
+
         return current
 
-    def _extract_openapi_parameters(self, path_info: dict[str, Any], endpoint_info: dict[str, Any]) -> None:
+    def _extract_openapi_parameters(
+        self, path_info: dict[str, Any], endpoint_info: dict[str, Any]
+    ) -> None:
         """Extract parameter information from OpenAPI path specification."""
         # Look for GET method parameters
         get_method = path_info.get("get", {})
         parameters = get_method.get("parameters", [])
-        
+
         for param in parameters:
             param_name = param.get("name")
             if not param_name:
                 continue
-                
+
             param_spec = {
                 "type": "string",  # Default
                 "description": param.get("description", f"Parameter: {param_name}"),
             }
-            
+
             # Extract schema information
             schema = param.get("schema", {})
             if schema:
@@ -512,54 +546,61 @@ class RESTAdapter(Adapter):
                         param_spec.update(self._extract_schema_info(resolved_schema))
                 else:
                     param_spec.update(self._extract_schema_info(schema))
-                
+
             # Add example if available in OpenAPI spec
             if "example" in param:
                 param_spec["example"] = param["example"]
-                
+
             # Determine if required
             is_required = param.get("required", False)
-            target_params = endpoint_info["required_parameters"] if is_required else endpoint_info["optional_parameters"]
+            target_params = (
+                endpoint_info["required_parameters"]
+                if is_required
+                else endpoint_info["optional_parameters"]
+            )
             target_params[param_name] = param_spec
 
     def _resolve_schema_ref(self, ref: str) -> dict[str, Any] | None:
         """Resolve a schema reference like '#/components/schemas/Communities'."""
         if not ref.startswith("#/"):
             return None
-            
+
         # Extract the path from the reference
         path_parts = ref[2:].split("/")  # Remove '#/' and split
-        
+
         for spec in self.openapi_specs:
             spec_data = None
             if isinstance(spec, dict) and "_raw_spec" in spec:
                 spec_data = spec["_raw_spec"]
             elif hasattr(spec, "__dict__"):
                 spec_data = self._openapi_to_dict(spec)
-                
+
             if not spec_data:
                 continue
-                
+
             # Navigate through the path to find the referenced schema
-            current = spec_data
+            current: Any = spec_data
             for part in path_parts:
                 if isinstance(current, dict) and part in current:
                     current = current[part]
                 else:
                     current = None
                     break
-                    
+
             if current and isinstance(current, dict):
-                return current
-                
+                # We've verified current is a dict at runtime
+                return current  # type: ignore[no-any-return]
+
         return None
 
-    def _extract_openapi_description(self, path_info: dict[str, Any], endpoint_info: dict[str, Any]) -> None:
+    def _extract_openapi_description(
+        self, path_info: dict[str, Any], endpoint_info: dict[str, Any]
+    ) -> None:
         """Extract description from OpenAPI path specification."""
         get_method = path_info.get("get", {})
         summary = get_method.get("summary", "")
         description = get_method.get("description", "")
-        
+
         if summary:
             endpoint_info["description"] = summary
         elif description:
@@ -568,7 +609,7 @@ class RESTAdapter(Adapter):
     def _extract_schema_info(self, schema: dict[str, Any]) -> dict[str, Any]:
         """Extract schema information into parameter specification."""
         info = {}
-        
+
         if "type" in schema:
             info["type"] = schema["type"]
         if "format" in schema:
@@ -583,7 +624,7 @@ class RESTAdapter(Adapter):
             info["default"] = schema["default"]
         if "pattern" in schema:
             info["pattern"] = schema["pattern"]
-            
+
         return info
 
     def _get_example_value(self, param_name: str) -> Any:
@@ -648,7 +689,15 @@ class RESTAdapter(Adapter):
     def _schema_to_dict(self, schema: Any) -> dict[str, Any]:
         """Convert OpenAPI schema object to dictionary."""
         result = {}
-        for attr in ["type", "format", "minimum", "maximum", "enum", "default", "pattern"]:
+        for attr in [
+            "type",
+            "format",
+            "minimum",
+            "maximum",
+            "enum",
+            "default",
+            "pattern",
+        ]:
             if hasattr(schema, attr):
                 value = getattr(schema, attr)
                 if value is not None:
@@ -659,10 +708,10 @@ class RESTAdapter(Adapter):
         """Get consolidated OpenAPI information."""
         if not self.openapi_specs:
             return None
-            
+
         # Use the first spec for basic info
         spec = self.openapi_specs[0]
-        
+
         if isinstance(spec, dict) and "_raw_spec" in spec:
             raw_spec = spec["_raw_spec"]
             info = raw_spec.get("info", {})
@@ -674,10 +723,10 @@ class RESTAdapter(Adapter):
         elif hasattr(spec, "info") and spec.info:
             return {
                 "title": spec.info.title or "Unknown",
-                "version": spec.info.version or "Unknown", 
+                "version": spec.info.version or "Unknown",
                 "description": spec.info.description or "",
             }
-        
+
         return None
 
     def post_data(

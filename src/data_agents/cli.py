@@ -9,20 +9,20 @@ from typing import Any, Optional
 import pandas as pd
 
 from data_agents import __version__
-from data_agents.adapters import RESTAdapter, TabularAdapter, NasaPowerAdapter
+from data_agents.adapters import NasaPowerAdapter, RESTAdapter, TabularAdapter
 from data_agents.core.adapter import Adapter
 from data_agents.core.router import Router
 
 
 def parse_nasa_query(query_string: str) -> tuple[str, dict[str, Any]]:
     """Parse NASA POWER query string into parameter name and kwargs.
-    
+
     Args:
         query_string: Query string in format "PARAMETER_NAME key=value key2=value2"
-        
+
     Returns:
         Tuple of (parameter_name, kwargs_dict)
-        
+
     Example:
         parse_nasa_query("T2M latitude=40.7 longitude=-74.0 temporal=daily")
         Returns: ("T2M", {"latitude": 40.7, "longitude": -74.0, "temporal": "daily"})
@@ -30,36 +30,36 @@ def parse_nasa_query(query_string: str) -> tuple[str, dict[str, Any]]:
     parts = query_string.split()
     if not parts:
         raise ValueError("Empty query string")
-    
+
     parameter_name = parts[0]
     kwargs: dict[str, Any] = {}
-    
+
     for part in parts[1:]:
-        if '=' not in part:
+        if "=" not in part:
             continue
-        key, value = part.split('=', 1)
-        
+        key, value = part.split("=", 1)
+
         # Try to convert numeric values
         try:
             # Try integer first
-            if '.' not in value:
+            if "." not in value:
                 kwargs[key] = int(value)
             else:
                 kwargs[key] = float(value)
         except ValueError:
             # Keep as string if not numeric
             kwargs[key] = value
-    
+
     return parameter_name, kwargs
 
 
 def execute_router_query(router: Router, query_string: str) -> dict[str, pd.DataFrame]:
     """Execute a query on all adapters in a router, handling different adapter types.
-    
+
     Args:
         router: The router containing adapters to query
         query_string: The query string
-        
+
     Returns:
         Dictionary mapping adapter names to their query results
     """
@@ -71,17 +71,17 @@ def execute_router_query(router: Router, query_string: str) -> dict[str, pd.Data
             # Log error and continue with other adapters
             print(f"Error querying adapter '{name}': {e}")
             results[name] = pd.DataFrame()
-    
+
     return results
 
 
 def execute_adapter_query(adapter: Adapter, query_string: str) -> pd.DataFrame:
     """Execute a query on an adapter, handling different adapter types.
-    
+
     Args:
         adapter: The adapter to query
         query_string: The query string
-        
+
     Returns:
         DataFrame with query results
     """
@@ -200,7 +200,10 @@ def create_adapter_from_config(
             print(f"Error: Failed to create NASA POWER adapter: {e}")
             return None
     else:
-        print(f"Error: Unknown adapter type '{adapter_type}'. Supported types: rest, tabular, nasa_power")
+        print(
+            f"Error: Unknown adapter type '{adapter_type}'. "
+            f"Supported types: rest, tabular, nasa_power"
+        )
         return None
 
 

@@ -46,9 +46,7 @@ class TabularAdapter(Adapter):
                             f"got {type(df)} for '{name}'"
                         )
             else:
-                raise ValueError(
-                    f"data must be a dict of DataFrames, got {type(data)}"
-                )
+                raise ValueError(f"data must be a dict of DataFrames, got {type(data)}")
 
     @property
     def data(self) -> pd.DataFrame:
@@ -163,13 +161,15 @@ class TabularAdapter(Adapter):
                         "Query specific table and column using 'table.column' syntax"
                     ),
                     "type": "string",
-                    "examples": [
-                        f"{table}.{col}"
-                        for table, df in list(self.tables.items())[:2]
-                        for col in df.columns.tolist()[:2]
-                    ]
-                    if self.tables
-                    else [],
+                    "examples": (
+                        [
+                            f"{table}.{col}"
+                            for table, df in list(self.tables.items())[:2]
+                            for col in df.columns.tolist()[:2]
+                        ]
+                        if self.tables
+                        else []
+                    ),
                     "required": False,
                 },
                 "column_selection": {
@@ -181,13 +181,15 @@ class TabularAdapter(Adapter):
                 "filter_query": {
                     "description": "Pandas query string for filtering rows",
                     "type": "string",
-                    "examples": [
-                        "column_name > 10",
-                        "column_name == 'value'",
-                        "column_name.isin(['a', 'b'])",
-                    ]
-                    if all_columns
-                    else [],
+                    "examples": (
+                        [
+                            "column_name > 10",
+                            "column_name == 'value'",
+                            "column_name.isin(['a', 'b'])",
+                        ]
+                        if all_columns
+                        else []
+                    ),
                     "required": False,
                 },
                 "wildcard": {

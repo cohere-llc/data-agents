@@ -249,9 +249,10 @@ class TestRESTAdapter:
         if not adapter.endpoints and adapter.openapi_specs:
             adapter.endpoints = []
             from urllib.parse import urlparse
+
             base_parsed = urlparse(adapter.base_url)
             base_path = base_parsed.path.rstrip("/")
-            
+
             for spec in adapter.openapi_specs:
                 if isinstance(spec, dict) and "_raw_spec" in spec:
                     raw_spec = spec["_raw_spec"]
@@ -259,7 +260,7 @@ class TestRESTAdapter:
                         for path in raw_spec["paths"].keys():
                             # Remove base path if the OpenAPI path includes it
                             if base_path and path.startswith(base_path):
-                                endpoint = path[len(base_path):].lstrip("/")
+                                endpoint = path[len(base_path) :].lstrip("/")
                             else:
                                 endpoint = path.lstrip("/")
                             if endpoint:  # Only add non-empty endpoints
@@ -619,8 +620,15 @@ class TestRESTAdapter:
         assert discovery["endpoints"]["posts"]["description"] == "REST endpoint: posts"
         assert "response_format" in discovery["endpoints"]["users"]
         assert "response_format" in discovery["endpoints"]["posts"]
-        assert discovery["endpoints"]["users"]["response_format"]["columns"] == ["id", "name"]
-        assert discovery["endpoints"]["posts"]["response_format"]["columns"] == ["id", "title", "userId"]
+        assert discovery["endpoints"]["users"]["response_format"]["columns"] == [
+            "id",
+            "name",
+        ]
+        assert discovery["endpoints"]["posts"]["response_format"]["columns"] == [
+            "id",
+            "title",
+            "userId",
+        ]
 
     def test_discover_no_config(self):
         """Test discovery with no configuration."""
@@ -675,8 +683,15 @@ class TestRESTAdapter:
         assert discovery["base_url"] == "https://api.example.com"
         assert "users" in discovery["endpoints"]
         assert "posts" in discovery["endpoints"]
-        assert discovery["endpoints"]["users"]["response_format"]["columns"] == ["id", "name"]
-        assert discovery["endpoints"]["posts"]["response_format"]["columns"] == ["id", "title", "userId"]
+        assert discovery["endpoints"]["users"]["response_format"]["columns"] == [
+            "id",
+            "name",
+        ]
+        assert discovery["endpoints"]["posts"]["response_format"]["columns"] == [
+            "id",
+            "title",
+            "userId",
+        ]
 
     @patch("requests.get")
     @patch("data_agents.adapters.rest_adapter.RESTAdapter.query")
@@ -1028,18 +1043,14 @@ class TestRESTAdapterIntegration:
             # Test discovery functionality with OpenAPI data
             discovery = adapter.discover()
             assert "openapi_info" in discovery, "OpenAPI info should be present"
-            assert discovery["openapi_info"], (
-                "OpenAPI info should not be empty"
-            )
+            assert discovery["openapi_info"], "OpenAPI info should not be empty"
 
             # Verify OpenAPI information
             openapi_info = discovery["openapi_info"]
             assert openapi_info["title"] == "POWER Daily API"
-            
+
             # Test that endpoints were extracted from OpenAPI spec
-            assert adapter.endpoints, (
-                "Endpoints should be extracted from OpenAPI spec"
-            )
+            assert adapter.endpoints, "Endpoints should be extracted from OpenAPI spec"
 
             # The endpoints may not be directly accessible without parameters,
             # so we just verify the OpenAPI parsing worked
@@ -1060,11 +1071,13 @@ class TestRESTAdapterOpenAPIEdgeCases:
     def test_openapi_object_processing_mock(self):
         """Test OpenAPI object processing with mock objects."""
         # Test that the REST adapter can handle OpenAPI specs without crashing
-        config = {"openapi": [{"openapi": "3.0.0", "paths": {"/users": {}, "/posts": {}}}]}
+        config = {
+            "openapi": [{"openapi": "3.0.0", "paths": {"/users": {}, "/posts": {}}}]
+        }
         adapter = RESTAdapter("https://api.example.com", config)
-        
+
         # The implementation should have tried to process the OpenAPI spec
-        assert hasattr(adapter, 'openapi_specs')
+        assert hasattr(adapter, "openapi_specs")
         # Even if processing fails, it shouldn't crash the initialization
         assert isinstance(adapter.openapi_specs, list)
 
@@ -1072,7 +1085,7 @@ class TestRESTAdapterOpenAPIEdgeCases:
         """Test endpoint enhancement when no OpenAPI specs are available."""
         adapter = RESTAdapter("https://api.example.com")
         endpoint_info = {"description": "Test endpoint"}
-        
+
         # Should not crash when no OpenAPI specs are available
         adapter._enhance_endpoint_from_openapi("test", endpoint_info)
         assert endpoint_info["description"] == "Test endpoint"
@@ -1080,74 +1093,76 @@ class TestRESTAdapterOpenAPIEdgeCases:
     def test_resolve_schema_ref_from_object_missing_components(self):
         """Test schema reference resolution with object that has no components."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create a mock object without components
         mock_spec = MagicMock()
         mock_spec.components = None
-        
-        result = adapter._resolve_schema_ref_from_object("#/components/schemas/User", mock_spec)
+
+        result = adapter._resolve_schema_ref_from_object(
+            "#/components/schemas/User", mock_spec
+        )
         assert result is None
 
     def test_resolve_schema_ref_from_object_missing_path(self):
         """Test schema reference resolution with object missing path."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create a mock object with components but missing schema
         mock_spec = MagicMock()
         mock_components = MagicMock()
         mock_spec.components = mock_components
         del mock_components.schemas  # Remove schemas attribute
-        
-        result = adapter._resolve_schema_ref_from_object("#/components/schemas/User", mock_spec)
+
+        result = adapter._resolve_schema_ref_from_object(
+            "#/components/schemas/User", mock_spec
+        )
         assert result is None
 
     def test_schema_ref_resolution_edge_cases(self):
         """Test schema reference resolution with edge cases."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Test with reference not starting with #/
         result = adapter._resolve_schema_ref("#invalid/ref")
         assert result is None
-        
+
         # Test with empty reference
         result = adapter._resolve_schema_ref("")
         assert result is None
 
     def test_openapi_raw_spec_fallback(self):
         """Test that raw spec fallback works when OpenAPI parsing fails."""
-        malformed_openapi = {
-            "openapi": "3.0.0",
-            "paths": {
-                "/test": {"get": {}}
-            }
-        }
-        
+        malformed_openapi = {"openapi": "3.0.0", "paths": {"/test": {"get": {}}}}
+
         # Force the OpenAPI parsing to fail so it falls back to raw spec
-        with patch('data_agents.adapters.rest_adapter.OpenAPI', side_effect=Exception("Parse error")):
+        with patch(
+            "data_agents.adapters.rest_adapter.OpenAPI",
+            side_effect=Exception("Parse error"),
+        ):
             config = {"openapi": [malformed_openapi]}
             adapter = RESTAdapter("https://api.example.com", config)
-            
+
             # Should not crash and should store raw spec
-            assert hasattr(adapter, 'openapi_specs')
+            assert hasattr(adapter, "openapi_specs")
 
     def test_extract_schema_info_from_object_with_ref(self):
         """Test schema info extraction when schema contains a reference."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Mock schema object with $ref
         mock_schema = MagicMock()
         mock_schema.ref = "#/components/schemas/User"
-        
+
         # Create a mock spec to resolve the reference
         mock_spec = MagicMock()
         mock_user_schema = MagicMock()
         mock_user_schema.type = "object"
         mock_spec.components.schemas.User = mock_user_schema
-        
+
         adapter.openapi_specs = [mock_spec]
-        
+
         result = adapter._extract_schema_info_from_object(mock_schema)
-        
+
         # Should handle the reference resolution
         assert isinstance(result, dict)
 
@@ -1155,21 +1170,24 @@ class TestRESTAdapterOpenAPIEdgeCases:
         """Test parameter extraction with various edge cases."""
         adapter = RESTAdapter("https://api.example.com")
         endpoint_info = {"parameters": {}, "required_parameters": {}}
-        
+
         # Test with path info that has no parameters
         path_info = {"get": {"summary": "Test endpoint"}}
         adapter._extract_openapi_parameters(path_info, endpoint_info)
-        
+
         # Should not crash and should leave parameters empty
         assert isinstance(endpoint_info["parameters"], dict)
 
     def test_discover_endpoint_with_network_error(self):
         """Test endpoint discovery when network request fails."""
         adapter = RESTAdapter("https://api.example.com")
-        
-        with patch('requests.get', side_effect=requests.exceptions.RequestException("Network error")):
+
+        with patch(
+            "requests.get",
+            side_effect=requests.exceptions.RequestException("Network error"),
+        ):
             result = adapter._discover_endpoint("test")
-            
+
             # Should return None or handle error gracefully
             assert result is None or isinstance(result, dict)
 
@@ -1180,24 +1198,24 @@ class TestRESTAdapterErrorHandling:
     def test_discover_endpoint_exception_handling(self):
         """Test that _discover_endpoint handles exceptions gracefully."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Mock requests.get to raise an exception
-        with patch('requests.get', side_effect=requests.exceptions.RequestException("Network error")):
+        with patch(
+            "requests.get",
+            side_effect=requests.exceptions.RequestException("Network error"),
+        ):
             result = adapter._discover_endpoint("test")
-            
+
             # Should return None when network fails
             assert result is None
 
     def test_openapi_processing_exception_handling(self):
         """Test that OpenAPI processing handles malformed specs gracefully."""
         # Malformed OpenAPI spec that might cause exceptions
-        malformed_spec = {
-            "openapi": "3.0.0",
-            "paths": None  # This could cause issues
-        }
-        
+        malformed_spec = {"openapi": "3.0.0", "paths": None}  # This could cause issues
+
         config = {"openapi": [malformed_spec]}
-        
+
         # Should not crash even with malformed spec
         adapter = RESTAdapter("https://api.example.com", config)
         assert isinstance(adapter.endpoints, list)
@@ -1205,7 +1223,7 @@ class TestRESTAdapterErrorHandling:
     def test_schema_resolution_with_missing_components(self):
         """Test schema resolution when components section is missing."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Test with reference when no components are loaded
         result = adapter._resolve_schema_ref("#/components/schemas/User")
         assert result is None
@@ -1224,7 +1242,8 @@ class TestRESTAdapterDiscoveryEnhancements:
 
         # Should include endpoint information
         assert "endpoints" in discovery
-        # Note: endpoints may be empty if discovery fails (network calls), which is expected in test environment
+        # Note: endpoints may be empty if discovery fails (network calls),
+        # which is expected in test environment
         assert isinstance(discovery["endpoints"], dict)
 
     def test_openapi_info_extraction_without_specs(self):
@@ -1232,7 +1251,7 @@ class TestRESTAdapterDiscoveryEnhancements:
         # Test without any OpenAPI specs - should not have openapi_info
         adapter = RESTAdapter("https://api.example.com")
         discovery = adapter.discover()
-        
+
         # Should not have openapi_info when no specs are provided
         assert "openapi_info" not in discovery
         assert "adapter_type" in discovery
@@ -1242,15 +1261,15 @@ class TestRESTAdapterDiscoveryEnhancements:
         """Test endpoint availability checking when some endpoints fail."""
         adapter = RESTAdapter("https://api.example.com")
         adapter.endpoints = ["working", "broken", "also-working"]
-        
+
         def mock_get(url, **kwargs):
             if "broken" in url:
                 raise requests.exceptions.RequestException("Broken endpoint")
             return MagicMock(status_code=200)
-        
-        with patch('requests.get', side_effect=mock_get):
+
+        with patch("requests.get", side_effect=mock_get):
             discovery = adapter.discover()
-            
+
             # Should still include information about all endpoints
             assert "endpoints" in discovery
             assert len(discovery["endpoints"]) >= 2  # At least the working ones
@@ -1266,37 +1285,34 @@ class TestRESTAdapterOpenAPIObjectHandling:
         mock_spec.paths = {
             "/users": MagicMock(),
             "/posts": MagicMock(),
-            "/api/v1/comments": MagicMock()  # Test base path handling
+            "/api/v1/comments": MagicMock(),  # Test base path handling
         }
-        
+
         # Create adapter with base path
         adapter = RESTAdapter("https://api.example.com/api/v1")
         adapter.openapi_specs = [mock_spec]
-        
+
         # The constructor should extract endpoints
         config = {"openapi_data": [{"paths": {"/users": {}, "/posts": {}}}]}
         adapter2 = RESTAdapter("https://api.example.com", config)
-        
+
         # Check that endpoints are extracted properly
         assert isinstance(adapter2.endpoints, list)
 
     def test_openapi_object_to_dict_conversion(self):
         """Test conversion of OpenAPI objects to dictionaries."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create mock OpenAPI spec object
         mock_spec = MagicMock()
         mock_spec.info = MagicMock()
         mock_spec.info.title = "Test API"
         mock_spec.info.version = "1.0.0"
         mock_spec.info.description = "Test description"
-        
+
         # Create mock paths
-        mock_spec.paths = {
-            "/users": MagicMock(),
-            "/posts": MagicMock()
-        }
-        
+        mock_spec.paths = {"/users": MagicMock(), "/posts": MagicMock()}
+
         # Mock path object
         mock_path = MagicMock()
         mock_get_op = MagicMock()
@@ -1305,9 +1321,9 @@ class TestRESTAdapterOpenAPIObjectHandling:
         mock_get_op.parameters = []
         mock_path.get = mock_get_op
         mock_spec.paths["/users"] = mock_path
-        
+
         result = adapter._openapi_to_dict(mock_spec)
-        
+
         assert result is not None
         assert result["info"]["title"] == "Test API"
         assert result["info"]["version"] == "1.0.0"
@@ -1318,31 +1334,31 @@ class TestRESTAdapterOpenAPIObjectHandling:
     def test_path_to_dict_conversion(self):
         """Test conversion of OpenAPI path objects to dictionaries."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create mock path object with multiple methods
         mock_path = MagicMock()
-        
+
         # Mock GET operation
         mock_get = MagicMock()
         mock_get.summary = "Get resource"
-        mock_get.description = "Get description" 
+        mock_get.description = "Get description"
         mock_get.parameters = []
         mock_path.get = mock_get
-        
+
         # Mock POST operation
         mock_post = MagicMock()
         mock_post.summary = "Create resource"
         mock_post.description = "Post description"
         mock_post.parameters = []
         mock_path.post = mock_post
-        
+
         # Should not have other methods
         mock_path.put = None
         mock_path.delete = None
         mock_path.patch = None
-        
+
         result = adapter._path_to_dict(mock_path)
-        
+
         assert "get" in result
         assert result["get"]["summary"] == "Get resource"
         assert result["get"]["description"] == "Get description"
@@ -1355,12 +1371,12 @@ class TestRESTAdapterOpenAPIObjectHandling:
     def test_operation_to_dict_conversion(self):
         """Test conversion of OpenAPI operation objects to dictionaries."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create mock operation with parameters
         mock_operation = MagicMock()
         mock_operation.summary = "Test operation"
         mock_operation.description = "Test description"
-        
+
         # Mock parameters
         mock_param1 = MagicMock()
         mock_param1.name = "limit"
@@ -1368,18 +1384,18 @@ class TestRESTAdapterOpenAPIObjectHandling:
         mock_param1.required = False
         mock_param1.schema = MagicMock()
         mock_param1.schema.type = "integer"
-        
+
         mock_param2 = MagicMock()
         mock_param2.name = "filter"
         mock_param2.description = "Filter parameter"
         mock_param2.required = True
         mock_param2.schema = MagicMock()
         mock_param2.schema.type = "string"
-        
+
         mock_operation.parameters = [mock_param1, mock_param2]
-        
+
         result = adapter._operation_to_dict(mock_operation)
-        
+
         assert result["summary"] == "Test operation"
         assert result["description"] == "Test description"
         assert len(result["parameters"]) == 2
@@ -1389,13 +1405,13 @@ class TestRESTAdapterOpenAPIObjectHandling:
     def test_parameter_to_dict_conversion(self):
         """Test conversion of OpenAPI parameter objects to dictionaries."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create mock parameter
         mock_param = MagicMock()
         mock_param.name = "test_param"
         mock_param.description = "Test parameter description"
         mock_param.required = True
-        
+
         # Mock schema with various attributes
         mock_schema = MagicMock()
         mock_schema.type = "integer"
@@ -1404,12 +1420,12 @@ class TestRESTAdapterOpenAPIObjectHandling:
         mock_schema.maximum = 100
         mock_schema.default = 10
         mock_param.schema = mock_schema
-        
+
         result = adapter._parameter_to_dict(mock_param)
-        
+
         assert result["name"] == "test_param"
         assert result["description"] == "Test parameter description"
-        assert result["required"] == True
+        assert result["required"]
         assert result["schema"]["type"] == "integer"
         assert result["schema"]["format"] == "int32"
         assert result["schema"]["minimum"] == 1
@@ -1419,7 +1435,7 @@ class TestRESTAdapterOpenAPIObjectHandling:
     def test_schema_to_dict_conversion(self):
         """Test conversion of OpenAPI schema objects to dictionaries."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create mock schema with all supported attributes
         mock_schema = MagicMock()
         mock_schema.type = "string"
@@ -1429,9 +1445,9 @@ class TestRESTAdapterOpenAPIObjectHandling:
         mock_schema.default = "active"
         mock_schema.minimum = None  # Should not be included
         mock_schema.maximum = None  # Should not be included
-        
+
         result = adapter._schema_to_dict(mock_schema)
-        
+
         assert result["type"] == "string"
         assert result["format"] == "email"
         assert result["pattern"] == "^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$"
@@ -1447,11 +1463,11 @@ class TestRESTAdapterSchemaResolution:
     def test_resolve_schema_ref_with_proper_openapi_object(self):
         """Test schema resolution with proper OpenAPI object."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create mock OpenAPI spec with components
         mock_spec = MagicMock()
         adapter.openapi_specs = [mock_spec]
-        
+
         # Mock the _openapi_to_dict method to return schema data
         def mock_openapi_to_dict(spec):
             return {
@@ -1461,17 +1477,17 @@ class TestRESTAdapterSchemaResolution:
                             "type": "object",
                             "properties": {
                                 "id": {"type": "integer"},
-                                "name": {"type": "string"}
-                            }
+                                "name": {"type": "string"},
+                            },
                         }
                     }
                 }
             }
-        
+
         adapter._openapi_to_dict = mock_openapi_to_dict
-        
+
         result = adapter._resolve_schema_ref("#/components/schemas/User")
-        
+
         assert result is not None
         assert result["type"] == "object"
         assert "properties" in result
@@ -1481,17 +1497,11 @@ class TestRESTAdapterSchemaResolution:
     def test_resolve_schema_ref_invalid_path(self):
         """Test schema resolution with invalid reference paths."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Add a mock spec with valid components
-        mock_spec_data = {
-            "components": {
-                "schemas": {
-                    "User": {"type": "object"}
-                }
-            }
-        }
+        mock_spec_data = {"components": {"schemas": {"User": {"type": "object"}}}}
         adapter.openapi_specs = [{"_raw_spec": mock_spec_data}]
-        
+
         # Test invalid paths
         assert adapter._resolve_schema_ref("#/components/schemas/NonExistent") is None
         assert adapter._resolve_schema_ref("#/invalid/path/User") is None
@@ -1501,7 +1511,7 @@ class TestRESTAdapterSchemaResolution:
         """Test schema resolution with malformed references."""
         adapter = RESTAdapter("https://api.example.com")
         adapter.openapi_specs = [{"_raw_spec": {"components": {"schemas": {}}}}]
-        
+
         # Test malformed references
         assert adapter._resolve_schema_ref("invalid-ref") is None
         assert adapter._resolve_schema_ref("") is None
@@ -1511,7 +1521,7 @@ class TestRESTAdapterSchemaResolution:
     def test_resolve_schema_ref_no_specs(self):
         """Test schema resolution when no OpenAPI specs are available."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         result = adapter._resolve_schema_ref("#/components/schemas/User")
         assert result is None
 
@@ -1522,7 +1532,7 @@ class TestRESTAdapterParameterExtraction:
     def test_extract_openapi_parameters_with_schema_refs(self):
         """Test parameter extraction with schema references."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Mock schema resolution
         def mock_resolve_schema_ref(ref):
             if ref == "#/components/schemas/UserFilter":
@@ -1530,13 +1540,13 @@ class TestRESTAdapterParameterExtraction:
                     "type": "object",
                     "properties": {
                         "status": {"type": "string", "enum": ["active", "inactive"]},
-                        "role": {"type": "string"}
-                    }
+                        "role": {"type": "string"},
+                    },
                 }
             return None
-        
+
         adapter._resolve_schema_ref = mock_resolve_schema_ref
-        
+
         # Test path info with parameter that has schema reference
         path_info = {
             "get": {
@@ -1545,32 +1555,32 @@ class TestRESTAdapterParameterExtraction:
                         "name": "filter",
                         "description": "Filter users",
                         "required": True,
-                        "schema": {"$ref": "#/components/schemas/UserFilter"}
+                        "schema": {"$ref": "#/components/schemas/UserFilter"},
                     },
                     {
                         "name": "limit",
                         "description": "Limit results",
                         "required": False,
                         "schema": {"type": "integer", "minimum": 1, "maximum": 100},
-                        "example": 10
-                    }
+                        "example": 10,
+                    },
                 ]
             }
         }
-        
-        endpoint_info = {
-            "required_parameters": {},
-            "optional_parameters": {}
-        }
-        
+
+        endpoint_info = {"required_parameters": {}, "optional_parameters": {}}
+
         adapter._extract_openapi_parameters(path_info, endpoint_info)
 
         # Check required parameter with schema ref
         assert "filter" in endpoint_info["required_parameters"]
         filter_param = endpoint_info["required_parameters"]["filter"]
         assert filter_param["type"] == "object"
-        # Note: _extract_schema_info only extracts specific fields, not all schema content
-        assert filter_param["description"] == "Filter users"        # Check optional parameter with example
+        # Note: _extract_schema_info only extracts specific fields,
+        # not all schema content
+        assert (
+            filter_param["description"] == "Filter users"
+        )  # Check optional parameter with example
         assert "limit" in endpoint_info["optional_parameters"]
         limit_param = endpoint_info["optional_parameters"]["limit"]
         assert limit_param["type"] == "integer"
@@ -1581,7 +1591,7 @@ class TestRESTAdapterParameterExtraction:
     def test_extract_openapi_parameters_missing_name(self):
         """Test parameter extraction handles missing parameter names."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         path_info = {
             "get": {
                 "parameters": [
@@ -1589,25 +1599,22 @@ class TestRESTAdapterParameterExtraction:
                         # Missing "name" field
                         "description": "Unnamed parameter",
                         "required": True,
-                        "schema": {"type": "string"}
+                        "schema": {"type": "string"},
                     },
                     {
                         "name": "valid_param",
                         "description": "Valid parameter",
                         "required": False,
-                        "schema": {"type": "string"}
-                    }
+                        "schema": {"type": "string"},
+                    },
                 ]
             }
         }
-        
-        endpoint_info = {
-            "required_parameters": {},
-            "optional_parameters": {}
-        }
-        
+
+        endpoint_info = {"required_parameters": {}, "optional_parameters": {}}
+
         adapter._extract_openapi_parameters(path_info, endpoint_info)
-        
+
         # Should only have the valid parameter
         assert len(endpoint_info["required_parameters"]) == 0
         assert len(endpoint_info["optional_parameters"]) == 1
@@ -1616,26 +1623,23 @@ class TestRESTAdapterParameterExtraction:
     def test_extract_openapi_parameters_no_get_method(self):
         """Test parameter extraction when GET method is missing."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         path_info = {
             "post": {
                 "parameters": [
                     {
                         "name": "test_param",
                         "required": True,
-                        "schema": {"type": "string"}
+                        "schema": {"type": "string"},
                     }
                 ]
             }
         }
-        
-        endpoint_info = {
-            "required_parameters": {},
-            "optional_parameters": {}
-        }
-        
+
+        endpoint_info = {"required_parameters": {}, "optional_parameters": {}}
+
         adapter._extract_openapi_parameters(path_info, endpoint_info)
-        
+
         # Should not extract parameters from non-GET methods
         assert len(endpoint_info["required_parameters"]) == 0
         assert len(endpoint_info["optional_parameters"]) == 0
@@ -1647,7 +1651,7 @@ class TestRESTAdapterEndpointEnhancement:
     def test_enhance_endpoint_from_openapi_raw_spec(self):
         """Test endpoint enhancement using raw OpenAPI specifications."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create raw spec with endpoint info
         raw_spec = {
             "paths": {
@@ -1660,64 +1664,61 @@ class TestRESTAdapterEndpointEnhancement:
                                 "name": "limit",
                                 "description": "Number of users to return",
                                 "required": False,
-                                "schema": {"type": "integer", "default": 10}
+                                "schema": {"type": "integer", "default": 10},
                             }
-                        ]
+                        ],
                     }
                 },
                 "/api/users": {  # Test path matching
-                    "get": {
-                        "summary": "Alternative user endpoint",
-                        "parameters": []
-                    }
-                }
+                    "get": {"summary": "Alternative user endpoint", "parameters": []}
+                },
             }
         }
-        
+
         adapter.openapi_specs = [{"_raw_spec": raw_spec}]
-        
+
         endpoint_info = {
             "description": "Original description",
             "required_parameters": {},
-            "optional_parameters": {}
+            "optional_parameters": {},
         }
-        
+
         # Test exact path match
         adapter._enhance_endpoint_from_openapi("users", endpoint_info)
-        
+
         # Should have enhanced the endpoint info
         assert "limit" in endpoint_info["optional_parameters"]
         limit_param = endpoint_info["optional_parameters"]["limit"]
-        assert limit_param["type"] == "integer" 
+        assert limit_param["type"] == "integer"
         assert limit_param["default"] == 10
 
     def test_enhance_endpoint_from_openapi_object(self):
         """Test endpoint enhancement using proper OpenAPI objects."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create mock OpenAPI spec object
         mock_spec = MagicMock()
         mock_spec.paths = {}
-        
+
         # Create mock path object
         mock_path_obj = MagicMock()
         mock_spec.paths["/users"] = mock_path_obj
         mock_spec.paths["/api/users"] = mock_path_obj
-        
+
         adapter.openapi_specs = [mock_spec]
-        
+
         endpoint_info = {
             "description": "Original description",
             "required_parameters": {},
-            "optional_parameters": {}
+            "optional_parameters": {},
         }
-        
+
         # Mock the extraction methods to verify they're called
         adapter._extract_openapi_parameters_from_object = MagicMock()
         adapter._extract_openapi_description_from_object = MagicMock()
-        
+
         adapter._enhance_endpoint_from_openapi("users", endpoint_info)
-        
+
         # Should have called the extraction methods
         adapter._extract_openapi_parameters_from_object.assert_called_once()
         adapter._extract_openapi_description_from_object.assert_called_once()
@@ -1725,26 +1726,20 @@ class TestRESTAdapterEndpointEnhancement:
     def test_enhance_endpoint_no_matching_path(self):
         """Test endpoint enhancement when no matching path is found."""
         adapter = RESTAdapter("https://api.example.com")
-        
-        raw_spec = {
-            "paths": {
-                "/posts": {
-                    "get": {"summary": "Get posts"}
-                }
-            }
-        }
-        
+
+        raw_spec = {"paths": {"/posts": {"get": {"summary": "Get posts"}}}}
+
         adapter.openapi_specs = [{"_raw_spec": raw_spec}]
-        
+
         endpoint_info = {
             "description": "Original description",
             "required_parameters": {},
-            "optional_parameters": {}
+            "optional_parameters": {},
         }
-        
+
         # Test with non-matching endpoint
         adapter._enhance_endpoint_from_openapi("users", endpoint_info)
-        
+
         # Should not have changed the endpoint info
         assert endpoint_info["description"] == "Original description"
         assert len(endpoint_info["required_parameters"]) == 0
@@ -1757,46 +1752,46 @@ class TestRESTAdapterUtilityMethods:
     def test_get_example_value(self):
         """Test the get_example_value method."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # This method should always return None based on current implementation
         result = adapter._get_example_value("test_param")
         assert result is None
-        
+
         result = adapter._get_example_value("any_param")
         assert result is None
 
     def test_openapi_to_dict_exception_handling(self):
         """Test OpenAPI to dict conversion handles exceptions."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create a problematic spec that will raise an exception
         class ProblematicSpec:
-            @property 
+            @property
             def info(self):
                 raise Exception("Access error")
-        
+
         mock_spec = ProblematicSpec()
-        
+
         result = adapter._openapi_to_dict(mock_spec)
-        
+
         # Should return None when exception occurs
         assert result is None
 
     def test_get_openapi_info_with_proper_object(self):
         """Test OpenAPI info extraction with proper OpenAPI object."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create mock spec with info
         mock_spec = MagicMock()
         mock_spec.info = MagicMock()
         mock_spec.info.title = "Test API"
         mock_spec.info.version = "2.0.0"
         mock_spec.info.description = "Test API description"
-        
+
         adapter.openapi_specs = [mock_spec]
-        
+
         result = adapter._get_openapi_info()
-        
+
         assert result is not None
         assert result["title"] == "Test API"
         assert result["version"] == "2.0.0"
@@ -1805,35 +1800,35 @@ class TestRESTAdapterUtilityMethods:
     def test_get_openapi_info_with_none_values(self):
         """Test OpenAPI info extraction handles None values."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create mock spec with None values
         mock_spec = MagicMock()
         mock_spec.info = MagicMock()
         mock_spec.info.title = None
         mock_spec.info.version = None
         mock_spec.info.description = None
-        
+
         adapter.openapi_specs = [mock_spec]
-        
+
         result = adapter._get_openapi_info()
-        
+
         assert result is not None
         assert result["title"] == "Unknown"
-        assert result["version"] == "Unknown" 
+        assert result["version"] == "Unknown"
         assert result["description"] == ""
 
     def test_get_openapi_info_no_info_object(self):
         """Test OpenAPI info extraction when info object is missing."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create mock spec without info
         mock_spec = MagicMock()
         mock_spec.info = None
-        
+
         adapter.openapi_specs = [mock_spec]
-        
+
         result = adapter._get_openapi_info()
-        
+
         # Should return None when no info object
         assert result is None
 
@@ -1842,99 +1837,104 @@ class TestRESTAdapterAdvancedCoverage:
     """Test to cover specific missing lines and edge cases."""
 
     def test_openapi_endpoint_extraction_with_base_path(self):
-        """Test endpoint extraction with base path handling (covers lines 140, 150).""" 
+        """Test endpoint extraction with base path handling (covers lines 140, 150)."""
         # Test with base path that needs to be stripped from OpenAPI paths
         # Note: OpenAPI endpoint extraction may not work properly in test environment
         # This test verifies the base path handling logic exists
         adapter = RESTAdapter("https://api.example.com/api/v1")
-        
+
         # Verify that the adapter was created successfully with base path
         assert adapter.base_url == "https://api.example.com/api/v1"
         assert isinstance(adapter.endpoints, list)
 
     def test_openapi_endpoint_extraction_proper_object_with_base_path(self):
-        """Test endpoint extraction from proper OpenAPI object with base path (covers lines around 146-153)."""
+        """Test endpoint extraction from proper OpenAPI object with base path
+        (covers lines around 146-153)."""
         # Create mock OpenAPI spec with proper objects
         mock_spec = MagicMock()
         mock_spec.paths = {
             "/api/v1/users": MagicMock(),
             "/api/v1/posts": MagicMock(),
-            "/different/path": MagicMock()
+            "/different/path": MagicMock(),
         }
-        
+
         # Create adapter with matching base path
         adapter = RESTAdapter("https://api.example.com/api/v1")
         adapter.openapi_specs = [mock_spec]
         adapter.endpoints = []
-        
+
         # Manually trigger endpoint extraction logic
         from urllib.parse import urlparse
+
         base_parsed = urlparse(adapter.base_url)
         base_path = base_parsed.path.rstrip("/")
-        
+
         for spec in adapter.openapi_specs:
             if hasattr(spec, "paths") and spec.paths:
                 for path in spec.paths:
                     if base_path and path.startswith(base_path):
-                        endpoint = path[len(base_path):].lstrip("/")
+                        endpoint = path[len(base_path) :].lstrip("/")
                     else:
                         endpoint = path.lstrip("/")
                     if endpoint:
                         adapter.endpoints.append(endpoint)
-        
+
         # Should have extracted endpoints properly
         assert len(adapter.endpoints) > 0
 
     def test_extract_openapi_description_from_object(self):
-        """Test description extraction from OpenAPI objects (covers lines around 438-448)."""
+        """Test description extraction from OpenAPI objects
+        (covers lines around 438-448)."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create mock path object with description info
         mock_path_obj = MagicMock()
         mock_get_op = MagicMock()
         mock_get_op.summary = "Get all users"
         mock_get_op.description = "Retrieve a list of all users from the system"
         mock_path_obj.get = mock_get_op
-        
+
         endpoint_info = {
             "description": "Original description",
             "required_parameters": {},
-            "optional_parameters": {}
+            "optional_parameters": {},
         }
-        
+
         # This should trigger the _extract_openapi_description_from_object method
         adapter._extract_openapi_description_from_object(mock_path_obj, endpoint_info)
-        
-        # Should have updated the description with summary (and description if concatenated)
+
+        # Should have updated the description with summary
+        # (and description if concatenated)
         assert "Get all users" in endpoint_info["description"]
 
     def test_extract_openapi_parameters_from_object_with_refs(self):
-        """Test parameter extraction from OpenAPI objects with schema refs (covers lines around 420-428)."""
+        """Test parameter extraction from OpenAPI objects with schema refs
+        (covers lines around 420-428)."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create mock path object with parameters - simplified approach
         mock_path_obj = MagicMock()
         mock_get_op = MagicMock()
         mock_get_op.parameters = []  # Empty parameters to avoid complex mocking
         mock_path_obj.get = mock_get_op
-        
+
         mock_spec = MagicMock()
-        
-        endpoint_info = {
-            "required_parameters": {},
-            "optional_parameters": {}
-        }
-        
+
+        endpoint_info = {"required_parameters": {}, "optional_parameters": {}}
+
         # This should trigger parameter extraction method without error
-        adapter._extract_openapi_parameters_from_object(mock_path_obj, endpoint_info, mock_spec)
-        
+        adapter._extract_openapi_parameters_from_object(
+            mock_path_obj, endpoint_info, mock_spec
+        )
+
         # Check that method executed without error
         assert isinstance(endpoint_info["required_parameters"], dict)
 
     def test_schema_info_extraction_from_object_with_ref(self):
-        """Test schema info extraction from objects with refs (covers lines around 473, 483)."""
+        """Test schema info extraction from objects with refs
+        (covers lines around 473, 483)."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Mock schema resolution
         def mock_resolve_ref(ref, spec):
             if ref == "#/components/schemas/User":
@@ -1943,42 +1943,46 @@ class TestRESTAdapterAdvancedCoverage:
                 resolved.properties = {"id": MagicMock(type="integer")}
                 return resolved
             return None
-        
+
         adapter._resolve_schema_ref_from_object = mock_resolve_ref
-        
+
         # Create mock schema with reference
         mock_schema = MagicMock()
         mock_schema.__dict__ = {"ref": "#/components/schemas/User"}
-        
-        mock_spec = MagicMock()
-        
+
+        MagicMock()
+
         result = adapter._extract_schema_info_from_object(mock_schema)
-        
+
         # Should return some schema info
         assert isinstance(result, dict)
 
     def test_handle_parameterized_endpoint_complex(self):
-        """Test handling of parameterized endpoints with complex error responses (covers lines around 359-360)."""
+        """Test handling of parameterized endpoints with complex error responses
+        (covers lines around 359-360)."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create a mock response that could trigger parameter extraction
         mock_response = MagicMock()
         mock_response.status_code = 422  # Unprocessable Entity
         mock_response.json.return_value = {
             "error": "Missing required parameter",
-            "details": ["Parameter 'user_id' is required"]
+            "details": ["Parameter 'user_id' is required"],
         }
-        
+
         # This should trigger parameter extraction from error response
-        result = adapter._handle_parameterized_endpoint("users", "https://api.example.com/users", mock_response)
-        
+        result = adapter._handle_parameterized_endpoint(
+            "users", "https://api.example.com/users", mock_response
+        )
+
         # Should return endpoint info with extracted parameters
         assert "required_parameters" in result
 
     def test_openapi_description_extraction_edge_cases(self):
-        """Test OpenAPI description extraction edge cases (covers lines around 559-566).""" 
+        """Test OpenAPI description extraction edge cases
+        (covers lines around 559-566)."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Test with path info that has only summary, no description
         path_info = {
             "get": {
@@ -1986,36 +1990,37 @@ class TestRESTAdapterAdvancedCoverage:
                 # No description field
             }
         }
-        
+
         endpoint_info = {
             "description": "Original description",
             "required_parameters": {},
-            "optional_parameters": {}
+            "optional_parameters": {},
         }
-        
+
         adapter._extract_openapi_description(path_info, endpoint_info)
-        
+
         # Should have updated with just summary
         assert "Get users" in endpoint_info["description"]
 
     def test_extract_schema_info_all_fields(self):
-        """Test schema info extraction with all possible fields (covers lines 570-587)."""
+        """Test schema info extraction with all possible fields
+        (covers lines 570-587)."""
         adapter = RESTAdapter("https://api.example.com")
-        
+
         # Create schema with all possible fields
         schema = {
             "type": "string",
-            "format": "email", 
+            "format": "email",
             "minimum": 1,
             "maximum": 100,
             "enum": ["active", "inactive"],
             "default": "active",
             "pattern": "^[a-zA-Z]+$",
-            "extra_field": "should_be_ignored"  # Should not be included
+            "extra_field": "should_be_ignored",  # Should not be included
         }
-        
+
         result = adapter._extract_schema_info(schema)
-        
+
         # Should include all supported fields
         assert result["type"] == "string"
         assert result["format"] == "email"

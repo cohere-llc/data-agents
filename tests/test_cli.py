@@ -12,11 +12,11 @@ from data_agents.cli import (
     create_adapter_from_config,
     create_router_from_config,
     create_single_adapter_from_config,
+    execute_adapter_query,
+    execute_router_query,
     load_config_file,
     main,
     parse_nasa_query,
-    execute_adapter_query,
-    execute_router_query,
 )
 
 
@@ -449,7 +449,11 @@ class TestCLIAdapterCreation:
         adapter = create_adapter_from_config(config)
         assert adapter is None
         captured = capsys.readouterr()
-        assert "Error: Unknown adapter type 'unknown'. Supported types: rest, tabular, nasa_power" in captured.out
+        assert (
+            "Error: Unknown adapter type 'unknown'. "
+            "Supported types: rest, tabular, nasa_power"
+            in captured.out
+        )
 
     def test_create_adapter_from_config_nasa_power_valid(self):
         """Test creating NASA POWER adapter with valid config."""
@@ -599,38 +603,33 @@ class TestCLINASAParsing:
         """Test basic NASA query parsing."""
         query = "T2M latitude=40.7 longitude=-74.0 temporal=daily"
         param, kwargs = parse_nasa_query(query)
-        
+
         assert param == "T2M"
-        assert kwargs == {
-            "latitude": 40.7,
-            "longitude": -74.0,
-            "temporal": "daily"
-        }
+        assert kwargs == {"latitude": 40.7, "longitude": -74.0, "temporal": "daily"}
 
     def test_parse_nasa_query_integers(self):
         """Test NASA query parsing with integer values."""
         query = "PRECTOTCORR start=20230101 end=20230107 community=AG"
         param, kwargs = parse_nasa_query(query)
-        
+
         assert param == "PRECTOTCORR"
-        assert kwargs == {
-            "start": 20230101,
-            "end": 20230107,
-            "community": "AG"
-        }
+        assert kwargs == {"start": 20230101, "end": 20230107, "community": "AG"}
 
     def test_parse_nasa_query_mixed_types(self):
         """Test NASA query parsing with mixed data types."""
-        query = "WS2M latitude=40.7128 longitude=-74.0060 start=20230101 elevation=10 community=AG"
+        query = (
+            "WS2M latitude=40.7128 longitude=-74.0060 start=20230101 "
+            "elevation=10 community=AG"
+        )
         param, kwargs = parse_nasa_query(query)
-        
+
         assert param == "WS2M"
         assert kwargs == {
             "latitude": 40.7128,
             "longitude": -74.0060,
             "start": 20230101,
             "elevation": 10,
-            "community": "AG"
+            "community": "AG",
         }
 
     def test_parse_nasa_query_empty_string(self):
@@ -642,7 +641,7 @@ class TestCLINASAParsing:
         """Test NASA query parsing with just parameter name."""
         query = "T2M"
         param, kwargs = parse_nasa_query(query)
-        
+
         assert param == "T2M"
         assert kwargs == {}
 
@@ -650,35 +649,31 @@ class TestCLINASAParsing:
         """Test NASA query parsing with malformed key=value pairs."""
         query = "T2M latitude=40.7 badpair longitude=-74.0"
         param, kwargs = parse_nasa_query(query)
-        
+
         assert param == "T2M"
-        assert kwargs == {
-            "latitude": 40.7,
-            "longitude": -74.0
-        }
+        assert kwargs == {"latitude": 40.7, "longitude": -74.0}
 
     def test_parse_nasa_query_equals_in_value(self):
         """Test NASA query parsing with equals sign in value."""
         query = "T2M format=JSON units=metric=system"
         param, kwargs = parse_nasa_query(query)
-        
+
         assert param == "T2M"
-        assert kwargs == {
-            "format": "JSON",
-            "units": "metric=system"
-        }
+        assert kwargs == {"format": "JSON", "units": "metric=system"}
 
     def test_execute_adapter_query_nasa(self):
         """Test execute_adapter_query with NASA POWER adapter."""
         from data_agents.adapters import NasaPowerAdapter
-        
+
         # Create a real NASA adapter but mock the query method
         adapter = NasaPowerAdapter()
-        
-        with patch.object(adapter, 'query', return_value=pd.DataFrame({'test': [1, 2, 3]})) as mock_query:
+
+        with patch.object(
+            adapter, "query", return_value=pd.DataFrame({"test": [1, 2, 3]})
+        ) as mock_query:
             query_string = "T2M latitude=40.7 longitude=-74.0"
             result = execute_adapter_query(adapter, query_string)
-            
+
             # Verify the query was called with parsed parameters
             mock_query.assert_called_once_with("T2M", latitude=40.7, longitude=-74.0)
             assert len(result) == 3
@@ -686,56 +681,60 @@ class TestCLINASAParsing:
     def test_execute_adapter_query_non_nasa(self):
         """Test execute_adapter_query with non-NASA adapter."""
         from data_agents.adapters import TabularAdapter
-        
+
         # Create a tabular adapter
-        adapter = TabularAdapter({'data': pd.DataFrame({'col1': [1, 2], 'col2': [3, 4]})})
-        
+        adapter = TabularAdapter(
+            {"data": pd.DataFrame({"col1": [1, 2], "col2": [3, 4]})}
+        )
+
         # Test that it uses the query string directly
         result = execute_adapter_query(adapter, "*")
         assert len(result) == 2
-        assert list(result.columns) == ['col1', 'col2']
+        assert list(result.columns) == ["col1", "col2"]
 
     def test_execute_router_query_with_nasa(self):
         """Test execute_router_query with NASA adapter in router."""
-        from data_agents.core.router import Router
         from data_agents.adapters import NasaPowerAdapter, TabularAdapter
-        
+        from data_agents.core.router import Router
+
         router = Router()
         nasa_adapter = NasaPowerAdapter()
-        tabular_adapter = TabularAdapter({'data': pd.DataFrame({'col1': [1, 2]})})
-        
-        router['nasa'] = nasa_adapter
-        router['tabular'] = tabular_adapter
-        
-        with patch.object(nasa_adapter, 'query', return_value=pd.DataFrame({'nasa_data': [1]})) as mock_nasa:
+        tabular_adapter = TabularAdapter({"data": pd.DataFrame({"col1": [1, 2]})})
+
+        router["nasa"] = nasa_adapter
+        router["tabular"] = tabular_adapter
+
+        with patch.object(
+            nasa_adapter, "query", return_value=pd.DataFrame({"nasa_data": [1]})
+        ) as mock_nasa:
             results = execute_router_query(router, "T2M latitude=40.7")
-            
+
             # NASA adapter should be called with parsed parameters
             mock_nasa.assert_called_once_with("T2M", latitude=40.7)
-            
+
             # Should have results from both adapters
-            assert 'nasa' in results
-            assert 'tabular' in results
-            assert len(results['nasa']) == 1
+            assert "nasa" in results
+            assert "tabular" in results
+            assert len(results["nasa"]) == 1
             # Tabular adapter will return empty DataFrame for invalid query
-            assert len(results['tabular']) == 0
+            assert len(results["tabular"]) == 0
 
     def test_execute_router_query_with_error(self, capsys):
         """Test execute_router_query handles adapter errors gracefully."""
-        from data_agents.core.router import Router
         from data_agents.adapters import NasaPowerAdapter
-        
+        from data_agents.core.router import Router
+
         router = Router()
         nasa_adapter = NasaPowerAdapter()
-        router['nasa'] = nasa_adapter
-        
-        with patch.object(nasa_adapter, 'query', side_effect=Exception("API Error")):
+        router["nasa"] = nasa_adapter
+
+        with patch.object(nasa_adapter, "query", side_effect=Exception("API Error")):
             results = execute_router_query(router, "T2M latitude=40.7")
-            
+
             # Should capture the error and return empty DataFrame
-            assert 'nasa' in results
-            assert len(results['nasa']) == 0
-            
+            assert "nasa" in results
+            assert len(results["nasa"]) == 0
+
             # Should print error message
             captured = capsys.readouterr()
             assert "Error querying adapter 'nasa': API Error" in captured.out
@@ -747,23 +746,31 @@ class TestCLIEdgeCases:
     def test_create_adapter_nasa_power_creation_error(self, capsys):
         """Test NASA POWER adapter creation with error."""
         config = {"type": "nasa_power"}
-        
-        with patch('data_agents.cli.NasaPowerAdapter', side_effect=Exception("NASA API Error")):
+
+        with patch(
+            "data_agents.cli.NasaPowerAdapter", side_effect=Exception("NASA API Error")
+        ):
             adapter = create_adapter_from_config(config)
             assert adapter is None
             captured = capsys.readouterr()
-            assert "Error: Failed to create NASA POWER adapter: NASA API Error" in captured.out
+            assert (
+                "Error: Failed to create NASA POWER adapter: NASA API Error"
+                in captured.out
+            )
 
     def test_no_adapters_in_router(self, capsys):
         """Test list-adapters command with empty router."""
         router_config = {"adapters": {}}
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(router_config, f)
             config_file = f.name
 
         try:
-            with patch("sys.argv", ["data-agents", "list-adapters", "--router-config", config_file]):
+            with patch(
+                "sys.argv",
+                ["data-agents", "list-adapters", "--router-config", config_file],
+            ):
                 main()
             captured = capsys.readouterr()
             assert "No adapters registered" in captured.out
@@ -773,15 +780,27 @@ class TestCLIEdgeCases:
     def test_query_adapter_config_with_nasa_error(self, capsys):
         """Test query with NASA adapter that fails during query execution."""
         config = {"type": "nasa_power"}
-        
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(config, f)
             config_file = f.name
 
         try:
-            with patch('data_agents.adapters.NasaPowerAdapter.query', side_effect=Exception("Query Error")):
+            with patch(
+                "data_agents.adapters.NasaPowerAdapter.query",
+                side_effect=Exception("Query Error"),
+            ):
                 with pytest.raises(SystemExit):
-                    with patch("sys.argv", ["data-agents", "query", "T2M latitude=40.7", "--adapter-config", config_file]):
+                    with patch(
+                        "sys.argv",
+                        [
+                            "data-agents",
+                            "query",
+                            "T2M latitude=40.7",
+                            "--adapter-config",
+                            config_file,
+                        ],
+                    ):
                         main()
                 captured = capsys.readouterr()
                 assert "Query failed: Query Error" in captured.out
