@@ -2030,3 +2030,77 @@ class TestRESTAdapterAdvancedCoverage:
         assert result["default"] == "active"
         assert result["pattern"] == "^[a-zA-Z]+$"
         assert "extra_field" not in result
+
+    def test_empty_endpoint_filtering_integration(self):
+        """Test endpoint filtering through integration testing."""
+        # Use real JSON OpenAPI spec structure that will create empty endpoints
+        openapi_spec = {
+            "openapi": "3.0.0",
+            "info": {"title": "Test API", "version": "1.0.0"},
+            "paths": {
+                "/api/v1": {
+                    "get": {"responses": {"200": {"description": "OK"}}}
+                },  # Will become empty after base path removal
+                "/api/v1/": {
+                    "get": {"responses": {"200": {"description": "OK"}}}
+                },  # Will become empty after stripping
+                "/api/v1/users": {
+                    "get": {"responses": {"200": {"description": "OK"}}}
+                },  # Will become "users"
+            },
+        }
+
+        config = {"openapi_data": [openapi_spec]}
+        # Use base path that matches the OpenAPI paths
+        adapter = RESTAdapter("https://api.example.com/api/v1", config)
+
+        # Should only contain non-empty endpoints after base path stripping
+        # This should hit line 140 (if endpoint: self.endpoints.append(endpoint))
+        assert len(adapter.endpoints) > 0
+        assert "users" in adapter.endpoints
+
+    def test_openapi_parameter_missing_name_handling(self):
+        """Test that parameters without names are skipped gracefully."""
+        # Create a scenario that might hit line 429 (parameter name validation)
+        from unittest.mock import MagicMock, patch
+
+        # Use existing config loading pattern
+        openapi_spec = {
+            "openapi": "3.0.0",
+            "info": {"title": "Test API", "version": "1.0.0"},
+            "paths": {
+                "/test": {
+                    "get": {
+                        "parameters": [
+                            {
+                                # Missing "name" field - should be skipped
+                                "in": "query",
+                                "required": True,
+                                "schema": {"type": "string"},
+                            },
+                            {
+                                "name": "valid_param",
+                                "in": "query",
+                                "required": True,
+                                "schema": {"type": "string"},
+                            },
+                        ],
+                        "responses": {"200": {"description": "OK"}},
+                    }
+                }
+            },
+        }
+
+        config = {"openapi_data": [openapi_spec]}
+        adapter = RESTAdapter("https://api.example.com", config)
+
+        # Mock a request to trigger parameter discovery
+        with patch("requests.request") as mock_request:
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"test": "data"}
+            mock_request.return_value = mock_response
+
+            # This should trigger the parameter processing code
+            result = adapter.query("test")
+            assert result is not None

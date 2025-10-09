@@ -41,11 +41,11 @@ def parse_nasa_query(query_string: str) -> tuple[str, dict[str, Any]]:
 
         # Try to convert numeric values
         try:
-            # Try integer first
-            if "." not in value:
-                kwargs[key] = int(value)
+            float_val = float(value)
+            if float_val.is_integer():
+                kwargs[key] = int(float_val)
             else:
-                kwargs[key] = float(value)
+                kwargs[key] = float_val
         except ValueError:
             # Keep as string if not numeric
             kwargs[key] = value
