@@ -36,6 +36,6 @@
 #### NASA POWER Considerations
 - The APIs seem to be geared towards querying for small data sets (individual parameters over spatiotemporal ranges). Not sure how large the underlying datasets are.
 - Underlying data likely updated regularly. (daily?)
-- Seems like there could be quite a bit of related metadata related to data collection, calibrations, attribution, etc. that does not seem to be available through the API, but may be important for research use (not sure though)
+- Seems like there could be quite a bit of metadata related to data collection, calibrations, attribution, etc. that does not seem to be available through the API, but may be important for research use (not sure though)
 - NASA already has an interactive way to query these data (https://power.larc.nasa.gov/data-access-viewer/)  
 
