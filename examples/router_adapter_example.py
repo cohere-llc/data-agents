@@ -138,8 +138,8 @@ def main() -> None:
     # 2. Create adapters
     print("2. Creating adapters...")
 
-    customers_adapter = TabularAdapter("customers", customers_data)
-    orders_adapter = TabularAdapter("orders", orders_data)
+    customers_adapter = TabularAdapter({"customers": customers_data})
+    orders_adapter = TabularAdapter({"orders": orders_data})
     api_adapter = MockAPIAdapter("services", "https://api.example.com/services")
 
     # 3. Register adapters with the router

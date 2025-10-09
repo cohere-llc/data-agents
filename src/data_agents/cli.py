@@ -9,9 +9,89 @@ from typing import Any, Optional
 import pandas as pd
 
 from data_agents import __version__
-from data_agents.adapters import RESTAdapter, TabularAdapter
+from data_agents.adapters import NasaPowerAdapter, RESTAdapter, TabularAdapter
 from data_agents.core.adapter import Adapter
 from data_agents.core.router import Router
+
+
+def parse_nasa_query(query_string: str) -> tuple[str, dict[str, Any]]:
+    """Parse NASA POWER query string into parameter name and kwargs.
+
+    Args:
+        query_string: Query string in format "PARAMETER_NAME key=value key2=value2"
+
+    Returns:
+        Tuple of (parameter_name, kwargs_dict)
+
+    Example:
+        parse_nasa_query("T2M latitude=40.7 longitude=-74.0 temporal=daily")
+        Returns: ("T2M", {"latitude": 40.7, "longitude": -74.0, "temporal": "daily"})
+    """
+    parts = query_string.split()
+    if not parts:
+        raise ValueError("Empty query string")
+
+    parameter_name = parts[0]
+    kwargs: dict[str, Any] = {}
+
+    for part in parts[1:]:
+        if "=" not in part:
+            continue
+        key, value = part.split("=", 1)
+
+        # Try to convert numeric values
+        try:
+            float_val = float(value)
+            if float_val.is_integer():
+                kwargs[key] = int(float_val)
+            else:
+                kwargs[key] = float_val
+        except ValueError:
+            # Keep as string if not numeric
+            kwargs[key] = value
+
+    return parameter_name, kwargs
+
+
+def execute_router_query(router: Router, query_string: str) -> dict[str, pd.DataFrame]:
+    """Execute a query on all adapters in a router, handling different adapter types.
+
+    Args:
+        router: The router containing adapters to query
+        query_string: The query string
+
+    Returns:
+        Dictionary mapping adapter names to their query results
+    """
+    results = {}
+    for name, adapter in router.adapters.items():
+        try:
+            results[name] = execute_adapter_query(adapter, query_string)
+        except Exception as e:
+            # Log error and continue with other adapters
+            print(f"Error querying adapter '{name}': {e}")
+            results[name] = pd.DataFrame()
+
+    return results
+
+
+def execute_adapter_query(adapter: Adapter, query_string: str) -> pd.DataFrame:
+    """Execute a query on an adapter, handling different adapter types.
+
+    Args:
+        adapter: The adapter to query
+        query_string: The query string
+
+    Returns:
+        DataFrame with query results
+    """
+    if isinstance(adapter, NasaPowerAdapter):
+        # Parse NASA POWER query format: "PARAMETER_NAME key=value key2=value2"
+        parameter_name, kwargs = parse_nasa_query(query_string)
+        return adapter.query(parameter_name, **kwargs)
+    else:
+        # For other adapters, use the query string directly
+        return adapter.query(query_string)
 
 
 def load_config_file(config_path: str) -> dict[str, Any]:
@@ -108,12 +188,22 @@ def create_adapter_from_config(
                 return None
 
             data = pd.read_csv(csv_file)
-            return TabularAdapter(data)
+            return TabularAdapter({"data": data})
         except Exception as e:
             print(f"Error: Failed to create tabular adapter: {e}")
             return None
+
+    elif adapter_type == "nasa_power":
+        try:
+            return NasaPowerAdapter()
+        except Exception as e:
+            print(f"Error: Failed to create NASA POWER adapter: {e}")
+            return None
     else:
-        print(f"Error: Unknown adapter type '{adapter_type}'")
+        print(
+            f"Error: Unknown adapter type '{adapter_type}'. "
+            f"Supported types: rest, tabular, nasa_power"
+        )
         return None
 
 
@@ -254,8 +344,8 @@ def main() -> None:
         )
 
         # Create adapters
-        customers_adapter = TabularAdapter(customers_data)
-        orders_adapter = TabularAdapter(orders_data)
+        customers_adapter = TabularAdapter({"customers": customers_data})
+        orders_adapter = TabularAdapter({"orders": orders_data})
 
         # Add adapters to router using bracket notation
         router["customers"] = customers_adapter
@@ -338,7 +428,7 @@ def main() -> None:
         if args.router_config:
             # Query all adapters in router
             router = create_router_from_config(args.router_config)
-            results = router.query_all(args.query_string)
+            results = execute_router_query(router, args.query_string)
             for adapter_name, result in results.items():
                 print(f"\n--- Results from {adapter_name} ---")
                 if not result.empty:
@@ -350,7 +440,7 @@ def main() -> None:
             adapter = create_single_adapter_from_config(args.adapter_config)
             if adapter:
                 try:
-                    result = adapter.query(args.query_string)
+                    result = execute_adapter_query(adapter, args.query_string)
                     if not result.empty:
                         print(result.to_string(index=False))
                     else:
