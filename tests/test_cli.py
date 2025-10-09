@@ -451,7 +451,8 @@ class TestCLIAdapterCreation:
         captured = capsys.readouterr()
         assert (
             "Error: Unknown adapter type 'unknown'. "
-            "Supported types: rest, tabular, nasa_power" in captured.out
+            "Supported types: rest, tabular, nasa_power, gbif_occurrence"
+            in captured.out
         )
 
     def test_create_adapter_from_config_nasa_power_valid(self):
@@ -460,6 +461,29 @@ class TestCLIAdapterCreation:
         adapter = create_adapter_from_config(config)
         assert adapter is not None
         assert adapter.__class__.__name__ == "NasaPowerAdapter"
+
+    def test_create_adapter_from_config_gbif_occurrence_valid(self):
+        """Test creating GBIF Occurrence adapter with valid config."""
+        config = {"type": "gbif_occurrence"}
+        adapter = create_adapter_from_config(config)
+        assert adapter is not None
+        assert adapter.__class__.__name__ == "GBIFOccurrenceAdapter"
+
+    def test_create_adapter_from_config_gbif_occurrence_failure(self, capsys):
+        """Test GBIF adapter creation failure handling."""
+        config = {"type": "gbif_occurrence"}
+
+        with patch(
+            "data_agents.cli.GBIFOccurrenceAdapter",
+            side_effect=Exception("GBIF Adapter Error"),
+        ):
+            adapter = create_adapter_from_config(config)
+            assert adapter is None
+            captured = capsys.readouterr()
+            assert (
+                "Error: Failed to create GBIF Occurrence adapter: GBIF Adapter Error"
+                in captured.out
+            )
 
     def test_create_single_adapter_from_config_success(self):
         """Test creating single adapter from config file."""
@@ -803,5 +827,200 @@ class TestCLIEdgeCases:
                         main()
                 captured = capsys.readouterr()
                 assert "Query failed: Query Error" in captured.out
+        finally:
+            os.unlink(config_file)
+
+
+class TestCLIGBIFOccurrence:
+    """Test GBIF Occurrence adapter CLI functionality."""
+
+    def test_create_gbif_adapter_from_config_success(self):
+        """Test creating GBIF adapter from config file works correctly."""
+        config = {"type": "gbif_occurrence", "description": "GBIF biodiversity data"}
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(config, f)
+            config_file = f.name
+
+        try:
+            adapter = create_single_adapter_from_config(config_file)
+            assert adapter is not None
+            assert adapter.__class__.__name__ == "GBIFOccurrenceAdapter"
+        finally:
+            os.unlink(config_file)
+
+    @patch("data_agents.adapters.GBIFOccurrenceAdapter.query")
+    def test_query_gbif_adapter_basic(self, mock_query, capsys):
+        """Test basic GBIF adapter query execution through CLI."""
+        # Mock successful query response
+        mock_df = pd.DataFrame(
+            {
+                "gbifID": ["1", "2"],
+                "scientificName": ["Puma concolor", "Panthera leo"],
+                "country": ["US", "ZA"],
+            }
+        )
+        mock_df.attrs = {"total_count": 2, "limit": 20, "offset": 0}
+        mock_query.return_value = mock_df
+
+        config = {"type": "gbif_occurrence"}
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(config, f)
+            config_file = f.name
+
+        try:
+            with patch(
+                "sys.argv",
+                [
+                    "data-agents",
+                    "query",
+                    "scientificName=Puma concolor",
+                    "--adapter-config",
+                    config_file,
+                ],
+            ):
+                main()
+
+            captured = capsys.readouterr()
+            assert "gbifID" in captured.out
+            assert "Puma concolor" in captured.out
+            # CLI doesn't print metadata - only DataFrame content
+            mock_query.assert_called_once_with("scientificName=Puma concolor")
+        finally:
+            os.unlink(config_file)
+
+    @patch("data_agents.adapters.GBIFOccurrenceAdapter.query")
+    def test_query_gbif_adapter_complex(self, mock_query, capsys):
+        """Test complex GBIF adapter query with multiple parameters."""
+        # Mock successful query response
+        mock_df = pd.DataFrame(
+            {
+                "gbifID": ["123"],
+                "scientificName": ["Homo sapiens"],
+                "country": ["US"],
+                "year": [2023],
+            }
+        )
+        mock_df.attrs = {"total_count": 1, "limit": 20, "offset": 0}
+        mock_query.return_value = mock_df
+
+        config = {"type": "gbif_occurrence"}
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(config, f)
+            config_file = f.name
+
+        try:
+            with patch(
+                "sys.argv",
+                [
+                    "data-agents",
+                    "query",
+                    "scientificName=Homo sapiens&country=US&year=2023",
+                    "--adapter-config",
+                    config_file,
+                ],
+            ):
+                main()
+
+            captured = capsys.readouterr()
+            assert "gbifID" in captured.out
+            assert "Homo sapiens" in captured.out
+            # CLI doesn't print metadata - only DataFrame content
+            mock_query.assert_called_once_with(
+                "scientificName=Homo sapiens&country=US&year=2023"
+            )
+        finally:
+            os.unlink(config_file)
+
+    def test_query_gbif_adapter_config_with_error(self, capsys):
+        """Test query with GBIF adapter that fails during query execution."""
+        config = {"type": "gbif_occurrence"}
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(config, f)
+            config_file = f.name
+
+        try:
+            with patch(
+                "data_agents.adapters.GBIFOccurrenceAdapter.query",
+                side_effect=Exception("GBIF API Error"),
+            ):
+                with pytest.raises(SystemExit):
+                    with patch(
+                        "sys.argv",
+                        [
+                            "data-agents",
+                            "query",
+                            "scientificName=Puma concolor",
+                            "--adapter-config",
+                            config_file,
+                        ],
+                    ):
+                        main()
+                captured = capsys.readouterr()
+                assert "Query failed: GBIF API Error" in captured.out
+        finally:
+            os.unlink(config_file)
+
+    def test_gbif_adapter_in_router_config(self, capsys):
+        """Test GBIF adapter creation and listing in router configuration."""
+        router_config = {
+            "adapters": {
+                "gbif_mammals": {
+                    "type": "gbif_occurrence",
+                    "description": "GBIF mammal occurrences",
+                }
+            }
+        }
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(router_config, f)
+            config_file = f.name
+
+        try:
+            with patch(
+                "sys.argv",
+                ["data-agents", "list-adapters", "--router-config", config_file],
+            ):
+                main()
+            captured = capsys.readouterr()
+            assert "gbif_mammals" in captured.out
+            assert "GBIFOccurrenceAdapter" in captured.out
+            # CLI doesn't show descriptions in list-adapters output
+        finally:
+            os.unlink(config_file)
+
+    @patch("data_agents.adapters.GBIFOccurrenceAdapter.query")
+    def test_query_gbif_adapter_empty_results(self, mock_query, capsys):
+        """Test GBIF adapter query that returns empty results."""
+        # Mock empty query response
+        mock_df = pd.DataFrame()
+        mock_df.attrs = {"total_count": 0, "limit": 20, "offset": 0}
+        mock_query.return_value = mock_df
+
+        config = {"type": "gbif_occurrence"}
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(config, f)
+            config_file = f.name
+
+        try:
+            with patch(
+                "sys.argv",
+                [
+                    "data-agents",
+                    "query",
+                    "scientificName=NonexistentSpecies",
+                    "--adapter-config",
+                    config_file,
+                ],
+            ):
+                main()
+
+            captured = capsys.readouterr()
+            assert "Query returned no results" in captured.out
+            mock_query.assert_called_once_with("scientificName=NonexistentSpecies")
         finally:
             os.unlink(config_file)
