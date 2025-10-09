@@ -1,77 +1,12 @@
 {
+    "type": "rest",
     "name": "OpenAQ API v3",
     "description": "Air quality data from OpenAQ API v3 with token authentication",
-    "adapter_type": "rest",
     "base_url": "https://api.openaq.org/v3",
-    "config": {
-        "headers": {
-            "Accept": "application/json",
-            "User-Agent": "data-agents/1.0"
-        },
-        "auth": {
-            "type": "api_key",
-            "key": "X-API-Key",
-            "env_var": "OPENAQ_API_KEY"
-        },
-        "timeout": 30,
-        "verify": true,
-        "endpoints": [
-            "instruments",
-            "locations", 
-            "measurements",
-            "projects",
-            "sensors",
-            "summary"
-        ],
-        "pagination_param": "limit",
-        "pagination_limit": 100
+    "auth": {
+        "type": "api_key",
+        "key": "X-API-Key",
+        "env_var": "OPENAQ_API_KEY"
     },
-    "queries": {
-        "instruments": {
-            "description": "Get list of air quality monitoring instruments",
-            "endpoint": "instruments",
-            "params": {
-                "limit": 1000,
-                "page": 1,
-                "sort": "asc",
-                "order_by": "name"
-            }
-        },
-        "locations": {
-            "description": "Get measurement locations",
-            "endpoint": "locations",
-            "params": {
-                "limit": 1000,
-                "page": 1,
-                "coordinates": "{lat},{lon}",
-                "radius": 1000,
-                "country": "{country_code}",
-                "isMobile": false
-            }
-        },
-        "measurements": {
-            "description": "Get air quality measurements",
-            "endpoint": "measurements",
-            "params": {
-                "limit": 1000,
-                "page": 1,
-                "coordinates": "{lat},{lon}",
-                "radius": 1000,
-                "date_from": "{start_date}",
-                "date_to": "{end_date}",
-                "parameter_id": "{parameter_id}",
-                "location_id": "{location_id}"
-            }
-        },
-        "sensors": {
-            "description": "Get sensor information",
-            "endpoint": "sensors",
-            "params": {
-                "limit": 1000,
-                "page": 1,
-                "location_id": "{location_id}",
-                "parameter_id": "{parameter_id}"
-            }
-        }
-    }
+    "openapi_data": ["https://api.openaq.org/openapi.json"]
 }
