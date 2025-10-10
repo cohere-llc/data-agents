@@ -12,6 +12,7 @@ from data_agents import __version__
 from data_agents.adapters import (
     GBIFOccurrenceAdapter,
     NasaPowerAdapter,
+    OpenAQAdapter,
     RESTAdapter,
     TabularAdapter,
 )
@@ -211,10 +212,17 @@ def create_adapter_from_config(
         except Exception as e:
             print(f"Error: Failed to create GBIF Occurrence adapter: {e}")
             return None
+
+    elif adapter_type == "openaq":
+        try:
+            return OpenAQAdapter(adapter_config)
+        except Exception as e:
+            print(f"Error: Failed to create OpenAQ adapter: {e}")
+            return None
     else:
         print(
             f"Error: Unknown adapter type '{adapter_type}'. "
-            f"Supported types: rest, tabular, nasa_power, gbif_occurrence"
+            f"Supported types: rest, tabular, nasa_power, gbif_occurrence, openaq"
         )
         return None
 
@@ -454,7 +462,7 @@ def main() -> None:
                 try:
                     result = execute_adapter_query(adapter, args.query_string)
                     if not result.empty:
-                        print(result.to_string(index=False))
+                        print(result.to_json(orient="records", indent=2))
                     else:
                         print("Query returned no results")
                 except Exception as e:

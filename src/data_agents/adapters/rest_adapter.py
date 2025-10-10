@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Tuple, Union
+from typing import Any
 from urllib.parse import urljoin
 
 import pandas as pd
@@ -20,7 +20,7 @@ class RESTAdapter(Adapter):
     responses to pandas DataFrames. It's designed to work with JSON APIs
     and includes support for authentication, custom headers, and query parameters.
     """
-    
+
     # Type annotations for instance attributes
     auth: tuple[str, str] | None
 
@@ -189,7 +189,7 @@ class RESTAdapter(Adapter):
 
     def _setup_authentication(self) -> None:
         """Configure authentication based on the auth configuration.
-        
+
         Supports:
         - Basic auth: tuple (username, password)
         - Bearer token: string token or dict with type='bearer'
@@ -198,49 +198,57 @@ class RESTAdapter(Adapter):
         """
         auth_config = self.config.get("auth")
         self.auth = None  # For basic auth
-        
+
         if not auth_config:
             return
-            
+
         # Handle tuple format for basic auth (backward compatibility)
         if isinstance(auth_config, tuple) and len(auth_config) == 2:
             self.auth = auth_config
             return
-            
+
         # Handle string format as bearer token
         if isinstance(auth_config, str):
             token = auth_config
             # Check if it's an environment variable reference
             if token.startswith("${") and token.endswith("}"):
                 env_var = token[2:-1]
-                token = os.getenv(env_var)
-                if not token:
+                env_token = os.getenv(env_var)
+                if not env_token:
                     raise ValueError(f"Environment variable '{env_var}' not found")
+                token = env_token
             self.headers["Authorization"] = f"Bearer {token}"
             return
-            
+
         # Handle dict format for advanced auth configurations
         if isinstance(auth_config, dict):
             auth_type = auth_config.get("type", "bearer")
-            
+
             if auth_type == "basic":
                 username = auth_config.get("username")
                 password = auth_config.get("password")
                 if username and password:
                     self.auth = (username, password)
                 return
-                
+
             # Get token from config or environment variable
-            token = auth_config.get("token")
-            env_var = auth_config.get("env_var")
-            
-            if env_var:
-                token = os.getenv(env_var)
-                if not token:
-                    raise ValueError(f"Environment variable '{env_var}' not found")
-            elif not token:
-                raise ValueError("Either 'token' or 'env_var' must be provided for token-based auth")
-                
+            token_value = auth_config.get("token")
+            env_var_value = auth_config.get("env_var")
+
+            if env_var_value:
+                env_token = os.getenv(env_var_value)
+                if not env_token:
+                    raise ValueError(
+                        f"Environment variable '{env_var_value}' not found"
+                    )
+                token = env_token
+            elif token_value:
+                token = token_value
+            else:
+                raise ValueError(
+                    "Either 'token' or 'env_var' must be provided for token-based auth"
+                )
+
             if auth_type == "bearer":
                 self.headers["Authorization"] = f"Bearer {token}"
             elif auth_type == "api_key":
