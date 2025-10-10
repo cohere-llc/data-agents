@@ -116,11 +116,12 @@ class TestOpenAQCLIIntegration:
 
         # Test the info command
         cmd = ["python", "-m", "data_agents", "info", "--adapter", temp_config_file]
-        result = subprocess.run(
+        subprocess.run(
             cmd, capture_output=True, text=True, cwd=Path(__file__).parent.parent.parent
         )
 
-        # The command should execute without error (may fail due to missing dependencies in test env)
+        # The command should execute without error (may fail due to missing
+        # dependencies in test env)
         # We mainly test that the command structure is correct
 
     @patch("subprocess.run")
@@ -164,7 +165,7 @@ class TestOpenAQCLIIntegration:
         mock_run.return_value = mock_result
 
         # Test the discover command structure
-        cmd = ["python", "-m", "data_agents", "discover", "--adapter", temp_config_file]
+        ["python", "-m", "data_agents", "discover", "--adapter", temp_config_file]
         # Command structure is valid
 
     def test_cli_supported_adapter_types(self):
@@ -180,9 +181,10 @@ class TestOpenAQCLIIntegration:
         }
 
         # Should not raise an error for unknown adapter type
-        # (actual adapter creation might fail due to network, but type should be recognized)
+        # (actual adapter creation might fail due to network, but type should be
+        # recognized)
         try:
-            adapter = create_adapter_from_config(config)
+            create_adapter_from_config(config)
             # If we get here, the adapter type was recognized
             assert True
         except Exception as e:
@@ -254,7 +256,10 @@ class TestOpenAQDocumentationExamples:
                 "run",
                 "data-agents",
                 "query",
-                "query_measurements_by_region bbox=40.6,-74.2,40.9,-73.7 parameters=pm25 limit=50",
+                (
+                    "query_measurements_by_region "
+                    "bbox=40.6,-74.2,40.9,-73.7 parameters=pm25 limit=50"
+                ),
                 "--adapter-config",
                 "config/openaq_custom.adapter.json",
             ],
@@ -320,7 +325,8 @@ class TestOpenAQIntegrationWithCLI:
         }
 
         # The function should recognize the adapter type
-        # (creation might fail due to network/dependencies, but type should be recognized)
+        # (creation might fail due to network/dependencies, but type should be
+        # recognized)
         with patch("data_agents.adapters.openaq_adapter.OpenAQAdapter") as mock_adapter:
             mock_adapter.return_value = Mock()
             adapter = create_adapter_from_config(config)

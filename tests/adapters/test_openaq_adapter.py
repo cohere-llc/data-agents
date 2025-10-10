@@ -309,7 +309,8 @@ class TestOpenAQAdapter:
         mock_parameters_response,
     ):
         """Test querying measurements by parameter."""
-        # Mock parameter response first, then locations, then measurements for each sensor
+        # Mock parameter response first, then locations, then measurements for
+        # each sensor
         mock_param_response = Mock()
         mock_param_response.status_code = 200
         mock_param_response.json.return_value = mock_parameters_response
@@ -325,7 +326,8 @@ class TestOpenAQAdapter:
         mock_meas_response.json.return_value = mock_measurements_response
         mock_meas_response.raise_for_status.return_value = None
 
-        # Need 4 calls: parameters, locations, measurements for sensor 1675, measurements for sensor 1676, measurements for sensor 1677
+        # Need 4 calls: parameters, locations, measurements for sensor 1675,
+        # measurements for sensor 1676, measurements for sensor 1677
         mock_get.side_effect = [
             mock_param_response,  # Parameter lookup
             mock_loc_response,  # Location search

@@ -72,7 +72,7 @@ class TestCLIRouterWithOpenAQ:
         assert "tabular" in adapter_types
 
         # Each adapter should have required fields
-        for name, adapter in adapters.items():
+        for _name, adapter in adapters.items():
             assert "type" in adapter
             if adapter["type"] == "openaq":
                 assert "api_key" in adapter
@@ -168,11 +168,11 @@ adapters:
     api_key: ${OPENAQ_API_KEY}
     base_url: https://api.openaq.org/v3
     description: OpenAQ air quality measurement data
-  
+
   weather_data:
     type: nasa_power
     description: NASA POWER meteorological data
-    
+
   local_data:
     type: tabular
     csv_file: examples/sample_data.csv
@@ -282,10 +282,20 @@ class TestOpenAQDocumentationExamples:
     def test_query_command_structure(self):
         """Test query command structure from documentation examples."""
         query_examples = [
-            "query_measurements_by_region bbox=40.6,-74.2,40.9,-73.7 parameters=pm25 limit=50",
-            "query_measurements_by_region center_lat=37.7749 center_lon=-122.4194 radius=25 parameters=pm25 limit=50",
+            (
+                "query_measurements_by_region "
+                "bbox=40.6,-74.2,40.9,-73.7 parameters=pm25 limit=50"
+            ),
+            (
+                "query_measurements_by_region "
+                "center_lat=37.7749 center_lon=-122.4194 "
+                "radius=25 parameters=pm25 limit=50"
+            ),
             "query_measurements_by_parameter parameter=pm25 country=US limit=150",
-            "query_measurements_by_parameter parameter=o3 bbox=40.0,-125.0,45.0,-120.0 limit=75",
+            (
+                "query_measurements_by_parameter "
+                "parameter=o3 bbox=40.0,-125.0,45.0,-120.0 limit=75"
+            ),
         ]
 
         for query in query_examples:

@@ -173,7 +173,7 @@ class TestRESTAdapterAuthentication:
         config = {"auth": {"type": "api_key", "key": "X-API-Key", "token": "test-key"}}
 
         adapter = RESTAdapter("https://example.com", config)
-        result = adapter.query("test")
+        adapter.query("test")
 
         # Verify the request was made with correct headers
         mock_request.assert_called_once()
@@ -196,7 +196,7 @@ class TestRESTAdapterAuthentication:
         config = {"auth": ("username", "password")}
 
         adapter = RESTAdapter("https://example.com", config)
-        result = adapter.query("test")
+        adapter.query("test")
 
         # Verify the request was made with correct auth
         mock_request.assert_called_once()

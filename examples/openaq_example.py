@@ -24,7 +24,8 @@ def main():
 
     if not config["api_key"]:
         print(
-            "Warning: OPENAQ_API_KEY environment variable not set. Some queries may fail."
+            "Warning: OPENAQ_API_KEY environment variable not set. "
+            "Some queries may fail."
         )
 
     # Create the adapter

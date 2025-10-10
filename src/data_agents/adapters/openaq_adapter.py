@@ -6,7 +6,7 @@ with geographic filtering and parameter-based queries.
 """
 
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 import pandas as pd
 import requests
@@ -30,7 +30,7 @@ class OpenAQAdapter(Adapter):
     - Data aggregation and formatting
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[dict[str, Any]] = None):
         """
         Initialize OpenAQ adapter.
 
@@ -52,8 +52,8 @@ class OpenAQAdapter(Adapter):
         self.session.headers.update(self.headers)
 
         # Cache for parameter and location data
-        self._parameters_cache: Optional[List[Dict[str, Any]]] = None
-        self._locations_cache: Dict[str, Any] = {}
+        self._parameters_cache: Optional[list[dict[str, Any]]] = None
+        self._locations_cache: dict[str, Any] = {}
 
     def _get_api_key(self) -> Optional[str]:
         """Get API key from config or environment."""
@@ -67,10 +67,10 @@ class OpenAQAdapter(Adapter):
 
     def query_measurements_by_region(
         self,
-        bbox: Optional[List[float]] = None,
-        center: Optional[Dict[str, float]] = None,
+        bbox: Optional[list[float]] = None,
+        center: Optional[dict[str, float]] = None,
         radius: Optional[int] = None,
-        parameters: Optional[Union[str, List[str]]] = None,
+        parameters: Optional[Union[str, list[str]]] = None,
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
         limit: Optional[int] = None,
@@ -134,8 +134,8 @@ class OpenAQAdapter(Adapter):
         self,
         parameter: str,
         country: Optional[str] = None,
-        bbox: Optional[List[float]] = None,
-        center: Optional[Dict[str, float]] = None,
+        bbox: Optional[list[float]] = None,
+        center: Optional[dict[str, float]] = None,
         radius: Optional[int] = None,
         date_from: Optional[str] = None,
         date_to: Optional[str] = None,
@@ -178,10 +178,10 @@ class OpenAQAdapter(Adapter):
 
     def _find_locations_by_region(
         self,
-        bbox: Optional[List[float]] = None,
-        center: Optional[Dict[str, float]] = None,
+        bbox: Optional[list[float]] = None,
+        center: Optional[dict[str, float]] = None,
         radius: Optional[int] = None,
-        parameters: Optional[Union[str, List[str]]] = None,
+        parameters: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
     ) -> pd.DataFrame:
         """Find locations matching geographic and parameter criteria."""
@@ -242,7 +242,7 @@ class OpenAQAdapter(Adapter):
 
         return pd.DataFrame(locations_data)
 
-    def _extract_sensor_ids(self, locations_df: pd.DataFrame) -> List[int]:
+    def _extract_sensor_ids(self, locations_df: pd.DataFrame) -> list[int]:
         """Extract sensor IDs from locations DataFrame."""
         sensor_ids = []
 
@@ -439,7 +439,7 @@ class OpenAQAdapter(Adapter):
 
         # Extract other parameters
         parameters_str = params.get("parameter")
-        parameters: Optional[List[str]] = None
+        parameters: Optional[list[str]] = None
         if parameters_str:
             parameters = parameters_str.split(",")
 
@@ -463,7 +463,7 @@ class OpenAQAdapter(Adapter):
 
         return pd.DataFrame()
 
-    def discover(self) -> Dict[str, Any]:
+    def discover(self) -> dict[str, Any]:
         """
         Discover available parameters and capabilities.
 
@@ -519,16 +519,22 @@ class OpenAQAdapter(Adapter):
             "examples": [
                 {
                     "description": "Get PM2.5 measurements in New York area",
-                    "code": "adapter.query_measurements_by_parameter('pm25', center={'lat': 40.7128, 'lon': -74.0060}, radius=10000)",
+                    "code": (
+                        "adapter.query_measurements_by_parameter('pm25', "
+                        "center={'lat': 40.7128, 'lon': -74.0060}, radius=10000)"
+                    ),
                 },
                 {
                     "description": "Get all measurements in a bounding box",
-                    "code": "adapter.query_measurements_by_region(bbox=[-74.1, 40.6, -73.9, 40.8])",
+                    "code": (
+                        "adapter.query_measurements_by_region("
+                        "bbox=[-74.1, 40.6, -73.9, 40.8])"
+                    ),
                 },
             ],
         }
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert adapter to dictionary representation."""
         return {
             "adapter_type": "openaq",

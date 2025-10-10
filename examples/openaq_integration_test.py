@@ -73,9 +73,7 @@ def test_openaq_integration():
         elif "403" in error_msg or "Forbidden" in error_msg:
             print("❌ Permission denied: API key may lack required permissions")
         elif "429" in error_msg or "rate limit" in error_msg.lower():
-            print(
-                "⚠ Rate limit exceeded - API key is valid but requests are throttled"
-            )
+            print("⚠ Rate limit exceeded - API key is valid but requests are throttled")
             return True  # This counts as success for auth testing
         elif "timeout" in error_msg.lower():
             print("⚠ Request timed out - API may be slow")
