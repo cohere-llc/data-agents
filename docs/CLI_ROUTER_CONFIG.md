@@ -128,6 +128,26 @@ Example GBIF Occurrence adapter configuration:
 }
 ```
 
+### OpenAQ Adapter
+
+For OpenAQ adapters, specify:
+- `type`: Must be "openaq"
+- `api_key`: API key for OpenAQ API access (can use environment variable ${OPENAQ_API_KEY})
+- `base_url`: Optional base URL for the OpenAQ API (defaults to "https://api.openaq.org/v3")
+- `description`: Optional description of the adapter
+
+The OpenAQ adapter provides access to air quality measurement data from the OpenAQ platform. It supports geographic filtering, parameter-based querying, and temporal filtering for comprehensive air quality data analysis.
+
+Example OpenAQ adapter configuration:
+```json
+{
+  "type": "openaq",
+  "api_key": "${OPENAQ_API_KEY}",
+  "base_url": "https://api.openaq.org/v3",
+  "description": "OpenAQ air quality measurement data"
+}
+```
+
 ## Usage Examples
 
 ### Get router information
@@ -578,6 +598,299 @@ uv run data-agents query "hasCoordinate=true hasGeospatialIssue=false basisOfRec
   --adapter-config config/gbif.adapter.json
 ```
 
+## OpenAQ Adapter Usage
+
+The OpenAQ adapter provides access to air quality measurement data from the OpenAQ platform. It supports geographic filtering by bounding box or center point with radius, parameter-based querying for specific pollutants, and temporal filtering for comprehensive air quality data analysis.
+
+### OpenAQ Configuration
+
+Create an OpenAQ adapter configuration file:
+
+```json
+{
+  "type": "openaq",
+  "api_key": "${OPENAQ_API_KEY}",
+  "base_url": "https://api.openaq.org/v3",
+  "description": "OpenAQ air quality measurement data"
+}
+```
+
+Or include it in a router configuration:
+
+```json
+{
+  "adapters": {
+    "air_quality": {
+      "type": "openaq",
+      "api_key": "${OPENAQ_API_KEY}",
+      "description": "OpenAQ air quality measurement data"
+    },
+    "weather_data": {
+      "type": "nasa_power",
+      "description": "NASA POWER meteorological data"
+    }
+  }
+}
+```
+
+### API Key Setup
+
+To use the OpenAQ adapter, you need an API key:
+
+1. Sign up for an API key at https://openaq.org
+2. Set the environment variable: `export OPENAQ_API_KEY="your_key_here"`
+3. The adapter will automatically use the key for authenticated requests
+
+### Discovering OpenAQ Parameters
+
+```bash
+# Discover available OpenAQ query methods and capabilities
+uv run data-agents discover --adapter-config config/openaq_custom.adapter.json
+
+# Or discover parameters in a router with OpenAQ adapter
+uv run data-agents discover --router-config config/air_quality_router.json
+```
+
+This will show:
+- Available query methods (query_measurements_by_region, query_measurements_by_parameter)
+- Supported air quality parameters (PM2.5, PM10, NO2, O3, SO2, CO, etc.)
+- Geographic filtering capabilities
+- Temporal filtering options
+
+### Querying OpenAQ Air Quality Data
+
+The OpenAQ adapter supports two main query methods for retrieving air quality measurements with various filtering options.
+
+#### Method 1: Geographic Region Queries (query_measurements_by_region)
+
+Query air quality data for specific geographic regions using bounding boxes or center point with radius.
+
+**Bounding Box Queries:**
+
+```bash
+# PM2.5 measurements in New York City area
+uv run data-agents query "query_measurements_by_region bbox=40.6,-74.2,40.9,-73.7 parameters=pm25 limit=50" \
+  --adapter-config config/openaq_custom.adapter.json
+
+# Multiple parameters in Los Angeles area
+uv run data-agents query "query_measurements_by_region bbox=33.7,-118.7,34.3,-117.9 parameters=pm25,no2,o3 limit=100" \
+  --adapter-config config/openaq_custom.adapter.json
+
+# All parameters in London area with date range
+uv run data-agents query "query_measurements_by_region bbox=51.3,-0.5,51.7,0.2 date_from=2024-01-01 date_to=2024-01-07 limit=200" \
+  --adapter-config config/openaq_custom.adapter.json
+```
+
+**Center Point and Radius Queries:**
+
+```bash
+# Air quality within 25km of San Francisco
+uv run data-agents query "query_measurements_by_region center_lat=37.7749 center_lon=-122.4194 radius=25 parameters=pm25 limit=50" \
+  --adapter-config config/openaq_custom.adapter.json
+
+# Multiple parameters within 50km of Berlin
+uv run data-agents query "query_measurements_by_region center_lat=52.5200 center_lon=13.4050 radius=50 parameters=pm25,pm10,no2 limit=100" \
+  --adapter-config config/openaq_custom.adapter.json
+
+# Recent measurements within 10km of Tokyo
+uv run data-agents query "query_measurements_by_region center_lat=35.6762 center_lon=139.6503 radius=10 date_from=2024-10-01 limit=75" \
+  --adapter-config config/openaq_custom.adapter.json
+```
+
+#### Method 2: Parameter-Based Queries (query_measurements_by_parameter)
+
+Query measurements for specific air quality parameters with optional geographic and temporal filtering.
+
+**Parameter-Specific Queries:**
+
+```bash
+# Global PM2.5 measurements (latest)
+uv run data-agents query "query_measurements_by_parameter parameter=pm25 limit=100" \
+  --adapter-config config/openaq_custom.adapter.json
+
+# NO2 measurements in the United States
+uv run data-agents query "query_measurements_by_parameter parameter=no2 country=US limit=150" \
+  --adapter-config config/openaq_custom.adapter.json
+
+# Ozone measurements in specific region
+uv run data-agents query "query_measurements_by_parameter parameter=o3 bbox=40.0,-125.0,45.0,-120.0 limit=75" \
+  --adapter-config config/openaq_custom.adapter.json
+```
+
+**Temporal Filtering:**
+
+```bash
+# PM10 measurements from the last week
+uv run data-agents query "query_measurements_by_parameter parameter=pm10 date_from=2024-10-01 date_to=2024-10-07 limit=200" \
+  --adapter-config config/openaq_custom.adapter.json
+
+# SO2 measurements from specific month in Europe
+uv run data-agents query "query_measurements_by_parameter parameter=so2 bbox=35.0,-10.0,70.0,40.0 date_from=2024-06-01 date_to=2024-06-30 limit=100" \
+  --adapter-config config/openaq_custom.adapter.json
+```
+
+#### Combined Geographic and Parameter Queries
+
+```bash
+# PM2.5 in California with temporal filter
+uv run data-agents query "query_measurements_by_parameter parameter=pm25 bbox=32.5,-124.4,42.0,-114.1 date_from=2024-09-01 date_to=2024-09-07 limit=200" \
+  --adapter-config config/openaq_custom.adapter.json
+
+# Multiple parameters around major cities
+uv run data-agents query "query_measurements_by_region center_lat=40.7128 center_lon=-74.0060 radius=100 parameters=pm25,pm10,no2,o3 date_from=2024-10-01 limit=300" \
+  --adapter-config config/openaq_custom.adapter.json
+```
+
+### Query Parameters Reference
+
+#### Geographic Parameters
+
+**For Bounding Box queries:**
+- `bbox`: Comma-separated values as "south,west,north,east" (e.g., "40.6,-74.2,40.9,-73.7")
+
+**For Center/Radius queries:**
+- `center_lat`: Center latitude (-90 to 90)
+- `center_lon`: Center longitude (-180 to 180)  
+- `radius`: Radius in kilometers from center point
+
+**For Parameter-based queries:**
+- `country`: ISO country code (e.g., "US", "GB", "DE")
+- `bbox`: Optional bounding box for geographic filtering
+
+#### Air Quality Parameters
+
+Common parameters available:
+- `pm25`: PM2.5 (Particulate Matter ≤ 2.5 μm)
+- `pm10`: PM10 (Particulate Matter ≤ 10 μm)
+- `no2`: Nitrogen Dioxide
+- `o3`: Ozone
+- `so2`: Sulfur Dioxide
+- `co`: Carbon Monoxide
+- `bc`: Black Carbon
+
+#### Temporal Parameters
+
+- `date_from`: Start date in YYYY-MM-DD format
+- `date_to`: End date in YYYY-MM-DD format
+
+#### Control Parameters
+
+- `limit`: Maximum number of results to return (default varies by method)
+- `parameters`: Comma-separated list of parameters for region queries
+
+### Response Data Structure
+
+OpenAQ queries return detailed measurement data including:
+- **Measurement Values**: Pollutant concentrations with units
+- **Location Information**: Station names, coordinates, addresses
+- **Temporal Data**: Measurement timestamps and collection dates
+- **Data Quality**: Quality flags and validation status
+- **Source Information**: Data provider and sensor details
+- **Geographic Context**: Country, region, and locality information
+
+### Common Use Cases
+
+**Urban Air Quality Monitoring:**
+```bash
+# Monitor air quality in major metropolitan areas
+uv run data-agents query "query_measurements_by_region center_lat=34.0522 center_lon=-118.2437 radius=50 parameters=pm25,no2,o3 date_from=2024-10-01 date_to=2024-10-07" \
+  --adapter-config config/openaq_custom.adapter.json
+```
+
+**Regional Pollution Assessment:**
+```bash
+# Assess pollution levels across a state or province
+uv run data-agents query "query_measurements_by_region bbox=32.0,-107.0,37.0,-103.0 parameters=pm25,pm10,o3 date_from=2024-09-01 date_to=2024-09-30" \
+  --adapter-config config/openaq_custom.adapter.json
+```
+
+**Parameter-Specific Analysis:**
+```bash
+# Focus on specific pollutant across multiple regions
+uv run data-agents query "query_measurements_by_parameter parameter=pm25 country=US date_from=2024-10-01 date_to=2024-10-07 limit=500" \
+  --adapter-config config/openaq_custom.adapter.json
+```
+
+**Comparative Studies:**
+```bash
+# Compare air quality between different cities
+uv run data-agents query "query_measurements_by_region center_lat=51.5074 center_lon=-0.1278 radius=25 parameters=pm25,no2 date_from=2024-10-01 limit=100" \
+  --adapter-config config/openaq_custom.adapter.json
+```
+
+**Environmental Health Research:**
+```bash
+# Gather comprehensive air quality data for health studies
+uv run data-agents query "query_measurements_by_region bbox=40.4774,-74.2591,40.9176,-73.7004 parameters=pm25,pm10,no2,o3,so2 date_from=2024-08-01 date_to=2024-08-31" \
+  --adapter-config config/openaq_custom.adapter.json
+```
+
+### Rate Limiting and Best Practices
+
+The OpenAQ API has rate limits to ensure fair usage:
+- The adapter automatically handles rate limiting with appropriate warnings
+- For large data requests, consider breaking them into smaller geographic or temporal chunks
+- Use specific parameters and date ranges to optimize query performance
+- The adapter will retry failed requests and provide meaningful error messages
+
+### Data Quality Considerations
+
+- OpenAQ aggregates data from multiple sources with varying quality levels
+- Some sensors may have gaps in data or quality issues
+- The adapter includes location enrichment to provide geographic context
+- Consider filtering by specific data providers or sensor types for consistency
+
+## Testing and Validation
+
+All adapter configurations and CLI examples in this documentation are validated through comprehensive tests:
+
+### Automated Testing
+
+The data-agents project includes extensive tests for all adapters and CLI functionality:
+
+```bash
+# Test all adapters including OpenAQ
+pytest tests/adapters/ -v
+
+# Test CLI integration with all adapter types
+pytest tests/test_*integration.py -v
+
+# Test router configurations
+pytest tests/test_cli_router*.py -v
+
+# Test specific adapter
+pytest tests/adapters/test_openaq_adapter.py -v
+```
+
+### Example Validation
+
+All configuration examples and CLI commands in this documentation are:
+- ✅ **Syntax Validated**: JSON/YAML format correctness
+- ✅ **Parameter Validated**: Geographic coordinates, date formats, parameter names
+- ✅ **CLI Tested**: Command structure and argument validation
+- ✅ **Integration Tested**: Adapter creation and router configuration
+- ✅ **Error Handling Tested**: Invalid configurations and network issues
+
+### Configuration File Testing
+
+Each adapter configuration file is tested for:
+- Required field presence and format
+- Environment variable substitution
+- API endpoint accessibility
+- Parameter validation
+- Error message clarity
+
+### Query Example Testing
+
+All query examples are validated for:
+- Parameter format correctness
+- Geographic coordinate validity
+- Date range format compliance
+- Parameter name accuracy
+- Limit and pagination settings
+
+This ensures that all examples in this documentation work correctly and provide reliable starting points for users.
+
 ## Error Handling
 
 The CLI provides helpful error messages for common issues:
@@ -595,7 +908,9 @@ See the following example files in the repository:
 - `config/example_with_nasa.router.json` - Router configuration with NASA POWER adapter
 - `config/nasa_power.adapter.json` - NASA POWER adapter configuration
 - `config/gbif.adapter.json` - GBIF Occurrence adapter configuration
+- `config/openaq_custom.adapter.json` - OpenAQ adapter configuration
 - `config/jsonplaceholder.adapter.json` - Single adapter configuration example
 - `examples/sample_data.csv` - Sample CSV file for testing
 - `config/httpbin.adapter.json` - Another REST adapter configuration example
 - `examples/nasa_power_example.py` - Python example showing NASA POWER adapter usage
+- `examples/openaq_example.py` - Python example demonstrating OpenAQ adapter usage

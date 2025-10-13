@@ -1,0 +1,12 @@
+{
+    "type": "rest",
+    "name": "OpenAQ API v3",
+    "description": "Air quality data from OpenAQ API v3 with token authentication",
+    "base_url": "https://api.openaq.org/v3",
+    "auth": {
+        "type": "api_key",
+        "key": "X-API-Key",
+        "env_var": "OPENAQ_API_KEY"
+    },
+    "openapi_data": ["https://api.openaq.org/openapi.json"]
+}

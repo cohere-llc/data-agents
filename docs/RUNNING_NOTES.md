@@ -1,5 +1,22 @@
 # Running Notes from Analysis of Env-Agents Data Sources
 
+## Overall Observations
+
+- It's not too hard to vibe-code your way to getting data from these APIs (definitely not for production, but potentially useful for one-off research applications).
+- The APIs are geared towards facilitating fine-grained searches, not doing "bulk" data transfers.
+- Several of these sources are already compilations of disparate datasets that have gone through some standardization processes. 
+
+## Potential User Personas
+
+After looking through several of the APIs and thinking about ways to facilitate use of these data by researchers,
+it seemed potentially useful to think through options by way of personas (still thinking through this, though).
+
+| Persona | Data Access Method | User Skills   | Throughput | Data Location | Development Effort to Facilitate |
+|---------|--------------------|---------------|------------|---------------|----------------------------------|
+| A       | Native website     | Chrome, Excel | Low        | Source        | None                             |
+| B       | Native API         | Python, VS Code, Copilot | Moderate | Source | Low (example Jupyter Notebooks) |
+| C       | KBase              | KBase User    | High       | Source or LakeHouse | High (data transfer/transformation; custom APIs)
+
 ## 9 Oct 2025
 ### General Approach To Analysis
 - Use the RESTAdapter to explore API of data sources used in [env-agents](https://github.com/aparkin/env-agents)
@@ -13,6 +30,8 @@
 ### NASA POWER
 - Desciption of API: https://power.larc.nasa.gov/api/pages/
 - License: public domain (https://www.nasa.gov/organizations/disclaimer/)
+- Size: 8.5 TB (https://www.earthdata.nasa.gov/news/feature-articles/power-earth-science-data#:~:text=The%20POWER%20team%20soon%20will,Amazon%20Sustainability%20Data%20Initiative%20(ASDI))
+- Updated: daily
 
 | Data Product                       | OpenAPI spec URL                                                  |
 |------------------------------------|-------------------------------------------------------------------|
@@ -43,6 +62,7 @@
 ### GBIF Ecology
 - Description of API: https://techdocs.gbif.org/en/openapi/
 - License: Various (Public Domain, Create Commons 4.0, Unspecified)
+- Size: ~2B occurrence records (from 81K datasets) @ ~1.5KB/record = ~3TB
 - The API is split up, but there appears to be only one data product (occurrence). The remaining API sections seem to be tools for visualization, registering/managing data sources, and querying metadata (I think)
 
 | Data Product | OpenAPI spec URL                                  |
@@ -61,3 +81,19 @@
 
 - env-agents only queries against the `occurrence/search` endpoint
 - the OpenAPI spec seems pretty comprehensive. No issues using it to discover API for searching
+
+## 10 Oct 2025
+### OpenAQ
+
+- Description of API: https://api.openaq.org/openapi.json
+- License: Licenses for specific measurement data are queryable through the API
+- Size: uncertain
+- The API has many endpoints, but seems generally centered around "measurements", which can be located by
+geographical location, type, instrument, source, etc. (all described in one OpenAPI spec)
+- Seems to include detailed information about source, manner of collection
+
+| Data Product    | OpenAPI spec URL                    |
+|-----------------|-------------------------------------|
+| AQ Measurements | https://api.openaq.org/openapi.json |
+
+- env-agents searches by location and "parameter" (NO2, NO, PM2.5, etc.)

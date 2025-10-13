@@ -3,7 +3,7 @@
 import json
 import os
 import tempfile
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pandas as pd
 import pytest
@@ -1024,3 +1024,97 @@ class TestCLIGBIFOccurrence:
             mock_query.assert_called_once_with("scientificName=NonexistentSpecies")
         finally:
             os.unlink(config_file)
+
+
+class TestCLICoverage:
+    """Tests for improving CLI coverage."""
+
+    def test_create_openaq_adapter_with_exception(self, capsys):
+        """Test lines 219-221: OpenAQ adapter creation error handling."""
+        config_data = {
+            "type": "openaq",
+            "api_key": "test_key",  # Provide a valid key to avoid missing key errors
+        }
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(config_data, f)
+            config_file = f.name
+
+        try:
+            # Mock the OpenAQ adapter to raise an exception during creation
+            with patch(
+                "data_agents.cli.OpenAQAdapter",
+                side_effect=Exception("OpenAQ creation failed"),
+            ):
+                with patch(
+                    "sys.argv",
+                    ["data-agents", "query", "pm25", "--adapter-config", config_file],
+                ):
+                    # This should trigger the error handling in lines 219-221
+                    with pytest.raises(SystemExit):
+                        main()
+
+            captured = capsys.readouterr()
+            assert (
+                "Error: Failed to create OpenAQ adapter: OpenAQ creation failed"
+                in captured.out
+            )
+        finally:
+            os.unlink(config_file)
+
+    def test_main_function_direct_call(self):
+        """Test line 476: main entry point when called directly."""
+        # Test that main function can be called directly
+        with patch("sys.argv", ["data-agents", "--version"]):
+            with pytest.raises(SystemExit):
+                main()
+
+    def test_create_openaq_adapter_success(self):
+        """Test successful OpenAQ adapter creation."""
+        config = {
+            "type": "openaq",
+            "api_key": "test_key_123",
+            "base_url": "https://api.openaq.org/v3",
+        }
+
+        # Mock the OpenAQ adapter to avoid API calls
+        with patch("data_agents.cli.OpenAQAdapter") as mock_adapter:
+            mock_instance = Mock()
+            mock_instance.query = Mock()
+            mock_adapter.return_value = mock_instance
+
+            adapter = create_adapter_from_config(config)
+            assert adapter is not None
+            assert hasattr(adapter, "query")
+
+    def test_unknown_adapter_type_error_message(self, capsys):
+        """Test that unknown adapter types produce helpful error messages."""
+        config = {"type": "unknown_adapter_type"}
+
+        result = create_adapter_from_config(config)
+        assert result is None
+
+        captured = capsys.readouterr()
+        assert "Error: Unknown adapter type 'unknown_adapter_type'" in captured.out
+        assert (
+            "Supported types: rest, tabular, nasa_power, gbif_occurrence, openaq"
+            in captured.out
+        )
+
+    def test_openaq_adapter_import_and_functionality(self):
+        """Test that OpenAQ adapter can be imported and used in CLI context."""
+        config = {
+            "type": "openaq",
+            "api_key": "test_key",
+            "base_url": "https://api.openaq.org/v3",
+        }
+
+        # Mock the OpenAQ adapter to avoid API calls
+        with patch("data_agents.cli.OpenAQAdapter") as mock_adapter:
+            mock_instance = Mock()
+            mock_instance.__class__.__name__ = "OpenAQAdapter"
+            mock_adapter.return_value = mock_instance
+
+            # This should not raise an import error
+            adapter = create_adapter_from_config(config)
+            assert adapter.__class__.__name__ == "OpenAQAdapter"
