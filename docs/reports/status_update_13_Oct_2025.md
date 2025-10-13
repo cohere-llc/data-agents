@@ -20,7 +20,7 @@ __Overall Goal:__ Facilitate use of ENV-AGENTS (and similar) source data for res
 - Worked through three data sources so far (NASA POWER, GBIF, OpenAQ)
 
 ## General Observations
-- APIs seems stable and well-documented (all had OpenAPI specs available).
+- APIs seem stable and well-documented (all had OpenAPI specs available).
 - All three have easy-to-use web portals available.
 - Of the two data sources I could find estimates for (NASA POWER, GBIF), the underlying data is (very roughly) ~5-10 TB.
 - It's not too hard to vibe-code your way to getting data from these APIs (definitely not for production, but potentially useful for one-off research applications).
