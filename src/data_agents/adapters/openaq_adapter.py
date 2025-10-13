@@ -53,7 +53,6 @@ class OpenAQAdapter(Adapter):
 
         # Cache for parameter and location data
         self._parameters_cache: Optional[list[dict[str, Any]]] = None
-        self._locations_cache: dict[str, Any] = {}
 
     def _get_api_key(self) -> Optional[str]:
         """Get API key from config or environment."""
@@ -192,6 +191,11 @@ class OpenAQAdapter(Adapter):
             # Convert [min_lon, min_lat, max_lon, max_lat] to OpenAQ format
             params["bbox"] = f"{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}"
         elif center and radius:
+            if radius <= 0 or radius > 25000:
+                raise ValueError(
+                    "Invalid radius. Must be between 1 and 25000 meters "
+                    "(OpenAQ API limit)."
+                )
             params["coordinates"] = f"{center['lat']},{center['lon']}"
             params["radius"] = str(radius)
 
@@ -269,8 +273,15 @@ class OpenAQAdapter(Adapter):
             params["datetime_from"] = date_from
         if date_to:
             params["datetime_to"] = date_to
-        if limit:
-            params["limit"] = str(limit)
+        if limit is not None:
+            try:
+                limit_int = int(limit)
+                if 1 <= limit_int <= 10000:
+                    params["limit"] = str(limit_int)
+                else:
+                    raise ValueError("Limit must be between 1 and 10000")
+            except (ValueError, TypeError) as e:
+                raise ValueError("Limit must be an integer between 1 and 10000") from e
 
         url = f"{self.base_url}/sensors/{sensor_id}/measurements"
 

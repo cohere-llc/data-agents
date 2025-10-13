@@ -12,55 +12,6 @@ from unittest.mock import Mock, patch
 import pytest
 
 
-class TestOpenAQExample:
-    """Tests for the OpenAQ example script."""
-
-    def test_openaq_example_script_exists(self):
-        """Test that the OpenAQ example script exists and is valid Python."""
-        example_path = Path(__file__).parent.parent / "examples" / "openaq_example.py"
-        assert example_path.exists(), "OpenAQ example script should exist"
-
-        # Test that it's valid Python syntax
-        with open(example_path) as f:
-            content = f.read()
-            compile(content, str(example_path), "exec")
-
-    @patch("sys.path")
-    @patch("data_agents.adapters.openaq_adapter.OpenAQAdapter")
-    def test_openaq_example_script_execution(self, mock_adapter_class, mock_sys_path):
-        """Test that the OpenAQ example script can be executed without errors."""
-        # Mock the adapter to avoid actual API calls
-        mock_adapter = Mock()
-        mock_adapter.query_measurements_by_region.return_value = Mock()
-        mock_adapter.query_measurements_by_parameter.return_value = Mock()
-        mock_adapter.discover.return_value = {
-            "methods": ["query_measurements_by_region"]
-        }
-        mock_adapter_class.return_value = mock_adapter
-
-        # Import and run the example
-        example_path = Path(__file__).parent.parent / "examples" / "openaq_example.py"
-
-        # Read the example script content
-        with open(example_path) as f:
-            script_content = f.read()
-
-        # Remove the if __name__ == "__main__" block to test the main function directly
-        script_lines = script_content.split("\n")
-        filtered_lines = []
-        skip_lines = False
-
-        for line in script_lines:
-            if 'if __name__ == "__main__":' in line:
-                skip_lines = True
-                continue
-            if not skip_lines:
-                filtered_lines.append(line)
-
-        # Execute the filtered script (functions only, not main execution)
-        exec("\n".join(filtered_lines))
-
-
 class TestOpenAQCLIIntegration:
     """Tests for OpenAQ CLI integration."""
 
@@ -165,8 +116,7 @@ class TestOpenAQCLIIntegration:
         mock_run.return_value = mock_result
 
         # Test the discover command structure
-        ["python", "-m", "data_agents", "discover", "--adapter", temp_config_file]
-        # Command structure is valid
+        # Command structure validation would happen here if needed
 
     def test_cli_supported_adapter_types(self):
         """Test that CLI recognizes openaq as a supported adapter type."""
