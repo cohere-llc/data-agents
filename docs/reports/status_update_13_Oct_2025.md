@@ -10,7 +10,7 @@ __Overall Goal:__ Facilitate use of ENV-AGENTS (and similar) source data for res
   - Do not attempt to standardize queries or output data (as done in ENV-AGENTS)
 - For each data provider:
   - Identify all available datasets (not just what is used in env-agents)
-  - Assess options for autmoatic discovery of API (openapi, etc)
+  - Assess options for automatic discovery of API (openapi, etc)
   - Document considerations relevant to KBase project
 - Why this approach?
   - Don't want to write a lot of code by hand that will probably never be used again
