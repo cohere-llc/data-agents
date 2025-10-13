@@ -407,6 +407,248 @@ class TestOpenAQAdapter:
             args, kwargs = mock_query.call_args
             assert args[0] == "pm25"
 
+    # Additional tests for coverage improvements
+
+    def test_empty_measurements_list_returns_empty_dataframe(self, adapter):
+        """Test line 120: empty measurements list returns empty DataFrame."""
+        empty_df = pd.DataFrame()
+        result = adapter._extract_sensor_ids(empty_df)
+        assert result == []
+
+    def test_parameter_not_found_raises_error(self, adapter):
+        """Test line 164: parameter not found raises ValueError."""
+        with patch.object(adapter, "_get_parameter_id", return_value=None):
+            with pytest.raises(ValueError, match="Parameter.*not found"):
+                adapter.query_measurements_by_parameter("nonexistent_param")
+
+    @patch("requests.Session.get")
+    def test_invalid_radius_raises_error(self, mock_get, adapter):
+        """Test line 195: raise error for invalid radius."""
+        # Mock successful response for cases where API might be reached
+        mock_response = Mock()
+        mock_response.raise_for_status.return_value = None
+        mock_response.json.return_value = {"results": []}
+        mock_get.return_value = mock_response
+
+        # Test radius validation for values > 25000 (this works correctly)
+        with pytest.raises(
+            ValueError, match="Invalid radius.*Must be between 1 and 25000"
+        ):
+            adapter._find_locations_by_region(
+                center={"lat": 40.7, "lon": -74.0},
+                radius=30000,  # > 25000 limit
+            )
+
+        # Test radius validation for negative values (this works correctly)
+        with pytest.raises(
+            ValueError, match="Invalid radius.*Must be between 1 and 25000"
+        ):
+            adapter._find_locations_by_region(
+                center={"lat": 40.7, "lon": -74.0},
+                radius=-1,  # < 0
+            )
+
+        # Test radius validation for zero values (now fixed)
+        with pytest.raises(
+            ValueError, match="Invalid radius.*Must be between 1 and 25000"
+        ):
+            adapter._find_locations_by_region(
+                center={"lat": 40.7, "lon": -74.0},
+                radius=0,  # <= 0
+            )
+
+    @patch("requests.Session.get")
+    def test_kwargs_filtering_in_params(self, mock_get, adapter):
+        """Test line 219: kwargs filtering in _find_locations_by_region."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"results": []}
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
+
+        # Test that other kwargs are included
+        adapter._find_locations_by_region(
+            bbox=[40.6, -74.2, 40.9, -73.7],
+            country="US",  # Should be included
+            sort="desc",  # Should be included
+        )
+
+        # Verify the request was made with filtered params
+        mock_get.assert_called_once()
+        call_args = mock_get.call_args
+        params = call_args[1]["params"]
+        assert "country" in params
+        assert "sort" in params
+
+    def test_sensor_measurements_with_invalid_limit(self, adapter):
+        """Test lines 282-284: exception handling for invalid limit."""
+        # Test invalid string limit
+        with pytest.raises(
+            ValueError, match="Limit must be an integer between 1 and 10000"
+        ):
+            adapter._get_sensor_measurements(1675, limit="invalid")
+
+        # Test out of range limit
+        with pytest.raises(
+            ValueError, match="Limit must be an integer between 1 and 10000"
+        ):
+            adapter._get_sensor_measurements(1675, limit=15000)
+
+    @patch("requests.Session.get")
+    def test_sensor_measurements_request_exception(self, mock_get, adapter):
+        """Test line 296: request exception handling in _get_sensor_measurements."""
+        mock_get.side_effect = RequestException("Network error")
+
+        result = adapter._get_sensor_measurements(1675)
+
+        # Should return empty DataFrame on exception
+        assert isinstance(result, pd.DataFrame)
+        assert result.empty
+
+    def test_enrich_measurements_empty_inputs(self, adapter):
+        """Test lines 322, 360: empty inputs handling in "
+        "_enrich_measurements_with_location_data."""
+        empty_df = pd.DataFrame()
+        empty_locations_df = pd.DataFrame()
+        non_empty_measurements = pd.DataFrame({"value": [1, 2, 3]})
+
+        # Test with empty measurements
+        result = adapter._enrich_measurements_with_location_data(
+            empty_df, pd.DataFrame({"name": ["Test"]})
+        )
+        assert result.equals(empty_df)
+
+        # Test with empty locations
+        result = adapter._enrich_measurements_with_location_data(
+            non_empty_measurements, empty_locations_df
+        )
+        assert result.equals(non_empty_measurements)
+
+    @patch("requests.Session.get")
+    def test_load_parameters_with_exception(self, mock_get, adapter):
+        """Test lines 383-385: exception handling in _load_parameters."""
+        mock_get.side_effect = RequestException("API error")
+
+        with patch.object(adapter, "_parameters_cache", None):
+            adapter._load_parameters()
+            assert adapter._parameters_cache == []
+
+    def test_get_available_parameters_with_none_cache(self, adapter):
+        """Test line 393: get_available_parameters when cache is None."""
+        with patch.object(adapter, "_parameters_cache", None):
+            with patch.object(adapter, "_load_parameters") as mock_load:
+                adapter.get_available_parameters()
+                mock_load.assert_called_once()
+
+    def test_get_available_parameters_empty_cache(self, adapter):
+        """Test line 393: get_available_parameters when cache is empty list."""
+        adapter._parameters_cache = []
+        result = adapter.get_available_parameters()
+        assert result.empty
+
+    def test_query_unsupported_format(self, adapter):
+        """Test line 423: unsupported query format."""
+        # This should raise ValueError when parameter is not found
+        with pytest.raises(ValueError, match="Parameter.*not found"):
+            adapter.query("unsupported:format")
+
+    @patch("requests.Session.get")
+    def test_handle_measurements_query_malformed(self, mock_get, adapter):
+        """Test line 432: malformed measurements query."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"results": []}
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
+
+        result = adapter._handle_measurements_query("malformed query")
+
+        # Should return empty DataFrame since query can't be parsed properly
+        assert isinstance(result, pd.DataFrame)
+        assert result.empty
+
+    def test_handle_parameter_query_parsing_error(self, adapter):
+        """Test lines 471, 475: parsing errors in parameter query."""
+        result = adapter._handle_parameter_query("malformed")
+
+        # Should return empty DataFrame for unparseable query
+        assert isinstance(result, pd.DataFrame)
+        assert result.empty
+
+    def test_handle_parameter_query_missing_parameter(self, adapter):
+        """Test line 475: missing parameter in query."""
+        result = adapter._handle_parameter_query("country=US")
+
+        # Should return empty DataFrame when no parameter specified
+        assert isinstance(result, pd.DataFrame)
+        assert result.empty
+
+    def test_parameter_cache_none_in_get_parameter_id(self, adapter):
+        """Test that _get_parameter_id loads parameters when cache is None."""
+        # Set cache to None initially
+        adapter._parameters_cache = None
+
+        with patch.object(adapter, "_load_parameters") as mock_load:
+            # Mock _load_parameters to set cache after being called
+            def mock_load_side_effect():
+                adapter._parameters_cache = [{"id": 1, "name": "pm25"}]
+
+            mock_load.side_effect = mock_load_side_effect
+
+            result = adapter._get_parameter_id("pm25")
+
+            # Verify _load_parameters was called and result is correct
+            mock_load.assert_called_once()
+            assert result == 1
+
+    @patch("requests.Session.get")
+    def test_find_locations_no_results(self, mock_get, adapter):
+        """Test _find_locations_by_region with no results."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"results": []}
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
+
+        result = adapter._find_locations_by_region(bbox=[40.6, -74.2, 40.9, -73.7])
+        assert result.empty
+
+    @patch("requests.Session.get")
+    def test_get_sensor_measurements_no_results(self, mock_get, adapter):
+        """Test _get_sensor_measurements with no results."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"results": []}
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
+
+        result = adapter._get_sensor_measurements(1675)
+        assert isinstance(result, pd.DataFrame)
+        assert result.empty
+
+    def test_extract_sensor_ids_with_invalid_sensors(self, adapter):
+        """Test _extract_sensor_ids with sensors missing required fields."""
+        # Create a DataFrame with sensors that have missing fields
+        locations_df = pd.DataFrame(
+            [
+                {
+                    "sensors": [
+                        {"parameter": {"id": 2, "name": "pm25"}},  # Missing 'id'
+                        {"id": 1676},  # Missing 'parameter'
+                        {
+                            "id": 1677,
+                            "parameter": {"name": "no2"},
+                        },  # Missing parameter id
+                    ]
+                }
+            ]
+        )
+
+        result = adapter._extract_sensor_ids(locations_df)
+        # Should only extract sensor IDs that have the 'id' field
+        # The method only requires 'id' field, not parameter validation
+        assert sorted(result) == [1676, 1677]
+
 
 class TestOpenAQAdapterIntegration:
     """Integration tests for OpenAQAdapter with mocked API responses."""

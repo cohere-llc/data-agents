@@ -190,7 +190,7 @@ class OpenAQAdapter(Adapter):
         if bbox:
             # Convert [min_lon, min_lat, max_lon, max_lat] to OpenAQ format
             params["bbox"] = f"{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}"
-        elif center and radius:
+        elif center is not None and radius is not None:
             if radius <= 0 or radius > 25000:
                 raise ValueError(
                     "Invalid radius. Must be between 1 and 25000 meters "

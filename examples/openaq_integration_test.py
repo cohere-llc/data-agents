@@ -24,12 +24,12 @@ def test_openaq_integration():
     # Check if API key is available
     api_key = os.getenv("OPENAQ_API_KEY")
     if not api_key:
-        print("⚠ OPENAQ_API_KEY environment variable not set")
+        print("WARNING: OPENAQ_API_KEY environment variable not set")
         print("  This test requires an OpenAQ API key for authentication")
         print("  Set the environment variable or configure GitHub secrets")
         return False
 
-    print(f"✓ API key found: {api_key[:8]}...")
+    print(f"PASS: API key found: {api_key[:8]}...")
 
     # Configure the REST adapter for OpenAQ v3 API
     config = {
@@ -39,19 +39,19 @@ def test_openaq_integration():
     }
 
     try:
-        print("🔧 Configuring REST adapter...")
+        print("INFO: Configuring REST adapter...")
         adapter = RESTAdapter("https://api.openaq.org/v3", config)
 
         # Verify authentication headers are set
         assert "X-API-Key" in adapter.headers
-        print("✓ Authentication configured correctly")
+        print("PASS: Authentication configured correctly")
 
         # Test a simple API endpoint
-        print("🌐 Testing API connection...")
+        print("INFO: Testing API connection...")
         result = adapter.query("instruments", params={"limit": 3})
 
         if not result.empty:
-            print(f"✓ API request successful: {len(result)} instruments retrieved")
+            print(f"PASS: API request successful: {len(result)} instruments retrieved")
             print(f"  Response columns: {list(result.columns)}")
 
             # Show sample data if available
@@ -60,7 +60,7 @@ def test_openaq_integration():
                 for i, row in result.head(2).iterrows():
                     print(f"    - Row {i}: {dict(row)}")
         else:
-            print("⚠ API returned empty response")
+            print("WARNING: API returned empty response")
 
         return True
 
@@ -68,19 +68,22 @@ def test_openaq_integration():
         error_msg = str(e)
 
         if "401" in error_msg or "Unauthorized" in error_msg:
-            print("❌ Authentication failed: Invalid API key")
+            print("FAIL: Authentication failed: Invalid API key")
             print("  Check that OPENAQ_API_KEY is set correctly")
         elif "403" in error_msg or "Forbidden" in error_msg:
-            print("❌ Permission denied: API key may lack required permissions")
+            print("FAIL: Permission denied: API key may lack required permissions")
         elif "429" in error_msg or "rate limit" in error_msg.lower():
-            print("⚠ Rate limit exceeded - API key is valid but requests are throttled")
+            print(
+                "WARNING: Rate limit exceeded - API key is valid but requests "
+                "are throttled"
+            )
             return True  # This counts as success for auth testing
         elif "timeout" in error_msg.lower():
-            print("⚠ Request timed out - API may be slow")
+            print("WARNING: Request timed out - API may be slow")
             print("  Authentication configuration appears correct")
             return True  # This counts as success for auth testing
         else:
-            print(f"❌ Unexpected error: {error_msg}")
+            print(f"FAIL: Unexpected error: {error_msg}")
 
         return False
 
@@ -102,14 +105,14 @@ def test_config_validation():
         assert adapter.headers["X-API-Key"] == "test-token-123"
         assert adapter.headers["Accept"] == "application/json"
 
-        print("✓ Configuration validation passed")
-        print("✓ Authentication headers set correctly")
-        print("✓ API key format validated")
+        print("PASS: Configuration validation passed")
+        print("PASS: Authentication headers set correctly")
+        print("PASS: API key format validated")
 
         return True
 
     except Exception as e:
-        print(f"❌ Configuration validation failed: {e}")
+        print(f"FAIL: Configuration validation failed: {e}")
         return False
 
 
@@ -125,17 +128,17 @@ def main():
     integration_ok = test_openaq_integration()
 
     print("\nSummary:")
-    print(f"  Configuration: {'✓' if config_ok else '❌'}")
-    print(f"  Integration:   {'✓' if integration_ok else '❌'}")
+    print(f"  Configuration: {'PASS' if config_ok else 'FAIL'}")
+    print(f"  Integration:   {'PASS' if integration_ok else 'FAIL'}")
 
     if config_ok and integration_ok:
-        print("🎉 All tests passed!")
+        print("SUCCESS: All tests passed!")
         sys.exit(0)
     elif config_ok:
-        print("⚠ Configuration OK but integration test failed/skipped")
+        print("WARNING: Configuration OK but integration test failed/skipped")
         sys.exit(0)  # Don't fail CI if just the API key is missing/invalid
     else:
-        print("❌ Configuration test failed")
+        print("FAIL: Configuration test failed")
         sys.exit(1)
 
 
