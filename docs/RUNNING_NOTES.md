@@ -62,7 +62,7 @@ it seemed potentially useful to think through options by way of personas (still 
 ### GBIF Ecology
 - Description of API: https://techdocs.gbif.org/en/openapi/
 - License: Various (Public Domain, Create Commons 4.0, Unspecified)
-- Size: ~2B occurrence records (from 81K datasets)
+- Size: ~2B occurrence records (from 81K datasets) @ ~1.5KB/record = ~3TB
 - The API is split up, but there appears to be only one data product (occurrence). The remaining API sections seem to be tools for visualization, registering/managing data sources, and querying metadata (I think)
 
 | Data Product | OpenAPI spec URL                                  |
