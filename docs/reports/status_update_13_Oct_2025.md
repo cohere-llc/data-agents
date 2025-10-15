@@ -45,3 +45,10 @@ __Overall Goal:__ Facilitate use of ENV-AGENTS (and similar) source data for res
 - How much do we know about our target user base (skillset in particular)?
 - How valuable are the transferable skills gained through training users to develop their own scripts?
 - How much of these data would be used for a single research application?
+
+## Notes from 15 Oct 2025 Meeting
+- Option 1 (Native Web Portal) is off the table
+- Userbase will include those who will not be using AI Agents
+- Earth Science Infomration Partners (ESIP) group includes NASA, GBIF, OpenAQ
+  - The have a Slack channel that Elisha could use to ask specific questions
+- Document output data schemas for each source
