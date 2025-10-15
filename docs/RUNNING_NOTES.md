@@ -2436,3 +2436,340 @@ curl -X 'GET' \
 ```
 </details>
 </div>
+
+## USGS NWIS
+
+- There is a note on the [USGS Surface Water Daily Data page](https://waterdata.usgs.gov/nwis/dv?referred_module=sw) that says it (NWIS) is being decommisioned "in the future" and suggests using "WDFN" (maybe "Water Data for the Nation"?)
+- Adam's code seems to use the original service, which doesn't appear to have an OpenAPI spec
+  - My guess is that env-agents used more investigative methods to discover the API of NWIS
+- There does appear to be a documented API for WDFN data here: https://api.waterdata.usgs.gov/ogcapi/v0/openapi?f=html with OpenAPI specs
+  - It includes daily data, which is what env-agents seems to have been using
+- The information here is for WDFN
+
+| Data Product    | OpenAPI spec URL                                          |
+|-----------------|-----------------------------------------------------------|
+| all             | https://api.waterdata.usgs.gov/ogcapi/v0/openapi?f=html#/ |
+
+- there are many documented endpoints, but `daily` and `latest-continuous` may be the most relevant
+- it's not clear what the difference between `daily` and `latest-daily` endpoints are
+- there are endpoints that look like they contain metadata for measurements (e.g., `time-series-metadata`, `monitoring-locations`, etc.)
+
+### USGS WDFN Query Example
+
+#### Feature
+
+##### Request
+
+```bash
+curl -X 'GET' \
+  'https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily/items?f=json&lang=en-US&limit=10&properties=id,time_series_id,monitoring_location_id,parameter_code,statistic_id,time,value,unit_of_measure,approval_status,qualifier,last_modified&skipGeometry=false&offset=0&datetime=2018-02-12T00%3A00%3A00Z%2F2018-03-05T12%3A31%3A12Z' \
+  -H 'accept: application/geo+json'
+```
+
+##### Response
+
+<div>
+<details>
+<summary>Click to expand</summary>
+
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "value": "114",
+        "unit_of_measure": "uS/cm",
+        "parameter_code": "00095",
+        "statistic_id": "00001",
+        "monitoring_location_id": "USGS-02081094",
+        "time_series_id": "f4770ab8aee64721914b0c46a0e1493b",
+        "time": "2018-02-23",
+        "approval_status": "Approved",
+        "qualifier": null,
+        "last_modified": "2025-06-06T16:31:58.944425+00:00"
+      },
+      "id": "0000093d-9535-4bdd-8530-12b9b8d47411",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.8927777777778,
+          35.8130555555556
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "value": "0.46",
+        "unit_of_measure": "ft",
+        "parameter_code": "00065",
+        "statistic_id": "00001",
+        "monitoring_location_id": "USGS-08080700",
+        "time_series_id": "57efa232a7ce44b1844596de75104b74",
+        "time": "2018-03-01",
+        "approval_status": "Approved",
+        "qualifier": null,
+        "last_modified": "2025-07-04T19:03:40.447175+00:00"
+      },
+      "id": "00005171-76fe-434a-b31c-b30e1c7f9b26",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -101.7026747676,
+          34.1789604828062
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "value": "13.1",
+        "unit_of_measure": "degC",
+        "parameter_code": "00010",
+        "statistic_id": "00002",
+        "monitoring_location_id": "USGS-08065350",
+        "time_series_id": "57038b647e2c4c4aa698643b197aa44d",
+        "time": "2018-02-22",
+        "approval_status": "Approved",
+        "qualifier": null,
+        "last_modified": "2025-07-04T19:53:41.553856+00:00"
+      },
+      "id": "00006381-0a7b-42ee-95e5-5126e05ffde0",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.6563406910259,
+          31.3385131853307
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "value": "14.0",
+        "unit_of_measure": "degC",
+        "parameter_code": "00010",
+        "statistic_id": "00002",
+        "monitoring_location_id": "USGS-02110770",
+        "time_series_id": "236ab8e84b9140babea1871e2cd763f1",
+        "time": "2018-02-12",
+        "approval_status": "Approved",
+        "qualifier": null,
+        "last_modified": "2025-03-11T18:32:15.616937+00:00"
+      },
+      "id": "00007ea3-51f6-4ad5-8549-3e2895bb718d",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -78.7186287074082,
+          33.8212834688731
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "value": "420.69",
+        "unit_of_measure": "ft",
+        "parameter_code": "72019",
+        "statistic_id": "00002",
+        "monitoring_location_id": "USGS-345758106364003",
+        "time_series_id": "2a940062364e463096cbf61169981f2d",
+        "time": "2018-02-18",
+        "approval_status": "Approved",
+        "qualifier": null,
+        "last_modified": "2025-07-05T14:26:40.752284+00:00"
+      },
+      "id": "0000b50b-4dbd-453c-b584-dfce6470dc06",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -106.61168611111111,
+          34.966258333333336
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "value": "2.59",
+        "unit_of_measure": "ft",
+        "parameter_code": "00065",
+        "statistic_id": "00003",
+        "monitoring_location_id": "USGS-08130500",
+        "time_series_id": "792266f983804ac4aa851587e91ccfb7",
+        "time": "2018-02-16",
+        "approval_status": "Approved",
+        "qualifier": null,
+        "last_modified": "2025-03-11T20:33:01.030490+00:00"
+      },
+      "id": "0000cb9b-b3d2-40f6-827d-ddd1c73a2068",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -100.630931765048,
+          31.2740546472882
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "value": "0.00",
+        "unit_of_measure": "ft^3/s",
+        "parameter_code": "00060",
+        "statistic_id": "00003",
+        "monitoring_location_id": "USGS-09424150",
+        "time_series_id": "497e78c0c1a84eecbfb4b173add9923a",
+        "time": "2018-02-21",
+        "approval_status": "Approved",
+        "qualifier": null,
+        "last_modified": "2025-07-05T00:14:52.573320+00:00"
+      },
+      "id": "0000cf23-e607-4857-8c23-3056f34fdd48",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -114.157170161686,
+          34.3161256441171
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "value": "52.0",
+        "unit_of_measure": "ft^3/s",
+        "parameter_code": "00060",
+        "statistic_id": "00003",
+        "monitoring_location_id": "USGS-11427760",
+        "time_series_id": "c82d9f6ce66f4587b18397be292c0cd6",
+        "time": "2018-02-22",
+        "approval_status": "Approved",
+        "qualifier": null,
+        "last_modified": "2025-07-05T06:24:04.000595+00:00"
+      },
+      "id": "0000cf9a-7c33-4e18-b326-b5303d4950ea",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.595481215948,
+          39.0251806326975
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "value": "0.13",
+        "unit_of_measure": "in",
+        "parameter_code": "00045",
+        "statistic_id": "00006",
+        "monitoring_location_id": "USGS-03051000",
+        "time_series_id": "5011abe2876c413a9c452a625ae6b763",
+        "time": "2018-03-02",
+        "approval_status": "Approved",
+        "qualifier": null,
+        "last_modified": "2025-03-11T22:14:38.129449+00:00"
+      },
+      "id": "0000e1d8-29f7-4937-9ecf-47a10e14f4b1",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -79.9359079923468,
+          39.0292694107684
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "value": "6.61",
+        "unit_of_measure": "ft",
+        "parameter_code": "00065",
+        "statistic_id": "00003",
+        "monitoring_location_id": "USGS-02234400",
+        "time_series_id": "853144f5015144bbb5fcd223eb69da2c",
+        "time": "2018-03-04",
+        "approval_status": "Approved",
+        "qualifier": null,
+        "last_modified": "2025-07-04T02:21:58.643447+00:00"
+      },
+      "id": "0000e937-1c3f-4976-b507-91ecd493f642",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -81.2906221110044,
+          28.7041629070688
+        ]
+      }
+    }
+  ],
+  "numberReturned": 10,
+  "links": [
+    {
+      "rel": "next",
+      "href": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily/items?cursor=MDAwMGU5MzctMWMzZi00OTc2LWI1MDctOTFlY2Q0OTNmNjQy&lang=en-US&limit=10&properties=id,time_series_id,monitoring_location_id,parameter_code,statistic_id,time,value,unit_of_measure,approval_status,qualifier,last_modified&skipGeometry=false&datetime=2018-02-12T00%3A00%3A00Z%2F2018-03-05T12%3A31%3A12Z",
+      "type": "application/geo+json",
+      "title": "Items (next)"
+    },
+    {
+      "type": "application/geo+json",
+      "rel": "self",
+      "title": "This document as GeoJSON",
+      "href": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily/items?f=json&lang=en-US&limit=10&properties=id,time_series_id,monitoring_location_id,parameter_code,statistic_id,time,value,unit_of_measure,approval_status,qualifier,last_modified&skipGeometry=false&datetime=2018-02-12T00%3A00%3A00Z%2F2018-03-05T12%3A31%3A12Z"
+    },
+    {
+      "rel": "alternate",
+      "type": "application/ld+json",
+      "title": "This document as RDF (JSON-LD)",
+      "href": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily/items?f=jsonld&lang=en-US&limit=10&properties=id,time_series_id,monitoring_location_id,parameter_code,statistic_id,time,value,unit_of_measure,approval_status,qualifier,last_modified&skipGeometry=false&datetime=2018-02-12T00%3A00%3A00Z%2F2018-03-05T12%3A31%3A12Z"
+    },
+    {
+      "type": "text/html",
+      "rel": "alternate",
+      "title": "This document as HTML",
+      "href": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily/items?f=html&lang=en-US&limit=10&properties=id,time_series_id,monitoring_location_id,parameter_code,statistic_id,time,value,unit_of_measure,approval_status,qualifier,last_modified&skipGeometry=false&datetime=2018-02-12T00%3A00%3A00Z%2F2018-03-05T12%3A31%3A12Z"
+    },
+    {
+      "type": "application/json",
+      "title": "Daily values",
+      "rel": "collection",
+      "href": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily"
+    }
+  ],
+  "timeStamp": "2025-10-15T22:02:04.134794Z"
+}
+```
+</details>
+</div>
+
+#### Parameter
+
+- Parameter search doesn't return a `json` response. You can choose from html or csv
+
+##### Request
+
+```bash
+curl -X 'GET' \
+  'https://help.waterdata.usgs.gov/code/parameter_cd_nm_query?parm_nm_cd=00095&fmt=rdb&inline=true'
+```
+
+##### Response
+
+(buried in html)
+
+```
+# National Water Information System
+# 2025/10/15
+#
+#
+# Date Retrieved: USGS Water Data for the Nation Help System
+#
+parameter_cd    group   parm_nm epa_equivalence result_statistical_basis        result_time_basis       result_weight_basis     result_particle_size_basis      result_sample_fraction  result_temperature_basis        CASRN   SRSName parm_unit
+5s      8s      90s     5s      0s      0s      0s      0s      5s      8s      1s      20s     10s
+00095   Physical        Specific conductance, water, unfiltered, microsiemens per centimeter at 25 degrees Celsius      Agree                                   Total   25 deg C                Specific conductance    uS/cm @25C
+```
+
