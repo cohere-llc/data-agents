@@ -1,31 +1,43 @@
 # Running Notes from Analysis of Env-Agents Data Sources
 
-## Overall Observations
+__Task:__ Investigate data sources used by  [ENV-AGENTS](https://github.com/aparkin/env-agents/tree/main)
 
-- It's not too hard to vibe-code your way to getting data from these APIs (definitely not for production, but potentially useful for one-off research applications).
-- The APIs are geared towards facilitating fine-grained searches, not doing "bulk" data transfers.
-- Several of these sources are already compilations of disparate datasets that have gone through some standardization processes. 
+__Overall Goal:__ Facilitate use of ENV-AGENTS (and similar) source data for research applications
 
-## Potential User Personas
-
-After looking through several of the APIs and thinking about ways to facilitate use of these data by researchers,
-it seemed potentially useful to think through options by way of personas (still thinking through this, though).
-
-| Persona | Data Access Method | User Skills   | Throughput | Data Location | Development Effort to Facilitate |
-|---------|--------------------|---------------|------------|---------------|----------------------------------|
-| A       | Native website     | Chrome, Excel | Low        | Source        | None                             |
-| B       | Native API         | Python, VS Code, Copilot | Moderate | Source | Low (example Jupyter Notebooks) |
-| C       | KBase              | KBase User    | High       | Source or LakeHouse | High (data transfer/transformation; custom APIs)
-
-## General Approach To Analysis
-- Use the RESTAdapter to explore API of data sources used in [env-agents](https://github.com/aparkin/env-agents)
-- Create custom adapter to allow querying of same datasets as in env-agents
-  - Do not attempt to standardize queries or output data, as done in env-agents
+## Methodology
+- Use Copilot to wrap source data APIs
+  - Use "adapter" approach as in ENV-AGENTS
+  - Do not attempt to standardize queries or output data (as done in ENV-AGENTS)
 - For each data provider:
   - Identify all available datasets (not just what is used in env-agents)
-  - Assess options for autmoatic discovery of API (openapi, etc)
+  - Assess options for automatic discovery of API (openapi, etc)
   - Document considerations relevant to KBase project
+- Why this approach?
+  - Don't want to write a lot of code by hand that will probably never be used again
+  - Allows assessment of how useful AI agents might be for researchers attempting to use native data source APIs
 
+## General Observations
+- Many APIs seem stable and well-documented (OpenAPI specs available).
+  - NASA POWER, GBIF, OpenAQ
+- Some are not well documented and require extra effort to understand.
+  - USGS NWIS (no OpenAPI spec, but being ported to new service with somewhat rough OpenAPI spec), WQP (no OpenAPI specs)
+- All have web portals available, with most being easy to use.
+- Of the two data sources I could find estimates for (NASA POWER, GBIF), the underlying data is (very roughly) ~5-10 TB.
+- It's not too hard to vibe-code your way to getting data from these APIs (definitely not for production, but potentially useful for one-off research applications).
+- APIs are geared towards facilitating fine-grained searches, not doing "bulk" data transfers.
+- Several of these sources are already compilations of disparate datasets that have gone through some standardization processes.
+- The lowest-cost, lowest-risk, most straightforward and actionable way to use these data are through the web portals already developed by the maintainers of the datasets.
+  - The value-add of any proposed development should be measured against this approach
+- Bulk data transfer may require contacting the admins of the various data sources. I couldn't find anything by searching for this.
+
+## My Rough Understanding of Potential Options (or Roadmap)
+
+| Data Access Method                                            | User Skills                      | Throughput  | Dev Cost                                                        | User Costs                                                                                                                  | Pros                                                                                                       | Cons                                                                                                                                                                       |
+|---------------------------------------------------------------|----------------------------------|-------------|-----------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Native Web Portal (__NOT PURSUING__) | Browser; Excel; multiple portals | Low         | Very Low (docs)                                                 | Medium (learning to use different portals; time spent on individual searches; translation between platform concepts/naming) | Low dev cost; currently available                                                                          | Low throughput                                                                                                                                                             |
+| Jupyter Notebook (Native APIs)                                | Python; AI Agent                 | Medium      | Low-Medium (tutorials; examples, user forums, workshops)        | Medium-High (learning APIs with AI assist; translation between platform concepts/naming)                                    | Low dev cost; high throughput; users gain transferable skills                                              | High spin-up time for users w/ limited coding experience; uncertain usefulness of AI agents                                                                                |
+| Jupyter Notebook (custom Python pkg using native APIs)        | Python                           | Medium-High | Medium-High (pkg using multiple APIs, docs, user forums)        | Low-Medium (integrating output with various schemas/naming)                                                                 | High throughput; only one portal for users to learn                                                        | High dev cost; volatile APIs; non-transferable user skills                                                                                                                 |
+| Jupyter Notebook (bulk data ingestion; standardized querying) | Python                           | High        | High (custom portal and API; data ingestion; docs; user forums) | Low (standardized query; more consistent results schemas/naming)                                                            | High throughput; only one portal for users to learn; standardized data sets; single back-end API           | High dev cost; loss of information through standardizing data; volatile source data schemas; volatile bulk transfer APIs (if even available); non-transferable user skills |
 ## NASA POWER
 - Desciption of API: https://power.larc.nasa.gov/api/pages/
 - License: public domain (https://www.nasa.gov/organizations/disclaimer/)
