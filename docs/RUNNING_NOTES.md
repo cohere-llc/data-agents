@@ -66,8 +66,11 @@ curl -X 'GET' \
 
 ##### Response
 
-<div style="height: 400px; overflow-y: auto; border: padding: 10px; font-family: monospace;">
-<pre><code class="language-json">
+<div>
+<details>
+<summary>Click to expand</summary>
+
+```json
 {
   "type": "Feature",
   "geometry": {
@@ -127,7 +130,8 @@ curl -X 'GET' \
     "process": 0.03
   }
 }
-</code></pre>
+```
+</details>
 </div>
 
 - Coordinates are: longitude (deg), latitude (deg), elevation (m?)
@@ -145,8 +149,11 @@ curl -X 'GET' \
 ##### Response
 
 
-<div style="height: 400px; overflow-y: auto; padding: 10px; font-family: monospace;">
-<pre><code class="language-json">
+<div>
+<details>
+<summary>Click to expand</summary>
+
+```json
 {
   "features": [
     {
@@ -244,7 +251,8 @@ curl -X 'GET' \
   },
   "type": "FeatureCollection"
 }
-</code></pre>
+```
+</details>
 </div>
 
 - Coordinates are: longitude (deg), latitude (deg), elevation (m?)
@@ -297,8 +305,11 @@ curl -X 'GET' \
 
 ##### Response
 
-<div style="height: 400px; overflow-y: auto; padding: 10px; font-family: monospace;">
-<pre><code class="language-json">
+<div>
+<details>
+<summary>Click to expand</summary>
+
+```json
 {
   "offset": 0,
   "limit": 20,
@@ -1330,7 +1341,8 @@ curl -X 'GET' \
   ],
   "facets": []
 }
-</code></pre>
+```
+</details>
 </div>
 
 #### Occurance
@@ -1339,8 +1351,11 @@ curl -X 'GET' \
 
 ##### Output Example
 
-<div style="height: 400px; overflow-y: auto; padding: 10px; font-family: monospace;">
-<pre><code class="language-json">
+<div>
+<details>
+<summary>Click to expand</summary>
+
+```json
 {
   "endOfRecords": true,
   "count": 0,
@@ -1696,7 +1711,8 @@ curl -X 'GET' \
     }
   ]
 }
-</code></pre>
+```
+</details>
 </div>
 
 ## OpenAQ
@@ -1728,8 +1744,11 @@ curl -X 'GET' \
 ```
 ##### Response
 
-<div style="height: 400px; overflow-y: auto; padding: 10px; font-family: monospace;">
-<pre><code class="language-json">
+<div>
+<details>
+<summary>Click to expand</summary>
+
+```json
 {
   "meta": {
     "name": "openaq-api",
@@ -2081,7 +2100,8 @@ curl -X 'GET' \
     }
   ]
 }
-</code></pre>
+```
+</details>
 </div>
 
 #### Sensor by location
@@ -2097,8 +2117,11 @@ curl -X 'GET' \
 
 #### Response
 
-<div style="height: 400px; overflow-y: auto; padding: 10px; font-family: monospace;">
-<pre><code class="language-json">
+<div>
+<details>
+<summary>Click to expand</summary>
+
+```json
 {
   "meta": {
     "name": "openaq-api",
@@ -2222,7 +2245,8 @@ curl -X 'GET' \
     }
   ]
 }
-</code></pre>
+```
+</details>
 </div>
 
 #### Measurements by Sensor
@@ -2237,8 +2261,11 @@ curl -X 'GET' \
 ```
 ##### Response
 
-<div style="height: 400px; overflow-y: auto; padding: 10px; font-family: monospace;">
-<pre><code class="language-json">
+<div>
+<details>
+<summary> Click to expand</summary>
+
+```json
 {
   "meta": {
     "name": "openaq-api",
@@ -2406,5 +2433,6 @@ curl -X 'GET' \
     }
   ]
 }
-</code></pre>
+```
+</details>
 </div>
