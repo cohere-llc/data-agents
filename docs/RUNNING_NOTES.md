@@ -2974,3 +2974,31 @@ MORONGO1_WQX,Morongo Band of Mission Indians,MORONGO1_WQX-LM1080823,Field Msr/Ob
 </details>
 </div>
 
+## SSURGO
+
+- USDA Soil Survey Geographic Database
+- SOAP API that expects user-written SQL statements
+- This [PDF doc](https://sdmdataaccess.nrcs.usda.gov/documents/SoilDataAccessQueryGuide.pdf) describes the database you can query
+
+### Example Query
+
+- Below is a portion of the env-agents code to give an idea of how the requests are structured
+- I didn't attempt to run an actual query - can look into this more after the initial pass through the various data sources
+
+```python
+            soap_envelope = f"""<?xml version="1.0" encoding="utf-8"?>
+            <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                <soap:Body>
+                    <RunQuery xmlns="http://SDMDataAccess.nrcs.usda.gov/Tabular/SDMTabularService.asmx">
+                        <Query>SELECT co.cokey, ch.chkey, co.compname, co.comppct_r, ch.hzname, ch.hzdept_r, ch.hzdepb_r, ch.om_r, ch.ph1to1h2o_r, ch.awc_r, ch.claytotal_r, ch.silttotal_r, ch.sandtotal_r, ch.dbthirdbar_r, ch.ksat_r, ch.cec7_r, mu.mukey, mu.musym, mu.muname, mu.mukind, mu.farmlndcl, sa.areasymbol, sa.areaname
+FROM sacatalog sa 
+INNER JOIN legend lg ON lg.areasymbol = sa.areasymbol 
+INNER JOIN mapunit mu ON mu.lkey = lg.lkey 
+AND mu.mukey IN (SELECT * from SDA_Get_Mukey_from_intersection_with_WktWgs84('point({lon_lat})'))
+INNER JOIN component co ON co.mukey = mu.mukey AND co.majcompflag = 'Yes'
+INNER JOIN chorizon ch ON ch.cokey = co.cokey
+ORDER BY co.cokey, ch.hzdept_r ASC</Query>
+                    </RunQuery>
+                </soap:Body>
+            </soap:Envelope>"""
+```
