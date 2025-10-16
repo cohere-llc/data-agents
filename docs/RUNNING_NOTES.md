@@ -38,6 +38,36 @@ __Overall Goal:__ Facilitate use of ENV-AGENTS (and similar) source data for res
 | Jupyter Notebook (Native APIs)                                | Python; AI Agent                 | Medium      | Low-Medium (tutorials; examples, user forums, workshops)        | Medium-High (learning APIs with AI assist; translation between platform concepts/naming)                                    | Low dev cost; high throughput; users gain transferable skills                                              | High spin-up time for users w/ limited coding experience; uncertain usefulness of AI agents                                                                                |
 | Jupyter Notebook (custom Python pkg using native APIs)        | Python                           | Medium-High | Medium-High (pkg using multiple APIs, docs, user forums)        | Low-Medium (integrating output with various schemas/naming)                                                                 | High throughput; only one portal for users to learn                                                        | High dev cost; volatile APIs; non-transferable user skills                                                                                                                 |
 | Jupyter Notebook (bulk data ingestion; standardized querying) | Python                           | High        | High (custom portal and API; data ingestion; docs; user forums) | Low (standardized query; more consistent results schemas/naming)                                                            | High throughput; only one portal for users to learn; standardized data sets; single back-end API           | High dev cost; loss of information through standardizing data; volatile source data schemas; volatile bulk transfer APIs (if even available); non-transferable user skills |
+
+## Possible Paths Forward
+
+### OpenAPI-based Python Packages
+
+If the plan includes both options 2 and 3, we could consider initially developing a Python package that uses existing OpenAPI Python packages to facilitate interactions with generic services based on their published specs (sort of midway between options 2 and 3). We could then build upon the OpenAPI-backed wrappers with custom implementations of specific query types (location, time, species, etc.) for services that support those type of searches, gradually standardizing query syntax but always leaving native search capabilities in place. Custom transformations to standardize output data could also gradually be introduced. This would gradually move us closer to option 3. (This work might result in useful information for option 4, but wouldn't directly contribute to it.)
+
+#### OpenAPI Python Packages
+- `openapi-core`
+  - https://github.com/python-openapi/openapi-core
+  - Still pre-1.0, but seems actively maintained, 60 contributors, 350 Stars
+  - No code-generation
+  - Provides ability to validate and unmarshall request and response data
+- `openapi-generator`
+  - https://github.com/OpenAPITools/openapi-generator
+  - On v7.16, 3300 contributors, 25K Stars
+  - Code generator (for many languages)
+  - Creates client libraries, server stubs, docs
+
+#### Notes
+- I tried out `openapi-core` with the NASA POWER OpenAPI spec, see [here](https://github.com/cohere-llc/data-agents/blob/f842d148667db6befadee680238635e12144d62f/tests/adapters/test_openapi_adapter.py#L53-L88)
+  - The package is simple and fairly straigh-forward to use
+- I haven't tried `openapi-generator` yet. Seems like a bigger lift to use for the first time.
+- The biggest potential problem I see is the quality of the OpenAPI specs themselves
+  - NASA POWER input schema needed to be modified slightly to work (syntax issues)
+  - NASA POWER output schema was inconsistent with the actual output, but modifying the schema to be less strict for some data allowed it to work
+- If we do go this route, it would be good to set up the package to be consistent with how KBase users interact with other datasetes in Python (ie. genomics data)
+
+# Notes on Specific Data Sources
+
 ## NASA POWER
 - Desciption of API: https://power.larc.nasa.gov/api/pages/
 - License: public domain (https://www.nasa.gov/organizations/disclaimer/)

@@ -1,16 +1,20 @@
 """REST Adapter for OpenAPI Specifications."""
 
-from typing import Any, Hashable, Optional
-from ..core.adapter import Adapter
-
-from openapi_core import OpenAPI
+from collections.abc import Hashable
+from typing import Any, Optional
 
 import pandas as pd
+from openapi_core import OpenAPI
+
+from ..core.adapter import Adapter
+
 
 class OpenAPIAdapter(Adapter):
     """Adapter for RESTful APIs defined by OpenAPI specifications."""
 
-    def __init__(self, openapi_spec: dict[Hashable, Any], config: Optional[dict[str, Any]] = None):
+    def __init__(
+        self, openapi_spec: dict[Hashable, Any], config: Optional[dict[str, Any]] = None
+    ):
         """Initialize the OpenAPI adapter.
 
         Args:
@@ -27,7 +31,6 @@ class OpenAPIAdapter(Adapter):
         if not isinstance(self.config["base_url"], str):
             raise ValueError("'base_url' in config must be a string")
         self.base_url = self.config.get("base_url", "")
-
 
     def query(self, query: str, **kwargs: Any) -> pd.DataFrame:
         """Execute a query against the specified API endpoint.
@@ -48,4 +51,4 @@ class OpenAPIAdapter(Adapter):
         Returns:
             Dictionary containing discovery information.
         """
-        return self._raw_spec
+        return {str(key): value for key, value in self._raw_spec.items()}
