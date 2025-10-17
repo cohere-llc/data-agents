@@ -3002,3 +3002,158 @@ ORDER BY co.cokey, ch.hzdept_r ASC</Query>
                 </soap:Body>
             </soap:Envelope>"""
 ```
+
+## OpenStreetMap Overpass API
+
+- Community maintained 
+- Several Python packages already available
+  - https://github.com/mvexel/overpass-api-python-wrapper
+- No OpenAPI spec
+- The API is described in this wiki: https://wiki.openstreetmap.org/wiki/Overpass_API
+- Seems to have a very detailed custom query language (Overpass QL)
+- Note on wiki about downloading large datasets:
+>Downloading big data
+>
+>As the size of an Overpass API query result is only known when the download is complete, it is impossible to give an ETA while downloading. And the dynamically generated files from Overpass API typically take longer to generate and download than downloading existing static extracts of the same region. As a result, when you want to extract country-sized regions with all (or nearly all) data in it, it's better to use planet.osm mirrors for that. Overpass API is most useful when the amount of data needed is only a selection of the data available in the region.
+- The entire dataset is downloadable (see https://wiki.openstreetmap.org/wiki/Planet.osm)
+  - Updated weekly
+  - 2.2 TB (uncompressed); 83 GB (PBF compressed)
+
+### Example Query
+
+#### Request
+
+There is an example python script that runs a query from the wiki in `examples/osm_overpass_example.py`
+To run the example and save the output to a json file:
+
+```bash
+uv sync
+uv run python examples/osm_overpass_example.py > osm_overpass_output.json
+```
+
+The query embedded in the example request is:
+
+```
+[bbox:30.618338,-96.323712,30.591028,-96.330826]
+[out:json]
+[timeout:90]
+;
+(
+    way
+        (
+              30.626917110746,
+              -96.348809105664,
+              30.634468750236,
+              -96.339893442898
+          );
+);
+out geom;
+```
+
+#### Response
+
+<div>
+<details>
+<summary>Click to expand</summary>
+
+```json
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.8 e802775f",
+  "osm3s": {
+    "timestamp_osm_base": "2025-10-17T15:20:36Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+    {
+      "type": "way",
+      "id": 20714383,
+      "bounds": {
+        "minlat": 30.6277358,
+        "minlon": -96.341929,
+        "maxlat": 30.628834,
+        "maxlon": -96.340566
+      },
+      "nodes": [
+        222454378,
+        4204990218,
+        222454386
+      ],
+      "geometry": [
+        {
+          "lat": 30.6277358,
+          "lon": -96.340566
+        },
+        {
+          "lat": 30.6278459,
+          "lon": -96.3407026
+        },
+        {
+          "lat": 30.628834,
+          "lon": -96.341929
+        }
+      ],
+      "tags": {
+        "highway": "service",
+        "name": "W-X Row",
+        "postal_code": "77840",
+        "tiger:county": "Brazos, TX"
+      }
+    },
+    {
+      "type": "way",
+      "id": 20718240,
+      "bounds": {
+        "minlat": 30.6266916,
+        "minlon": -96.3501748,
+        "maxlat": 30.6301572,
+        "maxlon": -96.3459838
+      },
+      "nodes": [
+        222493143,
+        222493147,
+        222493151,
+        3906238127,
+        3906238105,
+        222493155
+      ],
+      "geometry": [
+        {
+          "lat": 30.6301572,
+          "lon": -96.3501748
+        },
+        {
+          "lat": 30.6295126,
+          "lon": -96.3493944
+        },
+        {
+          "lat": 30.6288617,
+          "lon": -96.3486331
+        },
+        {
+          "lat": 30.6285368,
+          "lon": -96.348235
+        },
+        {
+          "lat": 30.6267605,
+          "lon": -96.3460901
+        },
+        {
+          "lat": 30.6266916,
+          "lon": -96.3459838
+        }
+      ],
+      "tags": {
+        "highway": "residential",
+        "name": "Culpepper Drive",
+        "postal_code": "77801",
+        "tiger:county": "Brazos, TX"
+      }
+    },
+    ...
+  ]
+}
+```
+</details>
+</div>
+
