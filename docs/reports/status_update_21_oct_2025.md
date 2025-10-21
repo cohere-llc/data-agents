@@ -31,13 +31,10 @@ __Overall Goal:__ Facilitate use of ENV-AGENTS (and similar) source data for res
 
 ## OpenAPI-based Python Packages
 
-### Why
-- Could use existing packages to facilitate interactions with generic services based on their published specs
-- Would be somewhere between having users use native APIs to access data and providing a Python package with standardized queryies and output data
-- Could build upon the OpenAPI-backed wrappers with custom implementations of specific query types (location, time, species, etc.) for services that support those type of searches, gradually standardizing query syntax but always leaving native search capabilities in place
-- Custom transformations to standardize output data could also gradually be introduced. This would gradually move us closer to a fully standardized Python package
+### What
+Several python packages exist that consume OpenAPI specs to facilitate (to varying degrees)
+in-code interactions with the REST APIs described.
 
-### OpenAPI Python Packages
 - `openapi-core`
   - https://github.com/python-openapi/openapi-core
   - Still pre-1.0, but seems actively maintained, 60 contributors, 350 Stars
@@ -48,6 +45,12 @@ __Overall Goal:__ Facilitate use of ENV-AGENTS (and similar) source data for res
   - On v7.16, 3300 contributors, 25K Stars
   - Code generator (for many languages)
   - Creates client libraries, server stubs, docs
+
+### Why
+- Could use existing packages to facilitate interactions with generic services based on their published specs
+- Would be somewhere between having users use native APIs to access data and providing a Python package with standardized queryies and output data
+- Could build upon the OpenAPI-backed wrappers with custom implementations of specific query types (location, time, species, etc.) for services that support those type of searches, gradually standardizing query syntax but always leaving native search capabilities in place
+- Custom transformations to standardize output data could also gradually be introduced. This would gradually move us closer to a fully standardized Python package
 
 ### Notes
 - I tried out `openapi-core` with the NASA POWER OpenAPI spec, see [here](https://github.com/cohere-llc/data-agents/blob/f842d148667db6befadee680238635e12144d62f/tests/adapters/test_openapi_adapter.py#L53-L88)
@@ -62,7 +65,7 @@ __Overall Goal:__ Facilitate use of ENV-AGENTS (and similar) source data for res
 
 Google Earth Engine seems to be doing something similar to what we need to do. They provide a cloud-based service to query and processes geographical data from a variety of sources in a standardized way. We may (or may not) benefit from investigating how they have structured their APIs (JS and Python).
 
-#### Structure
+### Structure
 
 - Data are organized into __Images__ (raster data; e.g., satellite images) and __Features__ (Geometry-based data; roads, borders, point measurements)
 - __ImageCollection__ and __FeatureCollection__ are labelled collections that can be queried
@@ -70,7 +73,7 @@ Google Earth Engine seems to be doing something similar to what we need to do. T
 - __Reducer__ aggregates data algorithmically
 - __Join__ allows SQL-like linking of datasets for complex queries
 
-#### Some potentially relevant examples
+### Some potentially relevant examples
 - From the Earth Enginge [Getting Started Guide](https://developers.google.com/earth-engine/guides/getstarted). (code samples are licensed under Apache 2.0)
 - Loading a dataset and filtering with standard and dataset-specific attributes:
 ```js
