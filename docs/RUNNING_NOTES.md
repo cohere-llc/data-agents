@@ -66,6 +66,97 @@ If the plan includes both options 2 and 3, we could consider initially developin
   - NASA POWER output schema was inconsistent with the actual output, but modifying the schema to be less strict for some data allowed it to work
 - If we do go this route, it would be good to set up the package to be consistent with how KBase users interact with other datasetes in Python (ie. genomics data)
 
+### Google Earth Engine
+
+Google Earth Engine seems to be doing something similar to what we need to do. They provide a cloud-based service to query and processes geographical data from a variety of sources in a standardized way. We may (or may not) benefit from investigating how they have structured their APIs (JS and Python).
+
+#### Structure
+
+- Data are organized into __Images__ (raster data; e.g., satellite images) and __Features__ (Geometry-based data; roads, borders, point measurements)
+- __ImageCollection__ and __FeatureCollection__ are labelled collections that can be queried
+- __Geometry__ is a point, line, shape, etc. in [GeoJSON](https://datatracker.ietf.org/doc/html/rfc7946#autoid-1) format
+- __Reducer__ aggregates data algorithmically
+- __Join__ allows SQL-like linking of datasets for complex queries
+
+#### Some potentially relevant examples
+- From the Earth Enginge [Getting Started Guide](https://developers.google.com/earth-engine/guides/getstarted). (code samples are licensed under Apache 2.0)
+- Loading a dataset and filtering with standard and dataset-specific attributes:
+```js
+var filteredCollection = ee.ImageCollection('LANDSAT/LC08/C02/T1_TOA')
+  .filterBounds(point)
+  .filterDate(start, finish)
+  .sort('CLOUD_COVER', true);
+```
+- Processing filtered data algorithmically:
+```js
+// Load and display a Landsat TOA image.
+var image = ee.Image('LANDSAT/LC08/C02/T1_TOA/LC08_044034_20140318');
+Map.addLayer(image, {bands: ['B4', 'B3', 'B2'], max: 0.3});
+
+// Create an arbitrary rectangle as a region and display it.
+var region = ee.Geometry.Rectangle(-122.2806, 37.1209, -122.0554, 37.2413);
+Map.addLayer(region);
+
+// Get a dictionary of means in the region.  Keys are bandnames.
+var mean = image.reduceRegion({
+  reducer: ee.Reducer.mean(),
+  geometry: region,
+  scale: 30
+});
+```
+- Joining datasets:
+```js
+// Load a Landsat 8 image collection at a point of interest.
+var collection = ee.ImageCollection('LANDSAT/LC08/C02/T1_TOA')
+    .filterBounds(ee.Geometry.Point(-122.09, 37.42));
+
+// Define start and end dates with which to filter the collections.
+var april = '2014-04-01';
+var may = '2014-05-01';
+var june = '2014-06-01';
+var july = '2014-07-01';
+
+// The primary collection is Landsat images from April to June.
+var primary = collection.filterDate(april, june);
+
+// The secondary collection is Landsat images from May to July.
+var secondary = collection.filterDate(may, july);
+
+// Use an equals filter to define how the collections match.
+var filter = ee.Filter.equals({
+  leftField: 'system:index',
+  rightField: 'system:index'
+});
+
+// Create the join.
+var simpleJoin = ee.Join.simple();
+
+// Apply the join.
+var simpleJoined = simpleJoin.apply(primary, secondary, filter);
+
+// Display the result.
+print('Simple join: ', simpleJoined);
+```
+
+# Summary of Data Sources
+
+| Data Product     | Source              | OpenAPI spec | Python Package |
+|------------------|---------------------|--------------|----------------|
+| NASA POWER       | NASA                | yes          | -              |
+| GBIF Ecology     | GBIF                | yes          | pygbif         |
+| OpenAQ           | OpenAQ              | yes          | -              |
+| USGS WDFN        | USGS                | yes          | -              |
+| WQP              | WQP                 | no           | -              |
+| SSURGO           | USDA                | no           | -              |
+| OMP Overpass API | OpenStreetMap       | no           | -              |
+| Soilgrids        | Soilgrids           | yes          | -              |
+| SRTM             | Google Earth Engine | no           | ee             |
+| MODIS            | Google Earth Engine | no           | ee             |
+| WORLDCLIM_BIO    | Google Earth Engine | no           | ee             |
+| TERRACLIMATE     | Google Earth Engine | no           | ee             |
+| GPM              | Google Earth Engine | no           | ee             |
+
+
 # Notes on Specific Data Sources
 
 ## NASA POWER
