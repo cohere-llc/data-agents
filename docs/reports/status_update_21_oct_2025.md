@@ -63,7 +63,7 @@ in-code interactions with the REST APIs described.
 
 ## Google Earth Engine
 
-Google Earth Engine seems to be doing something similar to what we need to do. They provide a cloud-based service to query and processes geographical data from a variety of sources in a standardized way. We may (or may not) benefit from investigating how they have structured their APIs (JS and Python).
+Google Earth Engine seems to be doing something similar to what we need to do. They provide a cloud-based service to query and processes geographical data from a variety of sources in a standardized way. We may benefit from investigating how they have structured their APIs (JS and Python).
 
 ### Structure
 
