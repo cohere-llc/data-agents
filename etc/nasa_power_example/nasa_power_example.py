@@ -2,8 +2,9 @@
 # based on the Python API of Google Earth Engine (GEE).
 #
 # The proposed API consists of similar top-level functions as the GEE JavaScript API,
-# but is intended to pull data from various sources (REST APIs, databases, local files, etc.)
-# instead of just GEE datasets. The data and computation are local, not in the GEE cloud.
+# but is intended to pull data from various sources (REST APIs, databases, local files,
+# etc.) instead of just GEE datasets. The data and computation are local, not in the
+# GEE cloud.
 # Primary references:
 # - https://developers.google.com/earth-engine/apidocs/ee-featurecollection
 # - https://developers.google.com/earth-engine/guides/joins_spatial
@@ -27,7 +28,8 @@ muri = dp.FeatureCollection(
 # reference the NASA POWER data source
 nasa_power = dp.FeatureCollection("NASA_POWER/DAILY")
 
-# examine properties available in the NASA POWER dataset (could do the same for Muri Coring collection)
+# examine properties available in the NASA POWER dataset (could do the same for Muri
+# Coring collection)
 print(
     "All non-system properties in NASA POWER dataset as a dictionary:",
     nasa_power.toDictionary().getInfo(),
@@ -37,14 +39,17 @@ print(
     nasa_power.toDictionary(["*temperature*", "*precip*"]).getInfo(),
 )
 
-# define a distance-based spatial filter to use with the join to match points within 5 km
-spatial_filter = dp.Filter.withinDistance(leftField=".geo", rightField=".geo", distance=5000)
+# define a distance-based spatial filter to use with the join to match points
+# within 5 km
+spatial_filter = dp.Filter.withinDistance(
+    leftField=".geo", rightField=".geo", distance=5000
+)
 
 # define a join that saves the best (closest) match
 save_best_join = dp.Join.saveBest(matchesKey="bestMeasurement", distanceKey="distance")
 
-# apply the join to link each feature in the Muri Coring collection to NASA POWER features within 5 km
-# and within the date range 2024-01-01 to 2024-12-31
+# apply the join to link each feature in the Muri Coring collection to NASA POWER
+# features within 5 km and within the date range 2024-01-01 to 2024-12-31
 joined = (
     save_best_join.apply(muri, nasa_power, spatial_filter)
     .filter(dp.Filter.lt("distance", 5000))
@@ -65,8 +70,8 @@ def calculatePet(feature: dp.Feature) -> dp.Feature:
     return feature.set({"PET": pet})
 
 
-# reduce to annual averages (temperatures and radiation) and annual totals (precipitation)
-# and calculate PET for each Muri Coring point
+# reduce to annual averages (temperatures and radiation) and annual totals
+# (precipitation) and calculate PET for each Muri Coring point
 mean_annuals = joined.reduceColumns(
     reducer=[
         dp.Reducer.mean().repeat(4),
@@ -79,4 +84,5 @@ mean_annuals = joined.reduceColumns(
 print("Mean annual values with PET for each Muri Coring point:")
 print(mean_annuals.getInfo())
 
-# we could have .toDataframe(), .toXarray(), .toCSV(), etc. methods to export the results
+# we could have .toDataframe(), .toXarray(), .toCSV(), etc. methods to
+# export the results
