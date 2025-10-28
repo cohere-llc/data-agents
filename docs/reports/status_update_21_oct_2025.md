@@ -75,6 +75,7 @@ Google Earth Engine seems to be doing something similar to what we need to do. T
 
 ### Some potentially relevant examples
 - From the Earth Enginge [Getting Started Guide](https://developers.google.com/earth-engine/guides/getstarted). (code samples are licensed under Apache 2.0)
+  - public [Python/JS client libraries](https://github.com/google/earthengine-api) (Apache 2.0)
 - Loading a dataset and filtering with standard and dataset-specific attributes:
 ```js
 var filteredCollection = ee.ImageCollection('LANDSAT/LC08/C02/T1_TOA')

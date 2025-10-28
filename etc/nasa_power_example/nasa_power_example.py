@@ -52,7 +52,6 @@ save_best_join = dp.Join.saveBest(matchesKey="bestMeasurement", distanceKey="dis
 # features within 5 km and within the date range 2024-01-01 to 2024-12-31
 joined = (
     save_best_join.apply(muri, nasa_power, spatial_filter)
-    .filter(dp.Filter.lt("distance", 5000))
     .filter(dp.Filter.date("2024-01-01", "2024-12-31"))
 )
 
