@@ -1,9 +1,9 @@
-"""Data Agents - A prototype for general data discovery and harmonization."""
+"""Data Agents - A prototype for KBase external data integration."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
-from . import adapters
-from .adapters import RESTAdapter, TabularAdapter
-from .core import Adapter, Router
 
-__all__ = ["Adapter", "Router", "TabularAdapter", "RESTAdapter", "adapters"]
+def Authenticate() -> None:
+    """Authenticate user with external services."""
+
+    return

@@ -50,9 +50,8 @@ save_best_join = dp.Join.saveBest(matchesKey="bestMeasurement", distanceKey="dis
 
 # apply the join to link each feature in the Muri Coring collection to NASA POWER
 # features within 5 km and within the date range 2024-01-01 to 2024-12-31
-joined = (
-    save_best_join.apply(muri, nasa_power, spatial_filter)
-    .filter(dp.Filter.date("2024-01-01", "2024-12-31"))
+joined = save_best_join.apply(muri, nasa_power, spatial_filter).filter(
+    dp.Filter.date("2024-01-01", "2024-12-31")
 )
 
 
