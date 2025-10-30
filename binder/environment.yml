@@ -1,10 +1,10 @@
 name: data-agents-env
 channels:
   - conda-forge
-  - defaults
 dependencies:
   - python>=3.9
   - ipykernel
-  - uv
-  - uv:
+  - ipysytoscape
+  - pip
+  - pip:
     - data-agents
