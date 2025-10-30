@@ -57,6 +57,8 @@ dev = [
     "pandas-stubs>=2.2.2.240807",
     "types-requests>=2.32.4.20250913",
     "types-pyyaml>=6.0.12.20250915",
+    "ipykernel>=6.31.0",
+    "jupyter>=1.1.1",
 ]
 
 [tool.hatchling.build.targets.wheel]

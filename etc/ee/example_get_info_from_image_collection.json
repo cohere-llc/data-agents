@@ -1,0 +1,528 @@
+{
+  "type": "ImageCollection",
+  "bands": [],
+  "version": 1641990522994404,
+  "id": "NASA/NEX-DCP30_ENSEMBLE_STATS",
+  "properties": {
+    "system:visualization_0_min": "247.0",
+    "type_name": "ImageCollection",
+    "keywords": [
+      "climate",
+      "cmip5",
+      "csu",
+      "geophysical",
+      "nasa",
+      "nex",
+      "precipitation",
+      "temperature"
+    ],
+    "thumb": "https://mw1.google.com/ges/dd/images/NASA_NEX-DCP30_thumb.png",
+    "description": "<p>The NASA NEX-DCP30 dataset is comprised of downscaled climate scenarios\nfor the conterminous United States that are derived from the General\nCirculation Model (GCM) runs conducted under the Coupled Model\nIntercomparison Project Phase 5 (CMIP5, see <a href=\"https://journals.ametsoc.org/doi/abs/10.1175/BAMS-D-11-00094.1\">Taylor et al. 2012</a>)\nand across the four greenhouse gas emissions scenarios known as\nRepresentative Concentration Pathways (RCPs, see <a href=\"https://rd.springer.com/article/10.1007%2Fs10584-011-0156-z#page-1\">Meinshausen et al. 2011</a>)\ndeveloped for the Fifth Assessment Report of the Intergovernmental Panel\non Climate Change (IPCC AR5). The purpose of these datasets is to provide\na set of high resolution, bias-corrected climate change projections that\ncan be used to evaluate climate change impacts on processes that are\nsensitive to finer-scale climate gradients and the effects of local\ntopography on climate conditions.</p><p>The dataset contains monthly projections covering the periods from 1950\nthrough 2005 (Retrospective Run) and from 2006 to 2099 (Prospective Run).\nIt includes ensemble statistics calculated for each RCP from all model\nruns available for the pr, tasmin, and tasmax bands.</p><p>NEX-DCP30 was prepared by the Climate Analytics Group and NASA Ames\nResearch Center using the NASA Earth Exchange, and distributed by the NASA\nCenter for Climate Simulation (NCCS).</p><p><b>Provider: <a href=\"https://cds.nccs.nasa.gov/nex/\">NASA / CSU</a></b><br><p><b>Resolution</b><br>927.67 meters\n</p><p><b>Cadence</b><br>\n  1 month\n</p><p><b>Bands</b><table class=\"eecat\"><tr><th scope=\"col\">Name</th><th scope=\"col\">Description</th></tr><tr><td>pr_mean</td><td><p>Monthly mean of the daily precipitation rate at surface;\nincludes both liquid and solid phases from all types of clouds\n(both large-scale and convective)</p></td></tr><tr><td>pr_quartile25</td><td><p>25th quartile of the precipitation at surface; includes both\nliquid and solid phases from all types of clouds (both large-scale\nand convective)</p></td></tr><tr><td>pr_median</td><td><p>Median of precipitation at surface; includes both liquid and\nsolid phases from all types of clouds (both large-scale and convective)</p></td></tr><tr><td>pr_quartile75</td><td><p>75th quartile of the precipitation at surface; includes both\nliquid and solid phases from all types of clouds (both large-scale\nand convective)</p></td></tr><tr><td>tasmin_mean</td><td><p>Monthly mean of the daily-minimum near-surface air temperature</p></td></tr><tr><td>tasmin_quartile25</td><td><p>25th quartile the daily-minimum near-surface air temperature</p></td></tr><tr><td>tasmin_median</td><td><p>Median of the daily-minimum near-surface air temperature</p></td></tr><tr><td>tasmin_quartile75</td><td><p>75th quartile of the daily-minimum near-surface air temperature</p></td></tr><tr><td>tasmax_mean</td><td><p>Monthly mean of the daily-maximum near-surface air temperature</p></td></tr><tr><td>tasmax_quartile25</td><td><p>25th quartile of the daily-maximum near-surface air temperature</p></td></tr><tr><td>tasmax_median</td><td><p>Median of the daily-maximum near-surface air temperature</p></td></tr><tr><td>tasmax_quartile75</td><td><p>75th quartile of the daily-maximum near-surface air temperature</p></td></tr></table><p><b>Image Properties</b><table class=\"eecat\"><tr><th scope=\"col\">Name</th><th scope=\"col\">Type</th><th scope=\"col\">Description</th></tr><tr><td>scenario</td><td>STRING</td><td><p>Name of the CMIP5 scenario. It is one of: &#39;historical&#39;,\n&#39;rcp26&#39;, &#39;rcp45&#39;, &#39;rcp60&#39;, &#39;rcp85&#39;, where &#39;historical&#39; designates\nretrospective model runs (pre-2006).</p></td></tr><tr><td>month</td><td>DOUBLE</td><td><p>Calendar month</p></td></tr></table><p><b>Terms of Use</b><br><p>This dataset is in the public domain and is available\nwithout restriction on use and distribution. See <a href=\"https://science.nasa.gov/earth-science/earth-science-data/data-information-policy\">NASA&#39;s\nEarth Science Data &amp; Information Policy</a>\nfor additional information.</p><p><b>Suggested citation(s)</b><ul><li><p>Thrasher, B., J. Xiong, W. Wang, F. Melton, A. Michaelis and R. Nemani\n(2013), Downscaled Climate Projections Suitable for Resource Management,\nEos Trans. AGU, 94(37), 321.\n<a href=\"https://doi.org/10.1002/2013EO370002\">doi:10.1002/2013EO370002</a></p></li></ul><style>\n  table.eecat {\n  border: 1px solid black;\n  border-collapse: collapse;\n  font-size: 13px;\n  }\n  table.eecat td, tr, th {\n  text-align: left; vertical-align: top;\n  border: 1px solid gray; padding: 3px;\n  }\n  td.nobreak { white-space: nowrap; }\n</style>",
+    "source_tags": [
+      "nasa",
+      "csu",
+      "nex"
+    ],
+    "visualization_0_max": "311.0",
+    "title": "NEX-DCP30: Ensemble Stats for NASA Earth Exchange Downscaled Climate Projections",
+    "product_tags": [
+      "precipitation",
+      "temperature",
+      "cmip5",
+      "climate",
+      "geophysical"
+    ],
+    "provider": "NASA / CSU",
+    "visualization_0_min": "247.0",
+    "visualization_0_name": "Monthly Mean Minimum Air Temperature",
+    "date_range": [
+      -631152000000,
+      4102358400000
+    ],
+    "period": 0,
+    "system:visualization_0_bands": "tasmin_mean",
+    "provider_url": "https://cds.nccs.nasa.gov/nex/",
+    "sample": "https://mw1.google.com/ges/dd/images/NASA_NEX-DCP30_sample.png",
+    "tags": [
+      "climate",
+      "cmip5",
+      "csu",
+      "geophysical",
+      "nasa",
+      "nex",
+      "precipitation",
+      "temperature"
+    ],
+    "system:visualization_0_max": "311.0",
+    "visualization_0_palette": "blue,purple,cyan,green,yellow,red",
+    "system:visualization_0_palette": "blue,purple,cyan,green,yellow,red",
+    "system:visualization_0_name": "Monthly Mean Minimum Air Temperature",
+    "visualization_0_bands": "tasmin_mean"
+  },
+  "features": [
+    {
+      "type": "Image",
+      "bands": [
+        {
+          "id": "tasmax_median",
+          "data_type": {
+            "type": "PixelType",
+            "precision": "float"
+          },
+          "dimensions": [
+            7025,
+            3105
+          ],
+          "crs": "EPSG:4326",
+          "crs_transform": [
+            0.00833333333,
+            0,
+            -125.02083333,
+            0,
+            0.00833333333,
+            24.0625
+          ]
+        },
+        {
+          "id": "tasmax_quartile25",
+          "data_type": {
+            "type": "PixelType",
+            "precision": "float"
+          },
+          "dimensions": [
+            7025,
+            3105
+          ],
+          "crs": "EPSG:4326",
+          "crs_transform": [
+            0.00833333333,
+            0,
+            -125.02083333,
+            0,
+            0.00833333333,
+            24.0625
+          ]
+        },
+        {
+          "id": "tasmax_quartile75",
+          "data_type": {
+            "type": "PixelType",
+            "precision": "float"
+          },
+          "dimensions": [
+            7025,
+            3105
+          ],
+          "crs": "EPSG:4326",
+          "crs_transform": [
+            0.00833333333,
+            0,
+            -125.02083333,
+            0,
+            0.00833333333,
+            24.0625
+          ]
+        }
+      ],
+      "version": 1494558552865000,
+      "id": "NASA/NEX-DCP30_ENSEMBLE_STATS/rcp26_201001",
+      "properties": {
+        "system:time_start": 1262304000000,
+        "month": 1,
+        "scenario": "rcp26",
+        "system:footprint": {
+          "type": "LinearRing",
+          "coordinates": [
+            [
+              -125.02083335856697,
+              23.75321317889849
+            ],
+            [
+              -105.50694441038408,
+              23.753213201530432
+            ],
+            [
+              -85.99305556758561,
+              23.753213257579944
+            ],
+            [
+              -66.47916666128897,
+              23.753213246765
+            ],
+            [
+              -66.47916665379033,
+              49.937500001720856
+            ],
+            [
+              -85.99305551851933,
+              49.93750001806001
+            ],
+            [
+              -105.50694444901498,
+              49.9374999509912
+            ],
+            [
+              -125.02083332785615,
+              49.93749999254749
+            ],
+            [
+              -125.02083335856697,
+              23.75321317889849
+            ]
+          ]
+        },
+        "system:time_end": 1264982400000,
+        "system:asset_size": 555595188,
+        "system:index": "rcp26_201001"
+      }
+    },
+    {
+      "type": "Image",
+      "bands": [
+        {
+          "id": "tasmax_median",
+          "data_type": {
+            "type": "PixelType",
+            "precision": "float"
+          },
+          "dimensions": [
+            7025,
+            3105
+          ],
+          "crs": "EPSG:4326",
+          "crs_transform": [
+            0.00833333333,
+            0,
+            -125.02083333,
+            0,
+            0.00833333333,
+            24.0625
+          ]
+        },
+        {
+          "id": "tasmax_quartile25",
+          "data_type": {
+            "type": "PixelType",
+            "precision": "float"
+          },
+          "dimensions": [
+            7025,
+            3105
+          ],
+          "crs": "EPSG:4326",
+          "crs_transform": [
+            0.00833333333,
+            0,
+            -125.02083333,
+            0,
+            0.00833333333,
+            24.0625
+          ]
+        },
+        {
+          "id": "tasmax_quartile75",
+          "data_type": {
+            "type": "PixelType",
+            "precision": "float"
+          },
+          "dimensions": [
+            7025,
+            3105
+          ],
+          "crs": "EPSG:4326",
+          "crs_transform": [
+            0.00833333333,
+            0,
+            -125.02083333,
+            0,
+            0.00833333333,
+            24.0625
+          ]
+        }
+      ],
+      "version": 1494558067968000,
+      "id": "NASA/NEX-DCP30_ENSEMBLE_STATS/rcp45_201001",
+      "properties": {
+        "system:time_start": 1262304000000,
+        "month": 1,
+        "scenario": "rcp45",
+        "system:footprint": {
+          "type": "LinearRing",
+          "coordinates": [
+            [
+              -125.02083335856697,
+              23.75321317889849
+            ],
+            [
+              -105.50694441038408,
+              23.753213201530432
+            ],
+            [
+              -85.99305556758561,
+              23.753213257579944
+            ],
+            [
+              -66.47916666128897,
+              23.753213246765
+            ],
+            [
+              -66.47916665379033,
+              49.937500001720856
+            ],
+            [
+              -85.99305551851933,
+              49.93750001806001
+            ],
+            [
+              -105.50694444901498,
+              49.9374999509912
+            ],
+            [
+              -125.02083332785615,
+              49.93749999254749
+            ],
+            [
+              -125.02083335856697,
+              23.75321317889849
+            ]
+          ]
+        },
+        "system:time_end": 1264982400000,
+        "system:asset_size": 555204627,
+        "system:index": "rcp45_201001"
+      }
+    },
+    {
+      "type": "Image",
+      "bands": [
+        {
+          "id": "tasmax_median",
+          "data_type": {
+            "type": "PixelType",
+            "precision": "float"
+          },
+          "dimensions": [
+            7025,
+            3105
+          ],
+          "crs": "EPSG:4326",
+          "crs_transform": [
+            0.00833333333,
+            0,
+            -125.02083333,
+            0,
+            0.00833333333,
+            24.0625
+          ]
+        },
+        {
+          "id": "tasmax_quartile25",
+          "data_type": {
+            "type": "PixelType",
+            "precision": "float"
+          },
+          "dimensions": [
+            7025,
+            3105
+          ],
+          "crs": "EPSG:4326",
+          "crs_transform": [
+            0.00833333333,
+            0,
+            -125.02083333,
+            0,
+            0.00833333333,
+            24.0625
+          ]
+        },
+        {
+          "id": "tasmax_quartile75",
+          "data_type": {
+            "type": "PixelType",
+            "precision": "float"
+          },
+          "dimensions": [
+            7025,
+            3105
+          ],
+          "crs": "EPSG:4326",
+          "crs_transform": [
+            0.00833333333,
+            0,
+            -125.02083333,
+            0,
+            0.00833333333,
+            24.0625
+          ]
+        }
+      ],
+      "version": 1494372983325000,
+      "id": "NASA/NEX-DCP30_ENSEMBLE_STATS/rcp60_201001",
+      "properties": {
+        "system:time_start": 1262304000000,
+        "month": 1,
+        "scenario": "rcp60",
+        "system:footprint": {
+          "type": "LinearRing",
+          "coordinates": [
+            [
+              -125.02083335856697,
+              23.75321317889849
+            ],
+            [
+              -105.50694441038408,
+              23.753213201530432
+            ],
+            [
+              -85.99305556758561,
+              23.753213257579944
+            ],
+            [
+              -66.47916666128897,
+              23.753213246765
+            ],
+            [
+              -66.47916665379033,
+              49.937500001720856
+            ],
+            [
+              -85.99305551851933,
+              49.93750001806001
+            ],
+            [
+              -105.50694444901498,
+              49.9374999509912
+            ],
+            [
+              -125.02083332785615,
+              49.93749999254749
+            ],
+            [
+              -125.02083335856697,
+              23.75321317889849
+            ]
+          ]
+        },
+        "system:time_end": 1264982400000,
+        "system:asset_size": 555585485,
+        "system:index": "rcp60_201001"
+      }
+    },
+    {
+      "type": "Image",
+      "bands": [
+        {
+          "id": "tasmax_median",
+          "data_type": {
+            "type": "PixelType",
+            "precision": "float"
+          },
+          "dimensions": [
+            7025,
+            3105
+          ],
+          "crs": "EPSG:4326",
+          "crs_transform": [
+            0.00833333333,
+            0,
+            -125.02083333,
+            0,
+            0.00833333333,
+            24.0625
+          ]
+        },
+        {
+          "id": "tasmax_quartile25",
+          "data_type": {
+            "type": "PixelType",
+            "precision": "float"
+          },
+          "dimensions": [
+            7025,
+            3105
+          ],
+          "crs": "EPSG:4326",
+          "crs_transform": [
+            0.00833333333,
+            0,
+            -125.02083333,
+            0,
+            0.00833333333,
+            24.0625
+          ]
+        },
+        {
+          "id": "tasmax_quartile75",
+          "data_type": {
+            "type": "PixelType",
+            "precision": "float"
+          },
+          "dimensions": [
+            7025,
+            3105
+          ],
+          "crs": "EPSG:4326",
+          "crs_transform": [
+            0.00833333333,
+            0,
+            -125.02083333,
+            0,
+            0.00833333333,
+            24.0625
+          ]
+        }
+      ],
+      "version": 1494369042479000,
+      "id": "NASA/NEX-DCP30_ENSEMBLE_STATS/rcp85_201001",
+      "properties": {
+        "system:time_start": 1262304000000,
+        "month": 1,
+        "scenario": "rcp85",
+        "system:footprint": {
+          "type": "LinearRing",
+          "coordinates": [
+            [
+              -125.02083335856697,
+              23.75321317889849
+            ],
+            [
+              -105.50694441038408,
+              23.753213201530432
+            ],
+            [
+              -85.99305556758561,
+              23.753213257579944
+            ],
+            [
+              -66.47916666128897,
+              23.753213246765
+            ],
+            [
+              -66.47916665379033,
+              49.937500001720856
+            ],
+            [
+              -85.99305551851933,
+              49.93750001806001
+            ],
+            [
+              -105.50694444901498,
+              49.9374999509912
+            ],
+            [
+              -125.02083332785615,
+              49.93749999254749
+            ],
+            [
+              -125.02083335856697,
+              23.75321317889849
+            ]
+          ]
+        },
+        "system:time_end": 1264982400000,
+        "system:asset_size": 555588616,
+        "system:index": "rcp85_201001"
+      }
+    }
+  ]
+}

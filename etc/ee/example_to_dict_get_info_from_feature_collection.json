@@ -1,0 +1,27 @@
+{
+  "date_range": [
+    1451606400000,
+    1483315200000
+  ],
+  "description": "<p>This United States Census Bureau TIGER dataset contains all road segments\nfrom the 2016 release, containing more than 19 million individual\nline features covering the United States, the District of Columbia,\nPuerto Rico, and the <a href=\"https://www.census.gov/newsroom/releases/archives/2010_census/press-kits/island-areas.html\">Island Areas</a>.\nEach feature represents a road segment geometry (a single navigable\nlinear path connected to at least one intersection).</p><p>For full technical details on all TIGER 2016 products, see the <a href=\"https://www2.census.gov/geo/pdfs/maps-data/data/tiger/tgrshp2016/TGRSHP2016_TechDoc.pdf\">TIGER\ntechnical documentation.</a></p><p><b>Table Schema</b><table class=\"eecat\"><tr><th scope=\"col\">Name</th><th scope=\"col\">Type</th><th scope=\"col\">Description</th></tr><tr><td>fullname</td><td>STRING</td><td><p>A human-readable road name</p></td></tr><tr><td>linearid</td><td>STRING</td><td><p>The primary identifier used to refer to this row in other TIGER products</p></td></tr><tr><td>mtfcc</td><td>STRING</td><td><p>The road <a href=\"https://www.census.gov/geo/reference/mtfcc.html\">priority code</a>, representing, e.g., primary, second, local, etc.</p></td></tr><tr><td>rttyp</td><td>STRING</td><td><p>The route <a href=\"https://www.census.gov/geo/reference/rttyp.html\">type code</a>,</p></td></tr></table><p><b>Terms of Use</b><br><p>The U.S. Census Bureau offers some of its public data in machine-readable format via an Application Programming Interface (API). All of the content, documentation, code and related materials made available through the API are subject to <a href=\"https://www.census.gov/data/developers/about/terms-of-service.html\">these terms and conditions.</a></p><p><b>Suggested citation(s)</b><ul><li><p>For the creation of any reports, publications, new data sets, derived products, or services resulting from the data set, users should <a href=\"https://www.census.gov/about/policies/citation.html\">cite the US Census Bureau.</a></p></li></ul><style>\n  table.eecat {\n  border: 1px solid black;\n  border-collapse: collapse;\n  font-size: 13px;\n  }\n  table.eecat td, tr, th {\n  text-align: left; vertical-align: top;\n  border: 1px solid gray; padding: 3px;\n  }\n  td.nobreak { white-space: nowrap; }\n</style>",
+  "period": 0,
+  "product_tags": [
+    "us",
+    "roads"
+  ],
+  "provider": "United States Census Bureau",
+  "provider_url": "https://www.census.gov/geo/maps-data/data/tiger-data.html",
+  "sample": "https://mw1.google.com/ges/dd/images/TIGER_Roads_sample.png",
+  "source_tags": [
+    "census",
+    "tiger"
+  ],
+  "tags": [
+    "census",
+    "tiger",
+    "us",
+    "roads"
+  ],
+  "thumb": "https://mw1.google.com/ges/dd/images/TIGER_Roads_thumb.png",
+  "title": "TIGER: US Census Roads"
+}
