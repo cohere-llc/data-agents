@@ -6,5 +6,8 @@ dependencies:
   - ipykernel
   - ipycytoscape
   - pip
+  - requests
+  - pydantic
+  - click
   - pip:
-    - data-agents
+    - -e .
