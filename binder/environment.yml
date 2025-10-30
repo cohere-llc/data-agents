@@ -10,4 +10,4 @@ dependencies:
   - pydantic
   - click
   - pip:
-    - -e .
+    - -e ..
