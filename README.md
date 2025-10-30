@@ -4,6 +4,7 @@
 [![ubuntu](https://github.com/cohere-llc/data-agents/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/cohere-llc/data-agents/actions/workflows/ubuntu.yml)
 [![windows](https://github.com/cohere-llc/data-agents/actions/workflows/windows.yml/badge.svg)](https://github.com/cohere-llc/data-agents/actions/workflows/windows.yml)
 [![codecov](https://codecov.io/gh/cohere-llc/data-agents/branch/main/graph/badge.svg)](https://codecov.io/gh/cohere-llc/data-agents)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/cohere-llc/data-agents/HEAD?filepath=examples)
 
 A prototype for interaction with services used in [env-agents](https://github.com/aparkin/env-agents).
 
