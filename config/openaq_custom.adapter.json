@@ -1,5 +1,0 @@
-{
-  "type": "openaq",
-  "api_key": "${OPENAQ_API_KEY}",
-  "base_url": "https://api.openaq.org/v3"
-}

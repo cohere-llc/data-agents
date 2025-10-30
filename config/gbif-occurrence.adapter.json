@@ -1,6 +1,0 @@
-{
-    "type": "rest",
-    "base_url": "https://api.gbif.org/v1",
-    "timeout": 10,
-    "openapi_data": [ "https://techdocs.gbif.org/openapi/occurrence.json" ]
-}

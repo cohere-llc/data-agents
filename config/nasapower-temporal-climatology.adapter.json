@@ -1,5 +1,0 @@
-{
-    "type": "rest",
-    "base_url": "https://power.larc.nasa.gov",
-    "openapi_data": [ "https://power.larc.nasa.gov/api/temporal/climatology/openapi.json" ]
-}
