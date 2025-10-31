@@ -24,6 +24,9 @@
 from .feature import Feature
 from .feature_collection import FeatureCollection
 from .geometry import Geometry
+from .services import NewServiceAdapter
+
+FeatureCollection.from_service = staticmethod(NewServiceAdapter)  # type: ignore
 
 __version__ = "0.2.0"
 

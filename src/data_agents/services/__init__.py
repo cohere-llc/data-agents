@@ -19,35 +19,19 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE
 
-"""Definition of the Feature class and related functionality."""
+"""External service adapters"""
 
-from __future__ import annotations
+from traitlets import Any
 
-from typing import Any
+from ..feature_collection import FeatureCollection
+from .nasa_power import NasaPower
 
-from .geometry import Geometry
+__all__ = ["NewServiceAdapter"]
 
 
-class Feature:
-    """A single feature with a geometry and properties in GeoJSON format."""
-
-    def __init__(self, geo_json: dict[str, Any] | Feature):
-        if isinstance(geo_json, Feature):
-            self._type: str = geo_json._type
-            self._geometry: Geometry = geo_json._geometry
-            self._properties: dict[str, Any] = geo_json._properties
-        else:
-            self._type = geo_json["type"]
-            self._geometry = Geometry(geo_json["geometry"])
-            self._properties = geo_json["properties"]
-
-    def to_dict(self) -> dict[str, Any]:
-        """Return the feature as a dictionary."""
-        return {
-            "type": self._type,
-            "geometry": self._geometry.to_dict(),
-            "properties": self._properties,
-        }
-
-    def __getitem__(self, key: str) -> Any:
-        return self.to_dict()[key]
+def NewServiceAdapter(path: str, **kwargs: Any) -> FeatureCollection:
+    """Factory function to create a new service adapter based on the service name."""
+    if path.split("/")[0] == "NASA_POWER":
+        return NasaPower(path.split("/"), **kwargs)
+    else:
+        raise ValueError(f"Unknown service name: {path}")

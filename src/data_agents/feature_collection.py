@@ -23,6 +23,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from typing import Any
 
@@ -31,7 +32,8 @@ from .geometry import Geometry
 
 
 class FeatureCollection:
-    """A collection of features with associated geometries and properties."""
+    """A collection of features with associated geometries and properties in GeoJSON
+    format."""
 
     def __init__(self, geo_json: dict[str, Any] | list[Feature] | FeatureCollection):
         if isinstance(geo_json, FeatureCollection):
@@ -57,6 +59,23 @@ class FeatureCollection:
     def get_info(self) -> dict[str, Any]:
         """Return all information about the FeatureCollection."""
         return self.to_dict()
+
+    def properties(self, regex: str | None = None) -> dict[str, Any]:
+        """Return a dictionary of all property names in the FeatureCollection.
+        Args:
+            regex: If provided, only return property names that match this
+                    regular expression.
+        Returns:
+            A dictionary with property names as keys and any associated metadata as
+            values.
+        """
+
+        prop_set: set[Any] = set()
+        for feature in self._features:
+            for key in feature["properties"].keys():
+                if regex is None or re.search(regex, key):
+                    prop_set.add(key)
+        return dict.fromkeys(prop_set)
 
     @staticmethod
     def from_dict(
@@ -112,3 +131,15 @@ class FeatureCollection:
                 )
                 features.append(feature)
         return FeatureCollection(features)
+
+    @staticmethod
+    def from_service(path: str, **kwargs: Any) -> FeatureCollection:
+        """Create a FeatureCollection from a service path.
+
+        Args:
+            path: The service path string.
+            **kwargs: Additional keyword arguments to pass to the service adapter.
+        Returns:
+            A FeatureCollection instance.
+        """
+        return FeatureCollection({})

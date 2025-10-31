@@ -28,7 +28,7 @@ from typing import Any
 
 
 class Geometry:
-    """A geometric object representing spatial data."""
+    """A geometric object representing spatial data in GeoJSON format."""
 
     def __init__(self, geo_json: dict[str, Any] | Geometry):
         if isinstance(geo_json, Geometry):
