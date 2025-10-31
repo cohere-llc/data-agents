@@ -19,23 +19,34 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE
 
-"""Data Agents - A prototype for KBase external data integration."""
+"""Test for geometry module of data_agents package."""
 
-from .feature import Feature
-from .feature_collection import FeatureCollection
-from .geometry import Geometry
+from collections.abc import Callable
+from typing import Any
 
-__version__ = "0.2.0"
-
-# Public API
-__all__ = [
-    "Feature",
-    "FeatureCollection",
-    "Geometry",
-]
+from data_agents import Geometry
 
 
-def Authenticate() -> None:
-    """Authenticate user with external services."""
+def test_geometry_to_dict():
+    """Test the to_dict method of Geometry class."""
+    geom_dict: dict[str, Any] = {"type": "Point", "coordinates": [102.0, 0.5]}
+    geometry = Geometry(geom_dict)
+    assert geometry.to_dict() == geom_dict
+    new_geometry = Geometry(geometry)
+    assert new_geometry.to_dict() == geom_dict
 
-    return
+
+def test_geometry_getitem():
+    """Test the __getitem__ method of Geometry class."""
+    geom_dict: Geometry = Geometry({"type": "Point", "coordinates": [102.0, 0.5]})
+    geometry = Geometry(geom_dict)
+    assert geometry["type"] == "Point"
+    assert geometry["coordinates"] == [102.0, 0.5]
+
+
+def test_geometry_to_point():
+    """Test the to_point method of Geometry class."""
+    geom_fn: Callable[[dict[str, Any]], Geometry] = Geometry.to_point(["lat", "lon"])
+    geometry = geom_fn({"foo": "A", "lon": 102.0, "bar": "B", "lat": "0.5"})
+    expected_geom: Geometry = Geometry({"type": "Point", "coordinates": [0.5, 102.0]})
+    assert geometry.to_dict() == expected_geom.to_dict()

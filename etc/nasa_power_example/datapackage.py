@@ -3,7 +3,8 @@ Stub implementation of the 'datapackage' package - a proposed Earth Engine-like 
 for multi-source data analysis (REST APIs, CSV files, databases, etc.)
 """
 
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable
+from typing import Any
 
 
 class Geometry:
@@ -30,7 +31,7 @@ class Filter:
         return Filter()
 
     @staticmethod
-    def lt(field: str, value: Union[int, float]) -> "Filter":
+    def lt(field: str, value: int | float) -> "Filter":
         """Create a less-than filter"""
         return Filter()
 
@@ -85,7 +86,7 @@ class Join:
 class Feature:
     """Individual feature with properties and geometry"""
 
-    def __init__(self, properties: Optional[dict[str, Any]] = None):
+    def __init__(self, properties: dict[str, Any] | None = None):
         self.properties = properties or {}
 
     def get(self, property_name: str) -> Any:
@@ -102,7 +103,7 @@ class Feature:
 class FeatureCollection:
     """Collection of features with methods for analysis"""
 
-    def __init__(self, source: str, geometry: Optional[Geometry] = None):
+    def __init__(self, source: str, geometry: Geometry | None = None):
         self.source = source
         self.geometry = geometry
         self.features: list[Feature] = []  # Stub - would contain actual features
@@ -124,7 +125,7 @@ class FeatureCollection:
         # Stub implementation
         return self
 
-    def toDictionary(self, properties: Optional[list[str]] = None) -> "Dictionary":
+    def toDictionary(self, properties: list[str] | None = None) -> "Dictionary":
         """Convert collection properties to a dictionary"""
         return Dictionary()
 

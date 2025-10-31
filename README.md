@@ -6,7 +6,8 @@
 [![codecov](https://codecov.io/gh/cohere-llc/data-agents/branch/main/graph/badge.svg)](https://codecov.io/gh/cohere-llc/data-agents)
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/cohere-llc/data-agents/HEAD?filepath=examples)
 
-A prototype for interaction with services used in [env-agents](https://github.com/aparkin/env-agents).
+A prototype for interaction with services used in [env-agents](https://github.com/aparkin/env-agents),
+based on the [Google Earth Engine Python API](https://github.com/google/earthengine-api) and [GeoJSON](https://datatracker.ietf.org/doc/html/rfc7946) format.
 
 __This is an exploratory project with many missing/incomplete features.
 The code will change rapidly, and the project will likely be archived after the exporatory phase is completed.__

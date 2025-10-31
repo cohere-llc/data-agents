@@ -26,7 +26,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import requests
 
@@ -41,9 +41,7 @@ class NASAPowerParameterFetcher:
     def __init__(self):
         self.session = requests.Session()
 
-    def fetch_parameters(
-        self, community: str, temporal: str
-    ) -> Optional[dict[str, Any]]:
+    def fetch_parameters(self, community: str, temporal: str) -> dict[str, Any] | None:
         """
         Fetch parameters for a specific community and temporal frequency.
 
@@ -67,8 +65,8 @@ class NASAPowerParameterFetcher:
 
     def fetch_all_parameters(
         self,
-        communities: Optional[list[str]] = None,
-        temporal_frequencies: Optional[list[str]] = None,
+        communities: list[str] | None = None,
+        temporal_frequencies: list[str] | None = None,
     ) -> dict[str, Any]:
         """
         Fetch parameters for all specified community/temporal combinations.

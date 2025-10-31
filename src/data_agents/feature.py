@@ -19,4 +19,35 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE
 
-"""Test suite for data_agents package."""
+"""Definition of the Feature class and related functionality."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from .geometry import Geometry
+
+
+class Feature:
+    """A single feature with a geometry and properties in geoJSON format."""
+
+    def __init__(self, geo_json: dict[str, Any] | Feature):
+        if isinstance(geo_json, Feature):
+            self._type: str = geo_json._type
+            self._geometry: Geometry = geo_json._geometry
+            self._properties: dict[str, Any] = geo_json._properties
+        else:
+            self._type = geo_json["type"]
+            self._geometry = Geometry(geo_json["geometry"])
+            self._properties = geo_json["properties"]
+
+    def to_dict(self) -> dict[str, Any]:
+        """Return the feature as a dictionary."""
+        return {
+            "type": self._type,
+            "geometry": self._geometry.to_dict(),
+            "properties": self._properties,
+        }
+
+    def __getitem__(self, key: str) -> Any:
+        return self.to_dict()[key]
