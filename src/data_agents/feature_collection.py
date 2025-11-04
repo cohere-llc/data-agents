@@ -25,22 +25,41 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from .feature import Feature
 from .geometry import Geometry
+
+if TYPE_CHECKING:
+    from .filter import Filter
+    from .join import Join
 
 
 class FeatureCollection:
     """A collection of features with associated geometries and properties in GeoJSON
     format."""
 
-    def __init__(self, geo_json: dict[str, Any] | list[Feature] | FeatureCollection):
-        if isinstance(geo_json, FeatureCollection):
-            self._type: str = geo_json._type
-            self._features: list[Feature] = geo_json._features
+    def __init__(
+        self, geo_json: dict[str, Any] | list[Feature] | FeatureCollection | Join
+    ):
+        from .join import Join  # Import here to avoid circular dependency
+
+        self._type: str = "FeatureCollection"
+        self._join: Join | None = None
+        self._filters: list[Filter] = []
+        self._features: list[Feature] = []
+        if isinstance(geo_json, Join):
+            self._join = geo_json
+        elif isinstance(geo_json, FeatureCollection):
+            self._type = geo_json._type
+            self._features = (
+                geo_json._features if hasattr(geo_json, "_features") else []
+            )
+            self._join = geo_json._join if hasattr(geo_json, "_join") else None
+            self._filters = (
+                geo_json._filters.copy() if hasattr(geo_json, "_filters") else []
+            )
         elif isinstance(geo_json, list):
-            self._type = "FeatureCollection"
             self._features = geo_json
         else:
             self._type = geo_json["type"]
@@ -56,9 +75,45 @@ class FeatureCollection:
     def __getitem__(self, key: str) -> Any:
         return self.to_dict()[key]
 
+    def _compute_filters(self) -> FeatureCollection:
+        """Apply all filters to the FeatureCollection."""
+        features = self._features
+        for filter in self._filters:
+            features = filter.compute(features)
+        new_fc = FeatureCollection(features)
+        return new_fc
+
+    def compute(self) -> FeatureCollection:
+        """Compute the FeatureCollection by applying any joins and filters."""
+        if self._join is not None:
+            print("Computing join...")
+            return self._join.compute(self._filters)
+        if len(self._filters) > 0:
+            print("Computing filters...")
+            return self._compute_filters()
+        return self
+
+    def features(self) -> list[Feature]:
+        """Return the list of features in the FeatureCollection."""
+        return self._features
+
+    def filter(self, filter: Filter | list[Filter]) -> FeatureCollection:
+        """Apply a filter to the FeatureCollection.
+
+        Args:
+            filter (Filter): The filter to apply.
+
+        Returns:
+            FeatureCollection: A new FeatureCollection with the filter applied.
+        """
+        new_fc = FeatureCollection(self)
+        new_fc._filters.extend(filter if isinstance(filter, list) else [filter])
+        return new_fc
+
     def get_info(self) -> dict[str, Any]:
         """Return all information about the FeatureCollection."""
-        return self.to_dict()
+        print("Computing FeatureCollection...")
+        return self.compute().to_dict()
 
     def properties(self, regex: str | None = None) -> dict[str, Any]:
         """Return a dictionary of all property names in the FeatureCollection.

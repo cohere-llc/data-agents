@@ -39,12 +39,53 @@ class NasaPower(FeatureCollection):
     COMMUNITIES: dict[str, str] = {"AG": "AG", "RE": "RE", "SU": "SU"}
 
     PRODUCTS: dict[str, Any] = {
-        "HOURLY": {"descripton": "hourly averages", "path": "temporal/hourly"},
-        "DAILY": {"description": "daily averages", "path": "temporal/daily"},
-        "MONTHLY": {"description": "monthly averages", "path": "temporal/monthly"},
+        "HOURLY": {
+            "description": "hourly averages",
+            "path": "temporal/hourly",
+            "OpenAPI": "temporal/hourly/openapi.json",
+            "save_best_filter": {
+                "endpoint": "point",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": ["latitude", "longitude"],
+                },
+            },
+        },
+        "DAILY": {
+            "description": "daily averages",
+            "path": "temporal/daily",
+            "OpenAPI": "temporal/daily/openapi.json",
+            "save_best_filter": {
+                "endpoint": "point",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": ["latitude", "longitude"],
+                },
+            },
+        },
+        "MONTHLY": {
+            "description": "monthly averages",
+            "path": "temporal/monthly",
+            "OpenAPI": "temporal/monthly/openapi.json",
+            "save_best_filter": {
+                "endpoint": "point",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": ["latitude", "longitude"],
+                },
+            },
+        },
         "CLIMATOLOGY": {
             "description": "climatology averages",
             "path": "temporal/climatology",
+            "OpenAPI": "temporal/climatology/openapi.json",
+            "save_best_filter": {
+                "endpoint": "point",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": ["latitude", "longitude"],
+                },
+            },
         },
     }
 
@@ -76,6 +117,10 @@ class NasaPower(FeatureCollection):
     def __finalize__(self) -> None:
         """Finalize the FeatureCollection."""
         self._session.close()
+
+    def _compute_filters(self) -> FeatureCollection:
+        """Apply all filters to the FeatureCollection."""
+        return self
 
     def properties(self, regex: str | None = None) -> dict[str, Any]:
         """Return a dict of available properties for the NASA POWER

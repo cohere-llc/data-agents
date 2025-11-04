@@ -23,7 +23,9 @@
 
 from .feature import Feature
 from .feature_collection import FeatureCollection
+from .filter import Filter
 from .geometry import Geometry
+from .join import Join
 from .services import NewServiceAdapter
 
 FeatureCollection.from_service = staticmethod(NewServiceAdapter)  # type: ignore
@@ -34,7 +36,9 @@ __version__ = "0.2.0"
 __all__ = [
     "Feature",
     "FeatureCollection",
+    "Filter",
     "Geometry",
+    "Join",
 ]
 
 

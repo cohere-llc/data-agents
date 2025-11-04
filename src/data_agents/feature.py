@@ -37,7 +37,7 @@ class Feature:
             self._geometry: Geometry = geo_json._geometry
             self._properties: dict[str, Any] = geo_json._properties
         else:
-            self._type = geo_json["type"]
+            self._type = geo_json["type"] if "type" in geo_json else "Feature"
             self._geometry = Geometry(geo_json["geometry"])
             self._properties = geo_json["properties"]
 

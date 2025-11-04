@@ -21,7 +21,7 @@
 
 """External service adapters"""
 
-from traitlets import Any
+from typing import Any
 
 from ..feature_collection import FeatureCollection
 from .nasa_power import NasaPower
