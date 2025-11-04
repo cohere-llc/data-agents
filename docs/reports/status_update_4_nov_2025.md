@@ -14,15 +14,23 @@ __Overall Goal:__ Facilitate use of ENV-AGENTS (and similar) source data for res
 ## Options For External Data Sources
 - Bulk data transfer
   - Beginning to look into bulk data transfer options for external data sources
+  - Likely the lowest-cost option, if available
 - Python package backed by native web services
   - ENV-AGENTS-like structure
 ![ENV-AGENTS-like design](env-agents-structure.png)
-    - custom adapeters for each service with unified query syntax
+    - custom adapters for each service with unified query syntax
     - data staged in local Jupyter environment
     - interactions via native REST APIs or Python packages
+    - high-cost option
+      - custom integration per-adapter
+      - high maintenance costs as APIs/Python packages evolve
 
   - Google Earth Engine-like structure
 ![GEE-like design](gee-structure.png)
     - backend server supporting python package
     - data staged on server
     - interactions via native REST APIs or bulk protocols
+    - medium-high cost option
+      - custom integration per-adapter
+      - high maintenance costs as APIs evolve
+      - allows mixed use with lower-cost bulk-transfer when available
