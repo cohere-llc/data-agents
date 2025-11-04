@@ -8,7 +8,7 @@ __Overall Goal:__ Facilitate use of ENV-AGENTS (and similar) source data for res
 - Investigated structure of Google Earth Engine Python API
 - Began development of prototype Python package to support NASA POWER use case
   - Use to explore design options, estimate costs, allow user assessment of API
-  - Can try it out by clokcking Binder badge on [prototype repo](https://github.com/cohere-llc/data-agents?tab=readme-ov-file#data-agents) or just click [here](https://mybinder.org/v2/gh/cohere-llc/data-agents/HEAD?filepath=examples/simple.ipynb)
+  - Can try it out by clicking Binder badge on [prototype repo](https://github.com/cohere-llc/data-agents?tab=readme-ov-file#data-agents) or just click [here](https://mybinder.org/v2/gh/cohere-llc/data-agents/HEAD?filepath=examples/simple.ipynb)
   
 
 ## Options For External Data Sources
