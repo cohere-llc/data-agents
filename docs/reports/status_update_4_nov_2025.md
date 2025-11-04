@@ -34,3 +34,27 @@ __Overall Goal:__ Facilitate use of ENV-AGENTS (and similar) source data for res
       - custom integration per-adapter
       - high maintenance costs as APIs evolve
       - allows mixed use with lower-cost bulk-transfer when available
+
+## Bulk Data Options
+
+| Data Product     | Source              | Bulk source  | URL                                       |
+|------------------|---------------------|--------------|-------------------------------------------|
+| NASA POWER       | NASA                | AWS (S3)     | https://registry.opendata.aws/nasa-power/ |
+| GBIF Ecology     | GBIF                | AWS (S3)     | [link](https://aws.amazon.com/marketplace/pp/prodview-dvyemtksskta2?sr=0-1&ref_=beagle&applicationId=AWSMPContessa#usage)               |
+| OpenAQ           | OpenAQ              | AWS (S3)     | [link](https://aws.amazon.com/marketplace/pp/prodview-rvesvhymasphs?sr=0-1&ref_=beagle&applicationId=AWSMPContessa#resources)               |
+| USGS WDFN        | USGS                |              |                |
+| WQP              | WQP                 |              |                |
+| SSURGO           | USDA                |              |                |
+| OMP Overpass API | OpenStreetMap       | AWS (S3)     | [link](https://aws.amazon.com/marketplace/pp/prodview-3lemxt4oqpqsw?sr=0-4&ref_=beagle&applicationId=AWSMPContessa)               |
+| Soilgrids        | Soilgrids           |              |                |
+| SRTM             | Google Earth Engine | AWS (S3)*    | [link](https://aws.amazon.com/marketplace/pp/prodview-sfsm7hqeqw2wg?sr=0-2&ref_=beagle&applicationId=AWSMPContessa#resources)               |
+| MODIS            | Google Earth Engine | AWS (S3)**   | [Veg Ind 16d 250m](https://aws.amazon.com/marketplace/pp/prodview-4tjmrk43eec6s?sr=0-1&ref_=beagle&applicationId=AWSMPContessa)               |
+| WORLDCLIM_BIO    | Google Earth Engine |              |                |
+| TERRACLIMATE     | Google Earth Engine |              |                |
+| GPM              | Google Earth Engine | AWS (S3)***  | [Final 1month 0.1x0.1 v07](https://registry.opendata.aws/nasa-gpm3imergm/)               |
+
+\* This is for NASA GEDI, which seems to be an alternative elevation dataset to SRTM
+
+\*\* It's not clear if all the MODIS products available on Google Earth Engine are also available on AWS, but many are
+
+\*\*\* There are several GPM precipitation products available as well
