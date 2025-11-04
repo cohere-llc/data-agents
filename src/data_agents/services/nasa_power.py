@@ -120,6 +120,7 @@ class NasaPower(FeatureCollection):
 
     def _compute_filters(self) -> FeatureCollection:
         """Apply all filters to the FeatureCollection."""
+        
         return self
 
     def properties(self, regex: str | None = None) -> dict[str, Any]:

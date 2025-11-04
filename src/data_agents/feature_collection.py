@@ -86,10 +86,8 @@ class FeatureCollection:
     def compute(self) -> FeatureCollection:
         """Compute the FeatureCollection by applying any joins and filters."""
         if self._join is not None:
-            print("Computing join...")
             return self._join.compute(self._filters)
         if len(self._filters) > 0:
-            print("Computing filters...")
             return self._compute_filters()
         return self
 
@@ -112,7 +110,6 @@ class FeatureCollection:
 
     def get_info(self) -> dict[str, Any]:
         """Return all information about the FeatureCollection."""
-        print("Computing FeatureCollection...")
         return self.compute().to_dict()
 
     def properties(self, regex: str | None = None) -> dict[str, Any]:
