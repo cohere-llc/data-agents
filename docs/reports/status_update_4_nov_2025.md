@@ -42,15 +42,15 @@ __Overall Goal:__ Facilitate use of ENV-AGENTS (and similar) source data for res
 | NASA POWER       | NASA                | AWS (S3)     | https://registry.opendata.aws/nasa-power/ |
 | GBIF Ecology     | GBIF                | AWS (S3)     | [link](https://aws.amazon.com/marketplace/pp/prodview-dvyemtksskta2?sr=0-1&ref_=beagle&applicationId=AWSMPContessa#usage)               |
 | OpenAQ           | OpenAQ              | AWS (S3)     | [link](https://aws.amazon.com/marketplace/pp/prodview-rvesvhymasphs?sr=0-1&ref_=beagle&applicationId=AWSMPContessa#resources)               |
-| USGS WDFN        | USGS                |              |                |
-| WQP              | WQP                 |              |                |
-| SSURGO           | USDA                |              |                |
+| USGS WDFN        | USGS                | data.usgs.gov (Globus) | [link](https://data.usgs.gov/datacatalog/api/docs#/)               |
+| WQP              | WQP                 | data.usgs.gov (Globus)| [link](https://data.usgs.gov/datacatalog/api/docs#/)               |
+| SSURGO           | USDA                | nrcs.app.box.com | [link](https://nrcs.app.box.com/v/soils/folder/17971946225)               |
 | OMP Overpass API | OpenStreetMap       | AWS (S3)     | [link](https://aws.amazon.com/marketplace/pp/prodview-3lemxt4oqpqsw?sr=0-4&ref_=beagle&applicationId=AWSMPContessa)               |
-| Soilgrids        | Soilgrids           |              |                |
+| Soilgrids        | Soilgrids           | [data.isric.org](https://data.isric.org/geonetwork/srv/eng/catalog.search#/home) | [link](https://files.isric.org/soilgrids/latest/data_aggregated/) |
 | SRTM             | Google Earth Engine | AWS (S3)*    | [link](https://aws.amazon.com/marketplace/pp/prodview-sfsm7hqeqw2wg?sr=0-2&ref_=beagle&applicationId=AWSMPContessa#resources)               |
 | MODIS            | Google Earth Engine | AWS (S3)**   | [Veg Ind 16d 250m](https://aws.amazon.com/marketplace/pp/prodview-4tjmrk43eec6s?sr=0-1&ref_=beagle&applicationId=AWSMPContessa)               |
-| WORLDCLIM_BIO    | Google Earth Engine |              |                |
-| TERRACLIMATE     | Google Earth Engine |              |                |
+| WORLDCLIM_BIO    | Google Earth Engine | worldclim.org (2GB zip) | [link](https://www.worldclim.org/data/worldclim21.html) |
+| TERRACLIMATE     | Google Earth Engine | [climatologylab.org](https://www.climatologylab.org/terraclimate.html) (NetCDF) | [link](https://climate.northwestknowledge.net/TERRACLIMATE/index_directDownloads.php) |
 | GPM              | Google Earth Engine | AWS (S3)***  | [Final 1month 0.1x0.1 v07](https://registry.opendata.aws/nasa-gpm3imergm/)               |
 
 \* This is for NASA GEDI, which seems to be an alternative elevation dataset to SRTM
