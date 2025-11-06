@@ -12,6 +12,7 @@ Comments/Concerns:
 - It will likely have similar costs in terms of integration and maintenance of new data sources as ENV-AGENTS
 - They seem to have started with just USGS and then extended it to EQA-WQX and ESS-DIVE data sets
   - It would be interesting to hear how this went and how much the original structure needed to be adapted
+- Seems like possibly a custom data schema (although I'm not familiar enough with what is commonly used to be sure). At least, doesn't seem to be GeoJSON (used by NASA and Google)
 
 Initial Recommendations
 - Would not recommend pursuing, unless collaboration with the BASIN-3D stakeholders is important
