@@ -1,6 +1,22 @@
 # Notes as they happen
 Potentially useful information from this doc will be included in the CUMULATIVE_NOTES.md file after some clean up.
 
+## 6 Nov 2025
+Looking at [BASIN-3D](https://github.com/BASIN-3D/basin3d)
+In general:
+- Seems like it is intended to fill a similar need as ENV-AGENTS
+- Also, similar adapter-pattern structure to ENV-AGENTS
+
+Comments/Concerns:
+- Seems quite bottom-up in terms of design, so the querying syntax should be evaluated carefully for applicability to new data sets and use-of-use
+- It will likely have similar costs in terms of integration and maintenance of new data sources as ENV-AGENTS
+- They seem to have started with just USGS and then extended it to EQA-WQX and ESS-DIVE data sets
+  - It would be interesting to hear how this went and how much the original structure needed to be adapted
+
+Initial Recommendations
+- Would not recommend pursuing, unless collaboration with the BASIN-3D stakeholders is important
+- If it is, would recommend drafting use-case example to evaluate API and querying limitations
+
 ## 24 Oct 2025
 It looks like the Google Earty Engine Python and JS packages are public (https://github.com/google/earthengine-api)
 - They seems to primarily be a wrapper for the GEE backend API server, but might be useful as a pattern
